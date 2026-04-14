@@ -1,0 +1,300 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  // Bagian 4 (Soal 151-160) - Deret Angka dan Huruf
+  { q: "6, 14, 8, 18, 10, 22, ..., ..., 14", opt: ["8 dan 18", "10 dan 16", "12 dan 26", "14 dan 28", "12 dan 20"], a: 2 },
+  { q: "1, 1, 6, 8, 2, 1, 4, 4", opt: ["15/6 dan 9/3", "18/6 dan 4/2", "10/2 dan 8/6", "12/2 dan 6/3", "8/4 dan 12/4"], a: 0 },
+  { q: "4, 11, 25, 46, ..., 109", opt: ["76", "84", "72", "74", "82"], a: 3 },
+  { q: "10, 5, 25, ..., 100, ..., 475", opt: ["20 dan 90", "15 dan 95", "20 dan 95", "25 dan 80", "15 dan 90"], a: 2 },
+  { q: "36, 47, 59, 70, 82, ..., ...", opt: ["85 dan 92", "92 dan 89", "93 dan 105", "95 dan 102", "96 dan 104"], a: 2 },
+  { q: "N M P Q R U T S ...", opt: ["U V W", "X Y Z", "V W X", "S T U", "U V W"], a: 2 },
+  { q: "H A I I ... K E L O", opt: ["GI", "JU", "JK"], a: 1 },
+  { q: "E N M E P O ... R Q E T ...", opt: ["ES", "PT", "EU"], a: 2 },
+  { q: "Z X ... T ... P N", opt: ["WY", "VR", "YQ"], a: 1 },
+  { q: "F J N R ...", opt: ["V", "W", "X"], a: 0 },
+
+  // Bagian 4 (Soal 161-175) - Aljabar
+  { q: "(-0,65) + 117 : 9 – 3 = ...", opt: ["10,35", "9,65", "9,35", "10,65", "11,35"], a: 2 },
+  { q: "8 x 8 x 8 = 7 + 7 + 7 = ...", opt: ["591", "509", "599", "598", "519"], a: 4 },
+  { q: "2 + 2 x 2 – 2 = ...", opt: ["0", "8", "6", "2", "4"], a: 4 },
+  { q: "112 + 43 – 52 x 16 = ...", opt: ["25", "160", "185", "64", "121"], a: 2 },
+  { q: "17 x 18 - 14 x 19 - 18 : 6 = ...", opt: ["5545", "37", "9246", "47", "38"], a: 1 },
+  { q: "(212/441) + √196 – 142 = ...", opt: ["2", "3", "1", "5", "6"], a: 2 },
+  { q: "(125 + 75)² = ...", opt: ["40.000", "10.000", "20.000", "25.000", "50.000"], a: 0 },
+  { q: "0,4² = ...", opt: ["0,08", "0,16", "0,4", "0,014", "0,064"], a: 1 },
+  { q: "3² + 4² = ...", opt: ["25", "12", "17", "16", "20"], a: 0 },
+  { q: "12% dari 250 = ...", opt: ["30", "25", "22", "28", "35"], a: 0 },
+  { q: "6 berapa persen dari 40?", opt: ["0,15", "15", "1,5", "0,6", "25"], a: 1 },
+  { q: "0,25 × 0,4 = ...", opt: ["0,01", "0,1", "0,4", "0,12", "0,2"], a: 1 },
+  { q: "Jika x = 5 dan y = 2, maka x² + y² = ...", opt: ["29", "25", "14", "30", "20"], a: 0 },
+  { q: "(300 – 75)² = ...", opt: ["5.625", "50.625", "75.625", "225.625", "150.625"], a: 1 },
+  { q: "15% dari 1.200 = ...", opt: ["120", "180", "160", "150", "200"], a: 1 },
+
+  // Bagian 4 (Soal 176-200) - Numerik
+  { q: "Rasio kelereng Andi : Budi : Iwan = 8 : 15 : 17. Jika selisih kelereng Budi dan Iwan adalah 30 butir, maka jumlah kelereng mereka adalah ....", opt: ["600", "630", "650", "700", "750"], a: 0 },
+  { q: "Perbandingan buku Ayu : Dewi = 2 : 3 dan buku Dewi : Linda = 4 : 7. Nilai perbandingan buku Ayu : Dewi : Linda adalah ....", opt: ["6 : 10 : 18", "8 : 12 : 21", "9 : 10 : 21", "9 : 12 : 24", "10 : 15 : 21"], a: 1 },
+  { q: "Perbandingan uang A dan B adalah 2 : 5, sedangkan perbandingan uang B dan C adalah 3 : 4. Jika jumlah uang mereka bertiga Rp 1.230.000,00, maka selisih uang A dan C adalah ....", opt: ["Rp 380.000,00", "Rp 400.000,00", "Rp 420.000,00", "Rp 460.000,00", "Rp 480.000,00"], a: 2 },
+  { q: "Perbandingan uang Wati dan Novi adalah 2 : 3, sementara itu perbandingan uang Novi dan Indah 4 : 5. Jika jumlah uang mereka adalah Rp 3.500.000,00, maka banyaknya uang Wati adalah ....", opt: ["Rp 800.000,00", "Rp 850.000,00", "Rp 900.000,00", "Rp 950.000,00", "Rp 1.000.000,00"], a: 0 },
+  { q: "Perbandingan berat gabah yang diperoleh pak Slamet dan pak Sugi ketika panen adalah 7 : 8, sedangkan perbandingan berat gabah yang diperoleh pak Sugi dengan pak Yadi adalah 9 : 10. Jika berat gabah yang didapat ketiganya adalah 21,5 ton, maka berat gabah yang diperoleh pak Slamet, pak Sugi, dan pak Yadi adalah kwintal", opt: ["Pak Slamet 60 kw, pak Sugi 70 kw, pak Yadi 75 kw", "Pak Slamet 62 kw, Pak Sugi 73 kw, Pak Yadi 80 kw", "Pak Slamet 63 kw, Pak Sugi 72 kw, Pak Yadi 80 kw", "Pak Slamet 65 kw, Pak Sugi 75 kw, Pak Yadi 85 kw", "Pak Slamet 70 kw, Pak Sugi 80 kw, Pak Yadi 90 kw"], a: 2 },
+  { q: "Apabila diketahui bahwa A : B = 5 : 6. Apabila pada nilai A = 20, Jadi berapakah nilai B ....", opt: ["16", "20", "24", "30", "36"], a: 2 },
+  { q: "Seorang murid kelas VI SD kemiling terdiri dari 15 murid pria dan 20 murid wanita. Jadi berapakah perbandingan murid pria dan wanita tersebut ....", opt: ["2 : 3", "3 : 4", "4 : 5", "1 : 2", "3 : 5"], a: 1 },
+  { q: "Kelereng A dan marta berjumlah 180 butir. Perbandingan kelereng A dan M 4 : 5.Maka jumlahnya ialah ....", opt: ["Kelereng A = 60, kelereng Marta = 120", "Kelereng A = 70, kelereng Marta = 110", "Kelereng A= 80, kelereng Marta = 100", "Kelereng A = 85, kelereng Marta = 95", "Kelereng A = 90, kelereng Marta = 90"], a: 2 },
+  { q: "Seorang pemborong akan membangun kantor berukuran 25 m × 20 m. Denah kantor digambar pada kertas dengan ukuran 10 cm × 8 cm. Skala yang digunakan pada denah kantor tersebut adalah ....", opt: ["1 : 20", "1 : 25", "1 : 200", "1 : 250", "1 : 500"], a: 3 },
+  { q: "Perbandingan panjang dan lebar persegi panjang 7 : 4. Jika keliling persegi panjang tersebut 66 cm, maka luasnya adalah ....", opt: ["132 cm²", "198 cm²", "218 cm²", "252 cm²", "280 cm²"], a: 3 },
+  { q: "Perbandingan uang Dian dan Rama 3 : 2. Jika jumlah uang Dian dan Rama Rp 40.000,00, selisih uang Dian dan Rama adalah ....", opt: ["Rp 8.000,00", "Rp 16.000,00", "Rp 24.000,00", "Rp 32.000,00", "Rp 40.000,00"], a: 0 },
+  { q: "Perbandingan kelereng Egi dan Legi 3 : 2. Jika selisih kelereng mereka 8, jumlah kelereng Egi dan Legi adalah ....", opt: ["40", "32", "24", "16", "48"], a: 0 },
+  { q: "Pada denah dengan skala 1 : 200 terdapat gambar kebun berbentuk persegi panjang dengan ukuran 7 cm x 4,5 cm. Luas kebun sebenarnya adalah ....", opt: ["58 m²", "63 m²", "126 m²", "140 m²", "280 m²"], a: 2 },
+  { q: "Jarak dua kota pada peta adalah 20 cm. Jika skala peta 1 : 600.000, jarak dua kota sebenarnya adalah ....", opt: ["1.200 km", "120 km", "30 km", "12 km", "6 km"], a: 1 },
+  { q: "Sebungkus coklat akan dibagikan kepada 24 anak, setiap anak mendapat 8 coklat. Jika coklat itu dibagikan kepada 16 anak, maka banyak coklat yang diperoleh setiap anak adalah ....", opt: ["8 coklat", "12 coklat", "16 coklat", "48 coklat", "24 coklat"], a: 1 },
+  { q: "Kue dalam kaleng dibagikan kepada 6 orang anak, masing-masing mendapat 30 kue dan tidak tersisa. Bila kue tersebut dibagikan kepada 10 orang anak, masing-masing akan mendapat kue sebanyak ....", opt: ["50", "36", "20", "18", "15"], a: 3 },
+  { q: "Banner dan Danvers bermain catur sebanyak 4 kali. Dengan peraturan bermain, jika menang diberi skor 10, jika kalah diberi skor -2, dan jika seri diberi skor 0. Pada saat Banner menang 2 kali dan seri 1 kali, berapa jumlah skor total yang diperoleh Banner dan Danvers?", opt: ["18", "24", "44", "22", "36"], a: 1 },
+  { q: "Dalam suatu kompetisi lompat jauh, Lexi dapat melompat sejauh 1,89 m. dan Bernard melompat sejauh 12,6 dm. Berapa perbedaan jarak lompatan antara Lexi dan Bernard?", opt: ["6 dm", "0,53 m", "0,63 m", "1,764 m", "10,71 dm"], a: 2 },
+  { q: "Di dalam Gudang terdapat 275 karung beras dengan berat 50kg tiap karung. Beras tersebut akan dibagikan kepada 5 pedagang sama banyak. Berapa banyak yang diterima setiap pedagang?", opt: ["1.375 kg", "275 kuintal", "13,75 kuintal", "2,75 ton", "27,5 ton"], a: 3 },
+  { q: "Untuk membuat 2 loyang kue cubit diperlukan 5,5kg gula dengan harga Rp11.000,- per kg. Berapa harga gula untuk membuat 16 loyang kue cubit?", opt: ["Rp484.000,00", "Rp490.000,00", "Rp520.000,00", "Rp560.000,00", "Rp580.000,00"], a: 0 },
+  { q: "Toko mebel menurunkan harga sofa sebesar 25% pada saat obral. Berapa harga asli sofa tersebut jika Jadon membayar sebesar Rp225.000,00?", opt: ["Rp270.000,00", "Rp300.000,00", "Rp370.000,00", "Rp400.000,00", "Rp450.000,00"], a: 3 },
+  { q: "Untuk memperoleh upah Rp360.000,00 per minggu, berapa jam ia harus bekerja dalam seminggu jika setiap jamnya ia memperoleh Rp9.000,00?", opt: ["30", "40", "60", "72", "76"], a: 1 },
+  { q: "Bu Gamora ingin membuat sebuah kolam renang di belakang rumahnya. Untuk membangun kolam renang, dibutuhkan 10 orang pekerja selama seminggu. Berapa orang yang dibutuhkan Bu Gamora untuk menyelesaikan kolam renang hanya dalam 2 hari?", opt: ["30", "32", "36", "35", "37"], a: 3 },
+  { q: "Gamora membeli sebuah buku dengan harga Rp250.000,00 dengan diskon 10% kemudian mendapat potongan diskon lagi 5%. Berapakah harga buku yang harus dibayar oleh Gamora?", opt: ["Rp213.750,00", "Rp170.500,00", "Rp200.500,00", "Rp215.750,00", "Rp150.750,00"], a: 0 },
+  { q: "Thor mempunyai tiga lembar uang sepuluh ribuan, 4 lembar uang lima ribuan, dan lima lembar uang dua puluh ribuan. Jika ia akan membeli pulsa seharga Rp55.000,00 berapa sisa uang Thor?", opt: ["Rp75.000,00", "Rp80.000,00", "Rp85.000,00", "Rp90.000,00", "Rp95.000,00"], a: 4 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

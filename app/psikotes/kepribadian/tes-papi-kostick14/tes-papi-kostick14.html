@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            
+            <h3 id="keterangan-skor" style="margin-top: -10px; margin-bottom: 20px;"></h3>
+            
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+{ q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya bekerja dengan sangat cepat untuk memastikan target harian terlampaui", "Saya memeriksa setiap baris data berkali-kali untuk menjamin tidak ada kesalahan sekecil apa pun"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Menemukan kesalahan kecil dalam laporan yang panjang memberikan kepuasan tersendiri bagi saya", "Saya lebih suka menjadi orang yang memberikan perintah daripada orang yang mengerjakan teknisnya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memiliki ambisi yang sangat kuat untuk menduduki posisi puncak manajemen", "Saya sangat teliti dalam memastikan semua angka dalam anggaran sudah sinkron dengan data asli"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu menyusun rencana cadangan strategis untuk mengantisipasi risiko bisnis", "Saya merasa sangat terganggu jika melihat tanda baca atau format dokumen yang tidak konsisten"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mendedikasikan waktu saya untuk mempelajari detail teknis dari setiap prosedur kerja", "Saya adalah pribadi yang sangat luwes dan mudah membangun jaringan dengan klien baru"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya berani mengambil risiko besar demi kemajuan perusahaan yang signifikan", "Saya memastikan setiap dokumen tertata rapi sesuai dengan urutan kronologis yang benar"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat perfeksionis dalam memeriksa akurasi setiap informasi sebelum dipresentasikan", "Saya adalah orang pertama yang akan maju untuk membela tim saya di hadapan atasan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya bekerja dengan stamina fisik yang tinggi dan jarang merasa lelah di lapangan", "Saya lebih suka mengerjakan tugas yang membutuhkan ketelitian tingkat tinggi daripada tugas umum"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat disiplin dalam memantau setiap perubahan kecil pada data operasional harian", "Saya ingin ide-ide brilian saya diakui dan diapresiasi secara luas oleh rekan kerja"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih suka memikirkan visi perusahaan sepuluh tahun ke depan", "Saya sangat menikmati tugas yang mengharuskan saya memeriksa draf laporan secara mendalam"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan tidak ada satu pun instruksi dalam SOP yang terlewatkan atau salah tafsir", "Saya memimpin rapat dengan sangat dominan agar semua orang mengikuti arahan saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya senang membantu rekan kerja yang sedang menghadapi masalah pribadi mereka", "Saya selalu memverifikasi ulang setiap sumber data untuk memastikan keabsahan dokumen"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya merasa sangat puas jika hasil perhitungan saya tepat hingga angka desimal terakhir", "Saya tidak pernah ragu untuk berkonfrontasi jika hak-hak kerja saya terganggu"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya bekerja dengan sangat tangkas dan fleksibel mengikuti perubahan situasi", "Saya lebih memilih waktu ekstra untuk mengecek kualitas daripada mengumpulkan tugas terburu-buru"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan kearsipan digital saya memiliki struktur folder yang sangat sistematis", "Saya memiliki kemampuan persuasif yang tinggi dalam memengaruhi pendapat orang lain"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat teliti dalam mencatat setiap poin penting dalam setiap pertemuan koordinasi", "Saya mendambakan posisi jabatan yang memberi saya otoritas besar atas bawahan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih suka melihat gambaran besar masalah daripada pusing dengan hal-hal kecil", "Saya sangat cermat dalam mendeteksi adanya anomali atau keanehan pada laporan keuangan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu mematuhi etika formal perusahaan dengan sangat sopan dan berwibawa", "Saya tidak akan membiarkan laporan keluar sebelum saya memeriksa ulang ejaannya secara manual"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya merasa sangat bersemangat saat mengerjakan analisis data yang sangat kompleks dan mendetail", "Saya adalah individu yang sangat mandiri dan tidak suka bergantung pada bantuan orang lain"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan semua peralatan kerja saya berada pada posisi yang sangat presisi setiap pagi", "Saya memiliki energi yang meledak-ledak untuk memimpin proyek di berbagai kota"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih tertarik pada hasil akhir yang fantastis daripada cara teknis pencapaiannya", "Saya senang menghabiskan waktu untuk merapikan detail kecil yang sering diabaikan orang lain"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat waspada terhadap detail kontrak kerja agar tidak ada celah hukum yang merugikan", "Saya sangat peduli pada kenyamanan dan keakraban sosial antar rekan setim"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya ingin prestasi kerja saya menjadi bahan pembicaraan positif di kantor", "Saya sangat betah duduk berlama-lama untuk membandingkan kecocokan data dari dua laporan berbeda"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu menyiapkan draf kerja dengan tingkat akurasi yang sulit dibantah oleh siapa pun", "Saya bekerja dengan ritme yang sangat cepat agar semua pekerjaan bisa selesai hari ini"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya cenderung fokus pada teori dan konsep abstrak yang mendasari sebuah sistem", "Saya selalu memastikan bahwa setiap item dalam checklist kerja saya sudah tercentang benar"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan penggunaan anggaran perusahaan tercatat secara mendetail hingga satuan terkecil", "Saya adalah pemimpin yang sangat karismatik dan disukai oleh banyak orang"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya tidak akan merasa tenang jika ada satu bagian kecil dari tugas saya yang belum sempurna", "Saya selalu berusaha untuk tidak terlihat kaku dan lebih santai dalam bekerja"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memiliki stamina untuk melakukan perjalanan dinas yang padat jadwalnya", "Saya sangat menikmati pekerjaan yang menuntut konsentrasi penuh pada detail teknis"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat ketat dalam memantau jadwal aktivitas bawahan saya setiap menitnya", "Saya sangat cermat dalam memastikan format presentasi saya terlihat sangat rapi dan konsisten"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu mengecek kelengkapan lampiran dokumen sebelum diserahkan kepada manajer", "Saya bekerja keras demi kenaikan pangkat yang sudah saya targetkan sejak lama"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih suka menjadi konseptor strategi daripada pemeriksa detail operasional", "Saya sangat teliti dalam memvalidasi kebenaran informasi sebelum menjadikannya keputusan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan lingkungan kerja saya bebas dari debu dan tertata dengan sangat teratur", "Saya selalu siap mengambil alih tanggung jawab jika pemimpin tim saya berhalangan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memiliki ketahanan mental untuk membaca ratusan halaman dokumen teknis yang rumit", "Saya sangat mahir dalam mencairkan ketegangan dalam sebuah perdebatan panas"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih memilih hasil kerja yang sedikit lambat namun akurasinya 100 persen", "Saya lebih memilih hasil kerja yang cepat meskipun ada sedikit kesalahan kecil yang wajar"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya ingin dikenal sebagai orang yang paling teliti di seluruh departemen saya", "Saya ingin dikenal sebagai orang yang paling berani menghadapi tantangan baru"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu menggunakan pedoman kerja yang sangat rinci dalam setiap langkah saya", "Saya sangat kompetitif dan selalu ingin mengalahkan pencapaian rekan kerja lain"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sering merasa risih jika melihat file digital yang namanya tidak beraturan", "Saya merasa sangat nyaman bekerja dalam kelompok yang penuh dengan obrolan santai"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya adalah pemikir analitis yang suka mencari solusi dari masalah-masalah teoritis", "Saya sangat memperhatikan detail kecil dalam instruksi kerja agar tidak terjadi kekeliruan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan seluruh alat tulis dan perlengkapan kantor saya terhitung dengan benar", "Saya tidak pernah ragu untuk memberikan kritik pedas kepada orang yang bekerja lambat"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat peduli pada penampilan fisik dan cara berpakaian saya saat di kantor", "Saya sangat peduli pada ketepatan penggunaan diksi dan tata bahasa dalam surat resmi"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya adalah orang yang sangat objektif dan tidak melibatkan perasaan dalam bekerja", "Saya sangat teliti dalam memantau perkembangan setiap proyek dari tahap ke tahap secara detail"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih suka mengerjakan satu tugas besar yang berdampak langsung pada perusahaan", "Saya lebih suka mengerjakan banyak tugas kecil yang menuntut pemeriksaan detail yang tinggi"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat waspada terhadap kemungkinan adanya penipuan dalam dokumen transaksi", "Saya selalu menantikan apresiasi dan tepuk tangan dari orang lain atas karya saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya bekerja dengan sangat tenang dan tidak terpengaruh oleh tekanan tenggat waktu", "Saya memastikan setiap sel dalam spreadsheet saya memiliki rumus yang benar dan akurat"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih memilih profesi sebagai auditor yang memeriksa kebenaran sistem secara detail", "Saya lebih memilih profesi sebagai manajer pemasaran yang harus banyak bergaul"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat teratur dalam menjadwalkan waktu perawatan rutin untuk semua mesin kantor", "Saya memiliki semangat yang meluap-luap untuk mengubah sistem kerja menjadi lebih modern"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya merasa sangat bahagia jika bisa bekerja tanpa gangguan dari orang lain", "Saya merasa sangat puas jika tidak ada satu pun koreksi dari atasan pada laporan saya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sering mengoreksi kesalahan kecil dalam pembicaraan orang lain agar lebih akurat", "Saya adalah pendengar yang sangat sabar bagi teman yang ingin berkeluh kesah"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat teliti dalam mengikuti petunjuk instalasi perangkat lunak terbaru", "Saya sangat dominan dalam memengaruhi arah kebijakan departemen saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mementingkan kuantitas hasil kerja agar terlihat produktif di mata perusahaan", "Saya mementingkan kualitas dan presisi hasil kerja meskipun membutuhkan waktu lebih lama"], a: 1 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+
+        // --- Logika Penentuan Keterangan Skor ---
+        const keteranganSkorEl = document.getElementById('keterangan-skor');
+        if (finalScoreValue <= 50) {
+            keteranganSkorEl.innerText = "Suka melihat gambaran besar (big picture), ceroboh pada hal kecil";
+            keteranganSkorEl.style.color = "#e74c3c"; // Warna merah
+        } else {
+            keteranganSkorEl.innerText = "Teliti, akurat, dan peduli pada hal-hal kecil (cocok untuk admin/keuangan)";
+            keteranganSkorEl.style.color = "#2ecc71"; // Warna hijau
+        }
+        // ----------------------------------------
+
+        document.getElementById('stats-text').innerText = `Jawaban Ideal: ${correct} | Jawaban Kurang Ideal: ${quizData.length - correct}`;        
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

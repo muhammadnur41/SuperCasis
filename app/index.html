@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperCasis | Next-Gen Test Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Gaya Tambahan untuk Elemen User di Pojok Kanan */
+        .user-navigation {
+            position: fixed;
+            top: 10px;
+            right: 200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .user-greeting {
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .user-greeting span {
+            color: #fcd34d; /* Warna kuning dari desain Anda */
+            font-weight: bold;
+        }
+
+        .btn-logout-modern {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ff4d4d;
+            padding: 8px 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout-modern:hover {
+            background: #ff4d4d;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4);
+        }
+
+        /* Responsif mobile */
+        @media (max-width: 480px) {
+            .user-navigation {
+                top: 10px;
+                right: 10px;
+            }
+            .user-greeting { display: none; } /* Sembunyikan teks di hp kecil, sisakan ikon */
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div id="particles-js"></div>
+
+    <div class="user-navigation" id="authSection">
+        </div>
+
+    <div class="container">
+        <header class="modern-header">
+            <div class="brand">
+                <div class="logo-glow">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h1>Super<span>Casis</span></h1>
+            </div>
+            <p class="subtitle">Platform Persiapan Seleksi Masa Depan</p>
+            
+            <div class="stats-bar">
+                <div class="stat-pill"><i class="fas fa-layer-group"></i> 260+ Materi</div>
+                <div class="stat-pill"><i class="fas fa-bolt"></i> Real-time Result</div>
+                <div class="stat-pill"><i class="fas fa-shield-halved"></i> Premium Access</div>
+            </div>
+        </header>
+
+        <main class="content-area">
+            <div class="main-menu-grid">
+                <div class="glass-card main-card" onclick="showPsikotesMainMenu()">
+                    <div class="card-content">
+                        <div class="icon-box purple"><i class="fas fa-puzzle-piece"></i></div>
+                        <h2>PSIKOTES</h2>
+                        <p>Kecerdasan, Kecermatan, & Kepribadian</p>
+                    </div>
+                    <div class="card-footer">Buka Modul <i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <div class="glass-card main-card" onclick="showAkademikMenu()">
+                    <div class="card-content">
+                        <div class="icon-box blue"><i class="fas fa-graduation-cap"></i></div>
+                        <h2>AKADEMIK</h2>
+                        <p>MTK, Inggris, Umum, & Kebangsaan</p>
+                    </div>
+                    <div class="card-footer">Buka Modul <i class="fas fa-chevron-right"></i></div>
+                </div>
+            </div>
+
+            <div id="psikotesMainMenu" class="sub-menu-container" style="display: none;">
+                <div class="section-header">
+                    <button onclick="backToMain()" class="btn-glass-back"><i class="fas fa-arrow-left"></i></button>
+                    <h2>Modul Psikotes</h2>
+                </div>
+                <p class="category-description">Pilih kategori tes psikotes</p>
+                <div class="psikotes-category-grid">
+                    <div class="psikotes-category-card" onclick="showPsikotesSubMenu('kecerdasan')">
+                        <div class="category-icon purple-gradient"><i class="fas fa-brain"></i></div>
+                        <h3>Tes Kecerdasan</h3>
+                        <p>3 Sub Tes</p>
+                        <span class="category-badge">60 Soal</span>
+                    </div>
+                    <div class="psikotes-category-card" onclick="showPsikotesSubMenu('kecermatan')">
+                        <div class="category-icon blue-gradient"><i class="fas fa-eye"></i></div>
+                        <h3>Tes Kecermatan</h3>
+                        <p>3 Sub Tes</p>
+                        <span class="category-badge">60 Soal</span>
+                    </div>
+                    <div class="psikotes-category-card" onclick="showPsikotesSubMenu('kepribadian')">
+                        <div class="category-icon green-gradient"><i class="fas fa-user-check"></i></div>
+                        <h3>Tes Kepribadian</h3>
+                        <p>2 Sub Tes</p>
+                        <span class="category-badge">40 Soal</span>
+                    </div>
+                    <div class="psikotes-category-card" onclick="showPsikotesSubMenu('tryout')">
+                        <div class="category-icon orange-gradient"><i class="fas fa-vial"></i></div>
+                        <h3>Try Out</h3>
+                        <p>1 Sub Tes</p>
+                        <span class="category-badge">20 Soal</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="psikotesSubMenu" class="sub-menu-container" style="display: none;">
+                <div class="section-header">
+                    <button onclick="backToPsikotesMain()" class="btn-glass-back"><i class="fas fa-arrow-left"></i></button>
+                    <h2 id="psikotesSubTitle">Tes Kecerdasan</h2>
+                </div>
+                <p class="category-description" id="psikotesSubDesc">Pilih jenis tes</p>
+                <div class="subcategory-grid" id="subcategoryGrid"></div>
+            </div>
+
+            <div id="psikotesDetailMenu" class="sub-menu-container" style="display: none;">
+                <div class="section-header">
+                    <button onclick="backToPsikotesSub()" class="btn-glass-back"><i class="fas fa-arrow-left"></i></button>
+                    <h2 id="psikotesDetailTitle">Tes Kemampuan Verbal</h2>
+                </div>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="psikotesDetailSearch" placeholder="Cari nomor soal..." onkeyup="searchPsikotesDetail()">
+                </div>
+                <div class="soal-grid" id="psikotesDetailGrid"></div>
+            </div>
+
+            <div id="akademikMenu" class="sub-menu-container" style="display: none;">
+                <div class="section-header">
+                    <button onclick="backToMain()" class="btn-glass-back"><i class="fas fa-arrow-left"></i></button>
+                    <h2>Modul Akademik</h2>
+                </div>
+                <div class="featured-section">
+                    <h3><i class="fas fa-star" style="color: #fcd34d;"></i> Kategori Akademik</h3>
+                    <div class="featured-grid">
+                        <div class="featured-card" onclick="showCategory('matematika')">
+                            <div class="featured-icon purple-gradient"><i class="fas fa-calculator"></i></div>
+                            <div class="featured-content">
+                                <h4>Matematika Dasar</h4>
+                                <p>20 paket soal · 200 butir</p>
+                                <span class="difficulty-badge">Mudah - Sulit</span>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                        <div class="featured-card" onclick="showCategory('inggris')">
+                            <div class="featured-icon blue-gradient"><i class="fas fa-language"></i></div>
+                            <div class="featured-content">
+                                <h4>Bahasa Inggris</h4>
+                                <p>20 paket soal · 200 butir</p>
+                                <span class="difficulty-badge">Grammar & Vocab</span>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                        <div class="featured-card" onclick="showCategory('umum')">
+                            <div class="featured-icon green-gradient"><i class="fas fa-globe"></i></div>
+                            <div class="featured-content">
+                                <h4>Pengetahuan Umum</h4>
+                                <p>20 paket soal · 200 butir</p>
+                                <span class="difficulty-badge">IPS & IPA</span>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                        <div class="featured-card" onclick="showCategory('wawasan')">
+                            <div class="featured-icon orange-gradient"><i class="fas fa-flag"></i></div>
+                            <div class="featured-content">
+                                <h4>Wawasan Kebangsaan</h4>
+                                <p>20 paket soal · 200 butir</p>
+                                <span class="difficulty-badge">Pancasila & UUD</span>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-access">
+                    <h3><i class="fas fa-bolt" style="color: #86efac;"></i> Akses Cepat</h3>
+                    <div class="quick-grid">
+                        <button class="quick-btn" onclick="showCategory('matematika')"><i class="fas fa-calculator"></i> MTK</button>
+                        <button class="quick-btn" onclick="showCategory('inggris')"><i class="fas fa-language"></i> ING</button>
+                        <button class="quick-btn" onclick="showCategory('umum')"><i class="fas fa-globe"></i> UMUM</button>
+                        <button class="quick-btn" onclick="showCategory('wawasan')"><i class="fas fa-flag"></i> WAWASAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="categoryDetailMenu" class="sub-menu-container" style="display: none;">
+                <div class="section-header">
+                    <button onclick="backToAkademik()" class="btn-glass-back"><i class="fas fa-arrow-left"></i></button>
+                    <div class="category-header-info">
+                        <h2 id="categoryTitle">Matematika</h2>
+                        <p id="categorySubtitle">20 Paket Soal Tersedia</p>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterSoal('semua', this)">Semua</button>
+                        <button class="filter-tab" onclick="filterSoal('mudah', this)">Mudah</button>
+                        <button class="filter-tab" onclick="filterSoal('sedang', this)">Sedang</button>
+                        <button class="filter-tab" onclick="filterSoal('sulit', this)">Sulit</button>
+                    </div>
+                    <div class="search-wrapper small">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="akademikSearch" placeholder="Cari paket soal..." onkeyup="searchAkademik()">
+                    </div>
+                </div>
+                <div class="soal-grid" id="categoryGrid"></div>
+            </div>
+
+            <div id="testFrame" class="test-overlay" style="display: none;">
+                <div class="test-nav">
+                    <button onclick="closeTest()" class="close-btn"><i class="fas fa-times"></i> Tutup</button>
+                    <div class="test-info">
+                        <span id="testTitle">Loading Test...</span>
+                        <span class="test-category-badge" id="testCategory">Matematika</span>
+                    </div>
+                    <div class="test-controls">
+                        <div class="timer-tag"><i class="far fa-clock"></i> <span id="timer">00:00</span></div>
+                        <button class="fullscreen-btn" onclick="toggleFullscreen()"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <iframe id="testIframe" src="about:blank"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const authSection = document.getElementById('authSection');
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userNama = localStorage.getItem('userNama');
+
+            // Jika tidak login, redirect ke halaman login
+            if (isLoggedIn !== 'true' || !userNama) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            // Tampilkan nama peserta di greeting
+            authSection.innerHTML = `
+                <div class="user-greeting">
+                    Halo, <span>${userNama}</span>
+                </div>
+                <button onclick="logout()" class="btn-logout-modern">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            `;
+        });
+
+        function logout() {
+            if(confirm('Apakah Anda yakin ingin keluar?')) {
+                // Hapus SEMUA data login peserta
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userNama');
+                localStorage.removeItem('userUsername');
+                // Kembali ke halaman login
+                window.location.href = '../login.html'; 
+            }
+        }
+    </script>
+</body>
+</html>

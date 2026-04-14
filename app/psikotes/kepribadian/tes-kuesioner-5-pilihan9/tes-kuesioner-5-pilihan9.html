@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            
+            <h3 id="keterangan-skor" style="margin-top: -10px; margin-bottom: 20px;"></h3>
+            
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    { q: "Saat tes psikotes menggambar rumah (DAP), Anda tidak bisa menggambar dengan rapi karena tremor. Yang paling tepat:", opt: ["Menyerah.", "Menggambar sebisanya.", "Meminta pensil mekanik.", "Meniru gambar tetangga.", "Menggambar dengan penggaris."], a: 1 },
+    { q: "Anda adalah komandan pleton. Seorang anggota pleton Anda sering bolos latihan. Anda sudah menegur tiga kali. Tindakan selanjutnya yang paling sesuai prosedur:", opt: ["Memberikan sanksi fisik (push-up ekstra).", "Melaporkan ke komandan kompi untuk sanksi administrasi.", "Memecatnya dari pleton.", "Memanggil orang tuanya.", "Mengabaikan karena dia tidak mengganggu yang lain."], a: 1 },
+    { q: "Anda menemukan bahwa rekan Anda menggunakan narkoba jenis sabu. Dia adalah anggota Brimob. Tindakan Anda:", opt: ["Menegur dan mengajak rehabilitasi.", "Langsung melaporkan ke atasan.", "Membiarkan karena bukan jam dinas.", "Mengancam akan melaporkan jika tidak memberi uang.", "Mengajak memakai bersama."], a: 1 },
+    { q: "Dalam tes Army Alpha (tes intelegensi kelompok), Anda diberikan waktu terbatas. Anda menyadari bahwa kecepatan Anda lebih lambat dari peserta lain. Sikap terbaik:", opt: ["Panik dan mempercepat asal-asalan.", "Tetap tenang dan mengerjakan sesuai kemampuan.", "Melihat jawaban tetangga.", "Berhenti mengerjakan dan menunggu waktu habis.", "Mengangkat tangan meminta tambahan waktu."], a: 1 },
+    { q: "Anda diperintahkan untuk melakukan penggeledahan rumah seorang aktivis. Saat penggeledahan, Anda menemukan barang bukti yang tidak terkait kasus tetapi menunjukkan pelanggaran hukum lain (misalnya pornografi). Tindakan Anda:", opt: ["Mengabaikan karena tidak sesuai surat perintah.", "Menyita dan melaporkan sebagai temuan tambahan.", "Mengembalikan ke tempat semula.", "Memusnahkan agar tidak jadi masalah baru.", "Memberitahu aktivis tersebut."], a: 1 },
+    { q: "Anda adalah anggota Polisi yang ditugaskan di daerah konflik. Seorang warga meminta perlindungan karena diancam oleh kelompok separatis. Namun Anda khawatir jika melindungi, kelompok separatis akan membalas ke keluarga Anda. Tindakan Anda:", opt: ["Menolak karena risiko.", "Memberikan perlindungan sesuai prosedur tanpa takut ancaman.", "Menyembunyikan warga di rumah pribadi.", "Menyarankan warga pindah kota.", "Melaporkan ke atasan dan minta pengamanan tambahan."], a: 1 },
+    { q: "Saat rapat koordinasi, seorang atasan dari instansi lain meremehkan institusi Anda di depan umum. Anda yakin dia salah. Sikap Anda:", opt: ["Langsung membantah dengan emosi.", "Diam dan melapor ke atasan Anda.", "Mencatat poin kesalahan dan menyampaikan koreksi secara diplomatis setelah rapat.", "Keluar ruangan.", "Menghina balik."], a: 2 },
+    { q: "Anda sedang dalam perjalanan dinas menggunakan kendaraan operasional. Tiba-tiba Anda melihat seorang polisi lalu lintas sedang memalak pengendara. Anda tidak mengenalnya. Tindakan Anda:", opt: ["Turun dan menegur.", "Merekam dan melaporkan.", "Membiarkan.", "Menghubungi atasan Anda.", "Memberi isyarat kepada pengendara untuk pergi."], a: 1 },
+    { q: "Anda adalah anggota tim forensik. Anda menemukan bukti yang membebaskan tersangka utama, tetapi atasan Anda ingin segera menutup kasus dengan menahan tersangka tersebut. Tindakan Anda:", opt: ["Memusnahkan bukti.", "Menyembunyikan bukti.", "Menyampaikan bukti tersebut ke penyidik dan pengadilan.", "Memberi tahu tersangka agar melarikan diri.", "Menunda-nunda."], a: 2 },
+    { q: "Dalam tes koran Pauli, Anda mengalami kelelahan di menit ke-15 dan mulai banyak melakukan kesalahan hitung. Yang paling tepat dilakukan:", opt: ["Berhenti sejenak dan melanjutkan.", "Mengurangi kecepatan untuk meminimalisir kesalahan.", "Meningkatkan kecepatan agar cepat selesai.", "Melihat lembar tetangga untuk memastikan baris yang benar.", "Mengacak-acak jawaban agar terlihat konsisten."], a: 1 },
+    { q: "Anda adalah seorang polisi yang sedang bertugas di stasiun kereta. Anda melihat seorang anak kecil yang tampak tersesat. Tidak ada orang dewasa mendampingi. Tindakan Anda:", opt: ["Membiarkan karena bukan pencurian.", "Membawa anak ke kantor polisi stasiun.", "Memanggil orang tua melalui pengeras suara.", "Menanyakan alamat anak.", "Menyerahkan ke petugas stasiun."], a: 2 },
+    { q: "Anda sedang menangani kasus kekerasan dalam rumah tangga. Korban ingin mencabut laporan karena tekanan dari keluarga suami. Tindakan Anda:", opt: ["Mencabut laporan.", "Menjelaskan konsekuensi dan tetap melanjutkan proses hukum jika bukti cukup.", "Menyuruh korban berpikir ulang.", "Menangkap suami tetap.", "Mengalihkan ke mediator."], a: 1 },
+    { q: "Anda adalah anggota satuan sabhara. Saat mengamankan unjuk rasa, seorang wartawan memasuki garis polisi. Atasan memerintahkan untuk menyita kameranya. Tindakan Anda:", opt: ["Menyita kamera.", "Meminta wartawan mundur dengan hormat.", "Mengabaikan perintah.", "Memukul wartawan.", "Mencatat identitas wartawan."], a: 1 },
+    { q: "Anda menemukan bahwa aplikasi pelaporan internal institusi memiliki bug yang bisa digunakan untuk mengubah nilai kinerja. Anda bisa menaikkan nilai Anda sendiri tanpa ketahuan. Tindakan Anda:", opt: ["Memanfaatkan untuk menaikkan nilai.", "Melaporkan bug ke bagian IT.", "Membiarkan karena bukan tanggung jawab.", "Menjual informasi bug ke rekan.", "Mengubah nilai rekan yang tidak suka."], a: 1 },
+    { q: "Anda sedang dalam misi penyelamatan sandera. Sandera adalah anak kecil. Pelaku meminta Anda meletakkan senjata dan mendekat. Jika tidak, dia akan membunuh anak itu. Tindakan Anda:", opt: ["Meletakkan senjata dan mendekat.", "Menembak pelaku dari jarak jauh.", "Meminta bantuan penembak jitu.", "Berpura-pura meletakkan senjata.", "Mengabaikan ancaman."], a: 0 },
+    { q: "Anda adalah anggota polisi yang baru pertama kali bertugas di daerah terpencil. Kepala desa setempat meminta 'uang keamanan' setiap bulan agar masyarakat kooperatif. Tindakan Anda:", opt: ["Memberikan uang.", "Menolak dan melaporkan ke atasan.", "Mengancam kepala desa.", "Membayar setengah.", "Meminta bukti tertulis."], a: 1 },
+    { q: "Dalam tes gambar orang (Draw a Person Test), Anda menggambar figur dengan tangan yang sangat panjang menjulur. Interpretasi psikologis yang paling mungkin:", opt: ["Ambisi yang kuat untuk meraih sesuatu.", "Perasaan tidak aman.", "Agresivitas tinggi.", "Kecenderungan manipulatif.", "Kemampuan komunikasi baik."], a: 0 },
+    { q: "Anda adalah anggota tim pemburu teroris. Anda mendapat informasi bahwa teroris bersembunyi di rumah sakit. Atasan memerintahkan serangan langsung. Tindakan Anda:", opt: ["Menyerang sesuai perintah.", "Meminta izin untuk melakukan pendekatan intelijen terlebih dahulu.", "Membatalkan misi.", "Menghubungi rumah sakit untuk evakuasi.", "Menyerang dengan taktik senyap."], a: 1 },
+    { q: "Seorang atasan meminta Anda untuk memata-matai rekan kerja yang dicurigai korupsi, tanpa prosedur resmi. Tindakan Anda:", opt: ["Melakukan sesuai perintah.", "Menolak karena tidak prosedural.", "Meminta surat tugas.", "Memata-matai diam-diam tetapi tidak melapor.", "Memberi tahu rekan yang dicurigai."], a: 2 },
+    { q: "Anda sedang dalam perjalanan pulang. Anda melihat sebuah mobil mogok di tengah rel kereta api, dan kereta sudah terlihat dari kejauhan. Sopir mobil panik tidak bisa keluar. Tindakan Anda:", opt: ["Berlari menjauh.", "Menolong sopir keluar.", "Meneriaki sopir agar keluar.", "Merekam kejadian.", "Menghubungi petugas kereta."], a: 1 },
+    { q: "Anda adalah anggota polisi lalu lintas. Seorang pengendara motor melanggar lalu lintas, tetapi dia sedang mengantar istrinya yang akan melahirkan. Tindakan Anda:", opt: ["Menilang tetap.", "Mengawal ke rumah sakit dan tidak menilang.", "Memberi teguran lisan.", "Meminta surat keterangan dokter.", "Menahan SIM."], a: 1 },
+    { q: "Dalam tes kepribadian tertulis (MMPI), Anda merasa beberapa pernyataan sangat tidak nyaman dan mengganggu privasi. Sikap yang tepat:", opt: ["Menjawab sejujur mungkin sesuai keadaan.", "Menjawab dengan cara yang membuat Anda terlihat sempurna.", "Mengosongkan jawaban untuk pernyataan sensitif.", "Menghentikan tes.", "Memprotes pengawas."], a: 0 },
+    { q: "Anda adalah anggota Densus 88. Saat penggerebekan rumah teroris, Anda menemukan anak kecil yang ketakutan. Teroris sudah tewas. Tindakan Anda:", opt: ["Meninggalkan anak.", "Membawa anak ke tempat aman dan berikan trauma healing.", "Menyerahkan ke Dinas Sosial.", "Memfoto anak untuk dokumentasi.", "Menanyai anak tentang teroris lain."], a: 1 },
+    { q: "Anda sedang bertugas jaga malam di kantor. Anda melihat atasan Anda keluar dari ruang kerja dengan membawa dokumen berstempel rahasia. Dia tidak melihat Anda. Tindakan Anda:", opt: ["Diam.", "Mencatat waktu dan melaporkan ke pengamanan internal.", "Menegur atasan.", "Mengikuti atasan.", "Memberi tahu rekan."], a: 1 },
+    { q: "Anda adalah seorang polisi yang sedang cuti dan mengunjungi keluarga. Sepupu Anda meminta Anda menggunakan senjata dinas untuk mengancam tetangganya yang berhutang. Tindakan Anda:", opt: ["Meminjamkan senjata.", "Menolak dengan tegas dan melaporkan sepupu ke polisi setempat.", "Memarahi sepupu.", "Berpura-pura setuju tetapi tidak melakukan.", "Meminjamkan senjata tanpa peluru."], a: 1 },
+    { q: "Dalam tes kemampuan spasial (bangun ruang), Anda tidak terbiasa dengan soal-soal 3D. Strategi terbaik:", opt: ["Menebak dengan cepat.", "Mencoba menggambar ulang di kertas coretan.", "Menyerah dan mengosongkan jawaban.", "Melihat jawaban peserta lain.", "Membayangkan benda sehari-hari yang serupa."], a: 1 },
+    { q: "Anda adalah anggota tim pengamanan pemilu. Anda menemukan seorang warga membawa puluhan KTP orang lain ke TPS. Tindakan Anda:", opt: ["Menangkap warga tersebut.", "Memeriksa dan meminta penjelasan.", "Membiarkan.", "Menyita KTP.", "Melaporkan ke panwaslu."], a: 1 },
+    { q: "Anda melihat rekan kerja Anda melakukan pelanggaran ringan seperti terlambat datang tetapi memalsukan jam masuk. Sikap yang paling sesuai dengan integritas seorang anggota Polri adalah:", opt: ["Mendiamkannya, karena itu bukan urusanmu.", "Menegur secara pribadi dan mengingatkan tentang Pakta Integritas.", "Melaporkan langsung ke atasan agar diberi sanksi tegas.", "Ikut melakukan hal yang sama karena semua orang melakukannya.", "Mencari bukti lain dan baru melaporkannya."], a: 1 },
+    { q: "Anda sedang dalam operasi penangkapan narkoba. Tersangka menawarkan uang 500 juta jika Anda membiarkannya pergi. Tidak ada saksi. Tindakan Anda:", opt: ["Menerima dan membiarkan.", "Menolak dan tetap menangkap.", "Menerima tetapi tetap menangkap.", "Meminta lebih.", "Berpura-pura menerima lalu menangkap."], a: 1 },
+    { q: "Anda adalah anggota intelijen. Anda mengetahui bahwa seorang anggota DPR akan melakukan tindakan makar. Bukti masih lemah. Atasan memerintahkan untuk melakukan penyadapan ilegal. Tindakan Anda:", opt: ["Melakukan penyadapan.", "Menolak dan meminta perintah pengadilan.", "Menyadap diam-diam.", "Memberi tahu DPR tersebut.", "Menghentikan penyelidikan."], a: 1 },
+    { q: "Saat tes fisik push-up, instruktur menghitung dengan kecepatan yang tidak realistis. Anda yakin hitungannya curang. Yang Anda lakukan:", opt: ["Berhenti dan protes.", "Tetap melakukan semampunya.", "Mengulang hitungan sendiri dengan suara keras.", "Menyuruh teman untuk protes.", "Meninggalkan tes."], a: 1 },
+    { q: "Anda adalah anggota polisi yang ditugaskan di perbatasan. Seorang pengungsi perang meminta suaka. Negara Anda tidak memiliki perjanjian pengungsi. Tindakan Anda:", opt: ["Menolak dan mengusir.", "Menahan dan menghubungi UNHCR.", "Membiarkan masuk diam-diam.", "Menyerahkan ke imigrasi.", "Memberi pakaian dan makanan lalu menyuruh pergi."], a: 3 },
+    { q: "Anda menemukan bahwa salah satu server kepolisian telah diretas. Data rahasia mungkin sudah dicuri. Anda tahu pelakunya, tetapi bukti tidak cukup untuk menangkap. Tindakan Anda:", opt: ["Mendiamkan.", "Melaporkan ke atasan dan tim siber.", "Menghubungi pelaku dan meminta mengembalikan data.", "Memperbaiki server sendiri.", "Mematikan semua server."], a: 1 },
+    { q: "Anda adalah anggota polisi yang sedang bertugas di objek wisata. Seorang anak kecil jatuh dari perahu. Orang tuanya panik. Tindakan Anda:", opt: ["Melompat dan menyelamatkan anak.", "Melempar pelampung.", "Memanggil petugas penyelamat.", "Merekam kejadian.", "Menenangkan orang tua."], a: 0 },
+    { q: "Dalam tes wawancara, pewawancara bertanya, 'Mengapa Anda ingin menjadi polisi?' Jawaban yang paling menggambarkan panggilan jiwa:", opt: ["Karena gaji dan tunjangan menarik.", "Karena ingin berkuasa.", "Karena ingin melayani masyarakat dan menegakkan keadilan.", "Karena tidak ada pekerjaan lain.", "Karena orang tua saya polisi."], a: 2 },
+    { q: "Anda adalah anggota polisi yang sedang dalam perjalanan dinas. Anda melihat sekelompok preman memalak seorang pedagang. Tindakan Anda:", opt: ["Turun dan menangkap preman.", "Menghubungi polisi setempat.", "Merekam dan melaporkan ke media.", "Membiarkan.", "Memberi isyarat kepada pedagang untuk lari."], a: 0 },
+    { q: "Anda menerima informasi bahwa rekan Anda akan melakukan aksi bunuh diri karena depresi. Dia meminta Anda diam. Tindakan Anda:", opt: ["Diam.", "Segera melaporkan ke atasan dan psikolog.", "Mencoba membantu sendiri.", "Memberi tahu keluarganya.", "Mengawasi dari jauh."], a: 1 },
+    { q: "Saat tes menggambar pohon, Anda menggambar pohon dengan cabang yang runcing dan berduri. Interpretasi:", opt: ["Agresivitas.", "Kreativitas.", "Keterbukaan.", "Ketakutan.", "Stabilitas."], a: 0 },
+    { q: "Anda adalah anggota tim cyber. Anda menemukan situs yang menjual data pribadi militer. Situs tersebut berada di luar negeri. Tindakan Anda:", opt: ["Menghubungi Interpol.", "Menyerang balik situs tersebut.", "Mendiamkan.", "Memblokir akses dari dalam negeri.", "Membeli data untuk bukti."], a: 0 },
+    { q: "Anda sedang bertugas pengamanan di stadion. Terjadi huru-hara antar suporter. Atasan memerintahkan untuk menembakkan gas air mata ke arah tribun. Namun banyak wanita dan anak-anak. Tindakan Anda:", opt: ["Menembak sesuai perintah.", "Meminta evakuasi wanita dan anak terlebih dahulu.", "Tidak menembak.", "Menembak ke arah lapangan.", "Membubarkan dengan kekuatan fisik."], a: 1 },
+    { q: "Anda adalah anggota polisi yang sedang cuti di kampung halaman. Sepupu Anda terlibat tawuran dan membawa senjata tajam. Polisi setempat mengepung rumah. Sepupu meminta Anda melindunginya. Tindakan Anda:", opt: ["Melindungi sepupu.", "Membantu polisi setempat menangkap sepupu.", "Menyembunyikan sepupu.", "Memberi tahu sepupu untuk menyerah.", "Diam."], a: 3 },
+    { q: "Dalam tes psikotes Pauli, Anda secara tidak sengaja melewatkan satu baris hitungan. Yang Anda lakukan:", opt: ["Membiarkan.", "Mengulang dari awal baris yang terlewat.", "Melanjutkan dari baris berikutnya tanpa memperbaiki.", "Menghapus dan mengulang semua.", "Memberi tanda pada baris yang terlewat."], a: 2 },
+    { q: "Anda adalah anggota polisi yang ditugaskan di bandara. Anda melihat seorang penumpang yang sangat gugup dan berkeringat. Setelah diperiksa, tidak ditemukan barang terlarang. Penumpang tersebut minta maaf. Tindakan Anda:", opt: ["Menahan tetap.", "Melepaskan dengan permintaan maaf.", "Mencatat identitas.", "Memberi peringatan.", "Menggeledah lebih lanjut."], a: 1 },
+    { q: "Anda sedang dalam misi penyelamatan di gunung. Salah satu tim Anda cedera parah dan tidak bisa melanjutkan. Cuaca buruk. Tim lain masih mencari korban. Keputusan Anda:", opt: ["Meninggalkan anggota yang cedera.", "Membawa anggota cedera turun bersama tim.", "Meminta tim lain menjemput.", "Membangun tenda darurat untuk anggota cedera dan melanjutkan.", "Membatalkan pencarian."], a: 1 },
+    { q: "Anda menerima laporan bahwa akan ada serangan teroris di tempat ibadah. Namun sumber adalah akun anonim. Tindakan Anda:", opt: ["Mengabaikan.", "Meningkatkan keamanan tempat ibadah secara diam-diam.", "Mengungsikan tempat ibadah.", "Menangkap pengurus tempat ibadah.", "Menyebar ke media."], a: 1 },
+    { q: "Anda adalah anggota polisi yang sedang melakukan razia miras. Seorang pengusaha terkenal meminta Anda melepasnya dengan imbalan 'sumbangan' untuk polisi. Tindakan Anda:", opt: ["Melepas.", "Menolak dan tetap memproses.", "Menerima sumbangan.", "Mengurangi hukuman.", "Meminta lebih."], a: 1 },
+    { q: "Dalam tes menggambar rumah (DAP), Anda menggambar rumah dengan pagar sangat tinggi dan berduri. Interpretasi:", opt: ["Kebutuhan privasi dan rasa tidak aman.", "Kreativitas.", "Kemewahan.", "Keterbukaan.", "Kekayaan."], a: 0 },
+    { q: "Anda adalah anggota tim negosiator. Pelaku sandera meminta Anda menembak diri sendiri sebagai bukti keseriusan. Tindakan Anda:", opt: ["Menembak diri.", "Menolak dan mencoba alternatif.", "Berpura-pura menembak.", "Memanggil penembak jitu.", "Menyerahkan senjata."], a: 2 },
+    { q: "Anda sedang dalam perjalanan menuju tempat tugas. Anda melihat kecelakaan yang melibatkan mobil dinas atasan Anda. Atasan Anda terluka. Tindakan Anda:", opt: ["Berhenti dan menolong.", "Melanjutkan perjalanan karena tugas lebih penting.", "Menghubungi ambulans.", "Merekam kejadian.", "Meminta warga menolong."], a: 0 },
+    { q: "Anda adalah anggota polisi yang baru lulus. Anda ditempatkan di unit yang sangat korup. Semua senior menerima uang pelicin. Tindakan Anda:", opt: ["Ikut menerima.", "Menolak dan melaporkan ke propam.", "Menerima tetapi tidak ikut memeras.", "Pindah unit.", "Mengumpulkan bukti perlahan."], a: 4 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+
+        // --- Logika Penentuan Keterangan Skor ---
+        const keteranganSkorEl = document.getElementById('keterangan-skor');
+        if (finalScoreValue <= 50) {
+            keteranganSkorEl.innerText = "KURANG IDEAL";
+            keteranganSkorEl.style.color = "#e74c3c"; // Warna merah
+        } else {
+            keteranganSkorEl.innerText = "IDEAL";
+            keteranganSkorEl.style.color = "#2ecc71"; // Warna hijau
+        }
+        // ----------------------------------------
+
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

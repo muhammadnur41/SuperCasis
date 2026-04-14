@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Tes Koran Pauli - Compact</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 10px;
+            max-width: 98vw;
+            width: 100%;
+            max-height: 98vh;
+            display: flex;
+            flex-direction: row; 
+            gap: 15px;
+        }
+
+        /* Menu di Samping (Kiri) */
+        .sidebar {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 2px solid #eee;
+            padding-right: 15px;
+            overflow-y: auto;
+        }
+
+        /* Area Soal di Samping Menu (Kanan) */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1 { text-align: center; color: #333; margin-bottom: 2px; font-size: 1.2em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 8px; font-size: 0.75em; font-style: italic; }
+
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .info-item { text-align: center; }
+        .info-label { font-size: 0.7em; color: #666; }
+        .info-value { font-size: 1em; font-weight: bold; color: #667eea; }
+
+        .controls-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-start { background: #28a745; color: white; }
+        .btn-stop { background: #dc3545; color: white; }
+        .btn-reset { background: #ffc107; color: #333; }
+        .btn-review { background: #17a2b8; color: white; grid-column: span 2; margin-top: 5px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .keyboard-hint { font-size: 0.7em; text-align: center; color: #555; margin-bottom: 10px; }
+
+        .worksheet-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            overflow: auto;
+            flex-grow: 1;
+        }
+
+        .worksheet { display: flex; gap: 8px; min-width: max-content; }
+
+        .kolom {
+            display: flex;
+            flex-direction: column;
+            width: 75px; 
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+
+        .header-kolom {
+            background: #667eea;
+            color: white;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.75em;
+        }
+
+        .kolom-body {
+            display: flex;
+            flex-direction: row;
+            padding: 8px 4px;
+            background: #fff;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .number-col {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px; 
+        }
+
+        .answer-col {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px; 
+            margin-top: 17px; 
+            padding-left: 6px;
+        }
+
+        .number-cell {
+            height: 28px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            background: white;
+            color: #333;
+        }
+
+        .answer-cell {
+            height: 28px;
+            border: 1px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: 0.2s;
+            background: white;
+        }
+
+        .answer-cell.selected { background: #667eea; color: white; outline: 2px solid #333; z-index: 2; }
+        .answer-cell.filled.neutral { background: #d1d5db; color: #333; border-color: #999; } 
+        .answer-cell.filled.correct { background: #28a745; color: white; border-color: #28a745; }
+        .answer-cell.filled.wrong { background: #dc3545; color: white; border-color: #dc3545; }
+
+        .stats-container {
+            display: none; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 5px;
+            border-top: 2px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .stat-card { background: #f8f9fa; padding: 5px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
+        .stat-label { font-size: 0.65em; color: #666; }
+        .stat-value { font-size: 0.9em; font-weight: bold; }
+
+        .current-position {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.7em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="sidebar">
+            <h1>📝 Tes Koran Pauli</h1>
+            <p class="subtitle">Jumlahkan angka berurutan ke bawah</p>
+
+            <div class="info-panel">
+                <div class="info-item"><div class="info-label">Waktu</div><div class="info-value" id="timer">00:00</div></div>
+                <div class="info-item"><div class="info-label">Target</div><div class="info-value" id="targetTime">10:00</div></div>
+                <div class="info-item"><div class="info-label">Terjawab</div><div class="info-value" id="answeredCount">0</div></div>
+                <div class="info-item"><div class="info-label">Total Soal</div><div class="info-value" id="totalQuestions">0</div></div>
+            </div>
+
+            <div class="controls-area">
+                <button class="btn btn-start" id="startBtn" onclick="startTest()">Mulai</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopTest()" disabled>Selesai</button>
+                <button class="btn btn-reset" onclick="resetTest()">Reset</button>
+            </div>
+
+            <div class="stats-container" id="statsContainer">
+                <div class="stat-card"><div class="stat-label">Benar</div><div class="stat-value" id="correctCount">0</div></div>
+                <div class="stat-card"><div class="stat-label">Salah</div><div class="stat-value" id="wrongCount">0</div></div>
+                <div class="stat-card"><div class="stat-label">Kec/m</div><div class="stat-value" id="speed">0</div></div>
+                <div class="stat-card"><div class="stat-label">Akurasi</div><div class="stat-value" id="accuracy">0%</div></div>
+                <button class="btn btn-review" onclick="showReview()">Review Jawaban</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="keyboard-hint">
+                ⌨️ <b>0-9</b>: Isi | <b>Enter</b>: Turun | <b>Tab</b>: Pindah Kolom | <b>Backspace</b>: Hapus
+            </div>
+
+            <div class="worksheet-container" id="worksheetContainer">
+                <div class="worksheet" id="worksheet"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="current-position" id="currentPosition">Kolom: 1, Baris: 1</div>
+
+    <script>
+        // ==========================================
+        // PENGATURAN SOAL (BISA DIUBAH DI SINI)
+        // Setiap array dalam kurung siku melambangkan 1 Kolom
+        // Tambahkan atau kurangi angka sesuai kebutuhan baris Anda.
+        // ==========================================
+        const soalPerKolom = [
+// Kolom 1
+    [5, 9, 1, 6, 3, 0, 8, 4, 7, 2, 8, 3, 9, 0, 6, 4],
+    // Kolom 2
+    [2, 7, 4, 0, 8, 5, 1, 9, 3, 6, 5, 1, 4, 8, 2, 7],
+    // Kolom 3
+    [8, 0, 6, 3, 9, 4, 7, 2, 5, 1, 0, 7, 2, 6, 9, 3],
+    // Kolom 4
+    [4, 1, 8, 5, 2, 7, 0, 6, 9, 3, 4, 8, 5, 1, 7, 0],
+    // Kolom 5
+    [0, 6, 3, 9, 5, 2, 4, 1, 8, 7, 1, 6, 0, 9, 3, 5],
+    // Kolom 6
+    [7, 3, 9, 2, 1, 8, 6, 5, 0, 4, 9, 2, 8, 4, 5, 1],
+    // Kolom 7
+    [1, 8, 5, 4, 7, 9, 3, 0, 2, 8, 6, 0, 3, 7, 1, 9],
+    // Kolom 8
+    [9, 4, 0, 7, 6, 1, 5, 8, 4, 2, 3, 5, 1, 2, 0, 8],
+    // Kolom 9
+    [6, 2, 7, 8, 0, 3, 9, 4, 1, 5, 7, 4, 6, 5, 8, 2],
+    // Kolom 10
+    [3, 5, 2, 1, 4, 6, 2, 7, 6, 0, 2, 9, 7, 3, 4, 6],
+    // Kolom 11
+    [5, 9, 1, 6, 3, 0, 8, 4, 7, 2, 8, 3, 9, 0, 6, 4],
+    // Kolom 12
+    [2, 7, 4, 0, 8, 5, 1, 9, 3, 6, 0, 7, 2, 6, 9, 1]
+        ];
+
+        let COLS = soalPerKolom.length;
+        let ROWS = soalPerKolom[0].length;
+        let TEST_DURATION = 600;
+        
+        let numbers = [];
+        let answers = [];
+        let results = [];
+        let currentCol = 0;
+        let currentRow = 0;
+        let timer = null;
+        let timeLeft = TEST_DURATION;
+        let isTestActive = false;
+        let isReviewMode = false; 
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+
+        // Memuat soal dari array kolom menjadi matriks baris-kolom
+        function loadNumbers() {
+            numbers = [];
+            for (let r = 0; r < ROWS; r++) {
+                let row = [];
+                for (let c = 0; c < COLS; c++) {
+                    // Mencegah error jika jumlah baris setiap kolom tidak seragam
+                    let val = soalPerKolom[c][r] !== undefined ? soalPerKolom[c][r] : 0;
+                    row.push(val);
+                }
+                numbers.push(row);
+            }
+        }
+
+        function generateCorrectAnswers() {
+            answers = [];
+            for (let i = 0; i < ROWS - 1; i++) {
+                let row = [];
+                for (let j = 0; j < COLS; j++) {
+                    let sum = (numbers[i][j] || 0) + (numbers[i + 1][j] || 0);
+                    row.push(sum > 9 ? sum - 10 : sum);
+                }
+                answers.push(row);
+            }
+        }
+
+        function renderWorksheet() {
+            const worksheet = document.getElementById('worksheet');
+            let html = '';
+
+            for (let col = 0; col < COLS; col++) {
+                html += `<div class="kolom" id="kolom-${col}">`;
+                html += `<div class="header-kolom">K${col + 1}</div>`;
+                html += `<div class="kolom-body">`;
+
+                // Kolom Angka (Sebelah Kiri)
+                html += `<div class="number-col">`;
+                for (let row = 0; row < ROWS; row++) {
+                    html += `<div class="number-cell">${numbers[row][col] || 0}</div>`;
+                }
+                html += `</div>`;
+
+                // Kolom Jawaban (Sebelah Kanan, di-stagger)
+                html += `<div class="answer-col">`;
+                for (let row = 1; row < ROWS; row++) {
+                    const answerRow = row - 1;
+                    const value = results[answerRow] && results[answerRow][col] !== undefined ? results[answerRow][col] : '';
+                    const isSelected = (currentRow === answerRow && currentCol === col);
+                    let statusClass = '';
+                    
+                    if (value !== '') {
+                        if (isReviewMode) {
+                            statusClass = (results[answerRow][col] === answers[answerRow][col]) ? 'filled correct' : 'filled wrong';
+                        } else {
+                            statusClass = 'filled neutral';
+                        }
+                    }
+
+                    html += `<div class="answer-cell ${statusClass} ${isSelected ? 'selected' : ''}" 
+                                 onclick="selectCell(${answerRow}, ${col})">${value}</div>`;
+                }
+                html += `</div>`;
+
+                html += `</div>`; 
+                html += `</div>`; 
+            }
+            worksheet.innerHTML = html;
+            updateInfo();
+        }
+
+        function updateInfo() {
+            document.getElementById('timer').textContent = formatTime(timeLeft);
+            document.getElementById('answeredCount').textContent = calculateAnswered();
+            document.getElementById('totalQuestions').textContent = (ROWS - 1) * COLS;
+            document.getElementById('correctCount').textContent = correctAnswers;
+            document.getElementById('wrongCount').textContent = wrongAnswers;
+            document.getElementById('speed').textContent = calculateSpeed();
+            document.getElementById('accuracy').textContent = calculateAccuracy() + '%';
+            document.getElementById('currentPosition').textContent = `K: ${currentCol + 1}, B: ${currentRow + 1}`;
+        }
+
+        function formatTime(s) {
+            return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        }
+
+        function calculateAnswered() {
+            let count = 0;
+            results.forEach(row => row.forEach(cell => { if(cell !== undefined) count++; }));
+            return count;
+        }
+
+        function calculateSpeed() {
+            const elapsed = (TEST_DURATION - timeLeft) / 20;
+            return elapsed > 0 ? Math.round(calculateAnswered() / elapsed) : 0;
+        }
+
+        function calculateAccuracy() {
+            const total = correctAnswers + wrongAnswers;
+            return total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
+        }
+
+        function selectCell(r, c) { if (isTestActive) { currentRow = r; currentCol = c; renderWorksheet(); } }
+
+        function inputNumber(num) {
+            if (!isTestActive) return;
+            if (!results[currentRow]) results[currentRow] = [];
+            
+            const prevVal = results[currentRow][currentCol];
+            if (prevVal !== undefined) {
+                if (prevVal === answers[currentRow][currentCol]) correctAnswers--; else wrongAnswers--;
+            }
+
+            results[currentRow][currentCol] = num;
+            if (num === answers[currentRow][currentCol]) correctAnswers++; else wrongAnswers++;
+
+            if (currentRow < ROWS - 2) {
+                currentRow++;
+            } else if (currentCol < COLS - 1) {
+                currentCol++; currentRow = 0;
+            }
+            renderWorksheet();
+        }
+
+        function handleKeyDown(e) {
+            if (!isTestActive) return;
+            if (e.key >= '0' && e.key <= '9') { inputNumber(parseInt(e.key)); e.preventDefault(); }
+            else if (e.key === 'ArrowUp' && currentRow > 0) { currentRow--; renderWorksheet(); }
+            else if (e.key === 'ArrowDown' && currentRow < ROWS - 2) { currentRow++; renderWorksheet(); }
+            else if (e.key === 'ArrowLeft' && currentCol > 0) { currentCol--; renderWorksheet(); }
+            else if (e.key === 'ArrowRight' && currentCol < COLS - 1) { currentCol++; renderWorksheet(); }
+            else if (e.key === 'Enter') { if(currentRow < ROWS - 2) currentRow++; renderWorksheet(); }
+            else if (e.key === 'Tab') { if(currentCol < COLS - 1) {currentCol++; currentRow=0;} e.preventDefault(); renderWorksheet(); }
+            else if (e.key === 'Backspace') { 
+                if(results[currentRow]) results[currentRow][currentCol] = undefined; 
+                resetStats(); 
+                renderWorksheet(); 
+            }
+        }
+
+        function resetStats() {
+            correctAnswers = 0; wrongAnswers = 0;
+            results.forEach((row, rIdx) => row.forEach((val, cIdx) => {
+                if (val !== undefined) {
+                    if (val === answers[rIdx][cIdx]) correctAnswers++; else wrongAnswers++;
+                }
+            }));
+        }
+
+        function startTest() {
+            if (isReviewMode) {
+                resetTest();
+            }
+
+            if (isTestActive) return;
+
+            isTestActive = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.addEventListener('keydown', handleKeyDown);
+            timer = setInterval(() => {
+                if (timeLeft > 0) { timeLeft--; updateInfo(); } 
+                else { stopTest(); alert('Waktu Habis!'); }
+            }, 1000);
+        }
+
+        function stopTest() {
+            isTestActive = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.removeEventListener('keydown', handleKeyDown);
+            clearInterval(timer);
+            
+            document.getElementById('statsContainer').style.display = 'grid';
+            updateInfo();
+        }
+
+        function showReview() {
+            isReviewMode = true; 
+            renderWorksheet();   
+        }
+
+        function resetTestState() {
+            timeLeft = TEST_DURATION;
+            currentCol = 0; currentRow = 0;
+            correctAnswers = 0; wrongAnswers = 0;
+            results = Array.from({length: ROWS-1}, () => []);
+            
+            isReviewMode = false; 
+            document.getElementById('statsContainer').style.display = 'none'; 
+            
+            generateCorrectAnswers();
+        }
+
+        function resetTest() {
+            stopTest();
+            loadNumbers();
+            resetTestState();
+            renderWorksheet();
+        }
+
+        // --- Inisialisasi Aplikasi ---
+        function initApp() {
+            loadNumbers();
+            resetTestState();
+            renderWorksheet();
+        }
+
+        // Jalankan saat pertama kali halaman dibuka
+        initApp();
+    </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  { q: "Semua karyawan hadir jika ada rapat. Hari ini rapat. Jadi...", opt: ["Karyawan libur", "Sebagian karyawan hadir", "Tidak ada karyawan hadir", "Semua karyawan hadir", "Tidak dapat disimpulkan"], a: 3 },
+{ q: "Jika Andi belajar, ia lulus. Andi tidak lulus. Jadi...", opt: ["Andi belajar", "Andi tidak belajar", "Andi malas", "Andi bodoh", "Andi pandai"], a: 1 },
+{ q: "Semua peserta rapat adalah direktur atau manajer. Budi adalah peserta rapat dan bukan direktur. Jadi...", opt: ["Budi direktur", "Budi karyawan", "Budi manajer", "Budi tamu", "Budi bukan siapa-siapa"], a: 2 },
+{ q: "Jika cuaca cerah, maka panen berhasil. Panen tidak berhasil. Jadi...", opt: ["Cuaca cerah", "Cuaca mendung", "Cuaca hujan", "Cuaca tidak cerah", "Cuaca buruk"], a: 3 },
+{ q: "Semua mahasiswa lulus atau mengulang. Andi mahasiswa dan tidak lulus. Jadi...", opt: ["Andi mengulang", "Andi lulus", "Andi drop out", "Andi cuti", "Andi pindah"], a: 0 },
+{ q: "Jika nilai baik, maka dapat beasiswa. Andi mendapat beasiswa. Jadi...", opt: ["Andi pasti nilai baik", "Andi mungkin nilai baik", "Andi nilai jelek", "Andi tidak dapat beasiswa", "Andi pandai"], a: 1 },
+{ q: "Semua orang jujur atau pembohong. Andi jujur. Jadi...", opt: ["Andi pembohong", "Andi kadang bohong", "Andi orang baik", "Andi bukan pembohong", "Andi tidak jujur"], a: 3 },
+{ q: "Jika tidak ada minyak, maka lampu padam. Lampu tidak padam. Jadi...", opt: ["Tidak ada minyak", "Ada minyak", "Minyak habis", "Lampu rusak", "Listrik mati"], a: 1 },
+{ q: "Semua kendaraan beroda atau tidak beroda. Sepeda beroda. Jadi...", opt: ["Sepeda termasuk kendaraan", "Sepeda bukan kendaraan", "Sepeda beroda dua", "Sepeda tidak beroda", "Tidak dapat disimpulkan"], a: 4 },
+{ q: "Jika pegawai negeri, maka berstatus PNS atau honorer. Budi pegawai negeri dan bukan PNS. Jadi...", opt: ["Budi PNS", "Budi kontrak", "Budi honorer", "Budi magang", "Budi bukan pegawai"], a: 2 },
+{ q: "Semua tanaman berbuah atau berbunga. Mangga berbuah. Jadi...", opt: ["Mangga tidak berbunga", "Mangga berbunga", "Mangga tanaman", "Mangga berbuah dan berbunga", "Tidak dapat disimpulkan"], a: 4 },
+{ q: "Jika rajin, maka sukses. Jika sukses, maka kaya. Andi rajin. Jadi...", opt: ["Andi sukses", "Andi mungkin kaya", "Andi miskin", "Andi kaya", "Andi tidak sukses"], a: 3 },
+{ q: "Semua bilangan genap habis dibagi 2 atau 4. 6 adalah bilangan genap dan tidak habis dibagi 4. Jadi...", opt: ["6 habis dibagi 2", "6 habis dibagi 4", "6 bukan bilangan genap", "6 bilangan ganjil", "6 bilangan prima"], a: 0 },
+{ q: "Jika pandai, maka juara. Jika juara, maka terkenal. Andi terkenal. Jadi...", opt: ["Andi pasti pandai", "Andi mungkin pandai", "Andi pasti juara", "Andi tidak pandai", "Andi tidak juara"], a: 1 },
+{ q: "Semua burung terbang atau berenang. Penguin tidak terbang. Jadi...", opt: ["Penguin terbang", "Penguin berenang", "Penguin bukan burung", "Penguin mamalia", "Penguin berjalan"], a: 1 },
+{ q: "Jika lulus, maka dapat kerja. Jika dapat kerja, maka punya uang. Andi punya uang. Jadi...", opt: ["Andi pasti lulus", "Andi pasti dapat kerja", "Andi mungkin lulus", "Andi tidak lulus", "Andi menganggur"], a: 2 },
+{ q: "Semua hewan bertelur atau beranak. Kucing beranak. Jadi...", opt: ["Kucing bertelur", "Kucing ovipar", "Kucing tidak bertelur", "Kucing mamalia", "Kucing bukan hewan"], a: 2 },
+{ q: "Jika beriman, maka beramal. Jika beramal, maka masuk surga. Andi masuk surga. Jadi...", opt: ["Andi pasti beriman", "Andi pasti beramal", "Andi mungkin beriman", "Andi tidak beriman", "Andi tidak beramal"], a: 2 },
+{ q: "Semua peserta ujian mengerjakan soal mudah atau sulit. Andi peserta ujian dan mengerjakan soal mudah. Jadi...", opt: ["Andi mengerjakan soal sulit", "Andi tidak ikut ujian", "Andi tidak mengerjakan soal sulit", "Andi curang", "Andi bodoh"], a: 2 },
+{ q: "Jika kemarau, maka kering. Jika kering, maka tanaman mati. Tanaman tidak mati. Jadi...", opt: ["Tidak kemarau", "Kemarau panjang", "Kemarau basah", "Tanaman hidup", "Tanaman subur"], a: 0 },
+{ q: "Semua warga negara adalah WNI atau WNA. Budi WNI. Jadi...", opt: ["Budi WNA", "Budi asing", "Budi bukan WNA", "Budi imigran", "Budi bukan warga negara"], a: 2 },
+{ q: "Jika makan, maka kenyang. Jika kenyang, maka tidak lapar. Andi lapar. Jadi...", opt: ["Andi makan", "Andi tidak makan", "Andi tidak kenyang", "Andi kenyang", "Andi tidak lapar"], a: 1 },
+{ q: "Semua makhluk hidup adalah manusia, hewan, atau tumbuhan. Kucing bukan manusia dan bukan tumbuhan. Jadi...", opt: ["Kucing makhluk hidup", "Kucing hewan", "Kucing manusia", "Kucing tumbuhan", "Kucing bukan makhluk hidup"], a: 1 },
+{ q: "Jika hujan, maka dingin. Jika dingin, maka pakai jaket. Tidak pakai jaket. Jadi...", opt: ["Hujan", "Dingin", "Panas", "Tidak hujan", "Gerah"], a: 3 },
+{ q: "Semua segitiga sama sisi atau sama kaki. Segitiga ABC bukan sama sisi. Jadi...", opt: ["Segitiga ABC siku-siku", "Segitiga ABC sembarang", "Segitiga ABC sama kaki", "Segitiga ABC tumpul", "Segitiga ABC lancip"], a: 2 },
+{ q: "Jika pintar, maka ranking satu. Jika ranking satu, maka dapat hadiah. Andi tidak dapat hadiah. Jadi...", opt: ["Andi pintar", "Andi tidak pintar", "Andi ranking satu", "Andi ranking dua", "Andi bodoh"], a: 1 },
+{ q: "Semua buah-buahan manis atau asam. Jeruk asam. Jadi...", opt: ["Jeruk manis", "Jeruk buah", "Jeruk tidak manis", "Jeruk segar", "Jeruk masam"], a: 2 },
+{ q: "Jika siang, maka terang. Jika terang, maka bisa melihat. Tidak bisa melihat. Jadi...", opt: ["Tidak siang", "Siang", "Malam", "Gelap", "Buta"], a: 0 },
+{ q: "Semua pekerja adalah PNS, pegawai swasta, atau wiraswasta. Andi PNS. Jadi...", opt: ["Andi pegawai swasta", "Andi wiraswasta", "Andi bukan pegawai swasta dan bukan wiraswasta", "Andi bukan pekerja", "Andi pengangguran"], a: 2 },
+{ q: "Jika berangkat pagi, maka tidak terlambat. Jika tidak terlambat, maka tidak dimarahi. Andi dimarahi. Jadi...", opt: ["Andi berangkat pagi", "Andi terlambat", "Andi tidak terlambat", "Andi tidak berangkat pagi", "Andi tepat waktu"], a: 3 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

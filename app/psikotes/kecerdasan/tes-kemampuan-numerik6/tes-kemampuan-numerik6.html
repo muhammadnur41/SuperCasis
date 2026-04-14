@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  { q: "Rana dan Rani adalah dua orang sepupu. Selisih umur mereka 12 tahun. Perbandingan umur Rana dan Rani adalah 6 : 4. Berapakah umur Rani 5 tahun yang akan datang?", opt: ["36 tahun", "24 tahun", "41 tahun", "29 tahun", "31 tahun"], a: 3 },
+  { q: "Jika suatu persegi panjang memiliki lebar l dan panjang 2l, maka keliling persegi panjang tersebut adalah...", opt: ["2l²", "3l²", "6l", "4l", "5l"], a: 2 },
+  { q: "Empat liter bensin cukup untuk menempuh perjalanan sejauh 48 km. Maka untuk menempuh perjalanan sejauh 60 km, diperlukan bensin sebanyak ... liter.", opt: ["4", "5", "6", "7", "8"], a: 1 },
+  { q: "Pembangunan sebuah rumah direncanakan dapat selesai selama 15 hari oleh 7 orang pekerja. Apabila hanya 5 orang yang dapat bekerja, maka rumah tersebut membutuhkan tambahan waktu ...", opt: ["5 hari", "21 hari", "6 hari", "10 hari", "15 hari"], a: 2 },
+  { q: "Udin les musik setiap 5 hari sekali, Dita setiap 4 hari sekali, dan Bona setiap 3 hari sekali. Pada 12 Maret 2015, mereka les bersama untuk kedua kalinya. Maka les bersama untuk yang pertama kali pada ...", opt: ["11 Mei 2015", "12 Mei 2015", "11 Januari 2015", "12 Januari 2015", "21 Januari 2015"], a: 4 },
+  { q: "Jarak Jogja-Pekalongan adalah 230 km. Mobil Dodo melaju dengan kecepatan 50 km/jam. Dalam perjalanan, Dodo istirahat selama 20 menit. Sampai di Pekalongan pukul 11:15. Mobil Dodo berangkat dari Jogja pada pukul ...", opt: ["06.19", "06.29", "06.39", "06.49", "06.59"], a: 0 },
+  { q: "Jarak antara 2 kota sejauh 10 km. Jika digambar pada skala 1:40.000, maka jarak 2 kota pada peta adalah ...", opt: ["55 cm", "45 cm", "25 cm", "40 cm", "35 dm"], a: 2 },
+  { q: "A merupakan sebuah bilangan yang apabila dikalikan dengan 2 kemudian dikurangi dengan 3 hasilnya 19. Maka nilai bilangan A adalah ...", opt: ["11", "12", "13", "14", "15"], a: 0 },
+  { q: "Tinggi rata-rata tim basket putri yang terdiri dari 10 anggota adalah 172 cm. Setelah salah satu dari mereka keluar dari tim, tinggi rata-ratanya menjadi 173 cm. Tinggi anggota yang keluar dari tim basket tersebut adalah ...", opt: ["183", "171", "180", "165", "163"], a: 0 },
+  { q: "Lampu merah menyala setiap 5 detik, lampu hijau menyala setiap 8 detik, lampu kuning menyala setiap 10 detik. Kapan ketiga lampu tersebut menyala secara bersamaan?", opt: ["Detik ke-30", "Detik ke-35", "Detik ke-40", "Detik ke-45", "Detik ke-50"], a: 2 },
+  { q: "Harga 3 kg jeruk adalah Rp 19.500,00. Maka harga 8 kg jeruk adalah ...", opt: ["Rp 46.000,00", "Rp 50.000,00", "Rp 52.000,00", "Rp 54.000,00", "Rp 55.000,00"], a: 2 },
+  { q: "Umur Lili 3 kali umur Lala. Umur Lili 22 tahun lebih tua dari umur Lala. Maka umur Lala adalah ...", opt: ["15 tahun", "14 tahun", "13 tahun", "12 tahun", "11 tahun"], a: 4 },
+  { q: "Sebuah mesin dapat menghasilkan 6 barang selama 3 jam. Banyak barang yang dapat dihasilkan oleh 3 mesin selama 5 jam adalah ...", opt: ["45", "30", "50", "55", "60"], a: 1 },
+  { q: "Dalam sebuah kelas khusus putri, terdapat 15 siswa suka menggambar, 17 siswa suka menari, dan 8 siswa suka keduanya. Jumlah seluruh siswa adalah ...", opt: ["12 siswa", "24 siswa", "18 siswa", "28 siswa", "32 siswa"], a: 1 },
+  { q: "Sofia menabung di bank. Setelah 10 bulan, jumlah tabungannya menjadi Rp900.000,00. Jika bunga yang diperoleh sebesar 24% per tahun, maka jumlah setoran awalnya adalah ...", opt: ["Rp 700.000,00", "Rp 800.000,00", "Rp 750.000,00", "Rp 600.000,00", "Rp 875.000,00"], a: 2 },
+  { q: "Sebuah kipas angin dibeli Pak Antok dengan harga Rp200.000,00. Agar memperoleh keuntungan sebesar 35%, kipas angin tersebut harus dijual dengan harga ...", opt: ["Rp 275.000,00", "Rp 270.000,00", "Rp 250.000,00", "Rp 245.000,00", "Rp 235.000,00"], a: 1 },
+  { q: "Luas sawah Pak Cecep adalah 0,75 ha. Seperempat bagiannya ditanami jagung, 40 are ditanami sayur, 625 m² ditanami ketela, sisanya dibuat 4 kolam ikan. Luas 1 kolam ikan yang dibuat Pak Cecep adalah ...", opt: ["250 m²", "1000 m²", "625 m²", "500 m²", "750 m²"], a: 0 },
+  { q: "Pada hari Minggu, Dodi pergi ke kebun binatang naik sepeda dari rumah. Dodi berangkat pada pukul 09:45 dan tiba pada pukul 10:05. Kecepatan rata-rata sepeda Dodi adalah 36 km/jam. Jarak rumah Dodi dengan kebun binatang adalah ...", opt: ["12 km", "32 km", "36 km", "24 km", "108 km"], a: 0 },
+  { q: "Mila menyambung 4 utas tali. Masing-masing tali panjangnya 2 m. Setiap ujung tali yang disambung berkurang 24 cm. Panjang tali Mila sekarang ...", opt: ["7 m 76 cm", "6 m 56 cm", "7 m 28 cm", "7 m 56 cm", "6 m 28 cm"], a: 2 },
+  { q: "Sebuah bak bervolume 360 liter diisi air selama 18 menit. Debit air kran yang digunakan untuk mengisi bak adalah...", opt: ["20 liter/menit", "15 liter/menit", "10 liter/menit", "5 liter/menit", "25 liter/menit"], a: 0 },
+  { q: "Besar sudut yang dilalui jarum panjang sebuah jam, yang bergerak dari pukul 15:05 sampai 15:30 adalah ...", opt: ["120°", "150°", "100°", "60°", "90°"], a: 1 },
+  { q: "Roda sebuah sepeda motor yang memiliki diameter 70 cm berputar sebanyak 500 putaran. Maka jarak tempuh roda tersebut adalah ...", opt: ["1.100 m", "1.010 m", "110 m", "101 m", "1.001 m"], a: 0 },
+  { q: "Pedagang grosir pecah belah membeli satu lusin piring seharga Rp 48.000,00. Piring terjual habis dengan harga Rp 4.600,00/buah. Persentase keuntungan yang diperoleh adalah ...", opt: ["15%", "12,5%", "13%", "20%", "30%"], a: 0 },
+  { q: "Sebuah peta memiliki skala 1:1.000.000. Jika jarak antara Jakarta dan Yogyakarta 625 km, maka jarak pada peta adalah ...", opt: ["6,25 cm", "62,5 cm", "625 cm", "0,625 cm", "6,250 cm"], a: 1 },
+  { q: "Persediaan pakan ayam cukup untuk 50 ayam selama 18 hari. Jika jumlah ayam ditambah 10 ekor, maka pakan tersebut hanya cukup digunakan selama ...", opt: ["17 hari", "15 hari", "14 hari", "13 hari", "12 hari"], a: 1 },
+
+  // Deret Angka dan Huruf (Soal 1-25)
+  { q: "3, 4, 7, 12, 19, ..., ...", opt: ["28 dan 39", "27 dan 38", "31 dan 40", "26 dan 39", "29 dan 39"], a: 0 },
+  { q: "1, 2, 3, 5, 8, ..., ...", opt: ["12 dan 20", "14 dan 19", "13 dan 21", "15 dan 30", "18 dan 26"], a: 2 },
+  { q: "85, 88, 92, 97, 102, ..., ...", opt: ["107 dan 115", "106 dan 109", "105 dan 110", "109 dan 115", "108 dan 114"], a: 1 },
+  { q: "1, 1, 2, 4, 3, 9, 4, ..., ...", opt: ["18 dan 5", "12 dan 6", "16 dan 5", "14 dan 5", "15 dan 5"], a: 2 },
+  { q: "5, 14, 32, 68, ...", opt: ["130 dan 280", "150 dan 244", "145 dan 260", "140 dan 284", "150 dan 250"], a: 3 },
+  { q: "A, Z, B, Y, C, ..., D", opt: ["E", "W", "X", "M", "N"], a: 2 },
+  { q: "E, G, I, K, ...", opt: ["O", "M", "D", "Y", "L"], a: 1 },
+  { q: "Z, K, L, Y, M, N, ..., ..., P", opt: ["R, U", "W, Q", "X, O", "S, Z", "T, Y"], a: 2 },
+  { q: "J, K, K, L, M, M, ..., ...", opt: ["N, O", "O, P", "P, Q", "Q, R", "N, P"], a: 0 },
+  { q: "C, N, O, D, P, Q, ..., ...", opt: ["A, S", "I, W", "H, L", "E, R", "F, T"], a: 3 },
+  { q: "78% + 0,96 + 16/100 = ...", opt: ["25/100", "19/10", "25%", "0,375", "0,4"], a: 1 },
+  { q: "32% × 2 3/5 : 0,875 = ...", opt: ["0,95", "1,68", "128,80", "95,08", "14,50"], a: 0 },
+  { q: "Nilai 29 adalah akar pangkat tiga dari ...", opt: ["15.625", "24.389", "17.576", "59.319", "62.859"], a: 1 },
+  { q: "Kuadrat dari hasil operasi 36 : 9 × 12 adalah ...", opt: ["1.764", "2.116", "2.304", "2.209", "1.936"], a: 2 },
+  { q: "12 × 5 + 45 : 5 = ...", opt: ["72", "64", "57", "48", "69"], a: 4 },
+  { q: "Penyelesaian persamaan (2p+1)/5 = (p+5)/4 adalah ...", opt: ["p = 2", "p = 3", "p = 5", "p = 7", "p = 4"], a: 3 },
+  { q: "Diketahui m = 9a² + 6ab + b². Nilai m untuk a = 2 1/3 dan b = -3 adalah ...", opt: ["12", "14", "16", "18", "20"], a: 2 },
+  { q: "Bentuk sederhana dari (x² – 9)/(x² – x – 6) adalah ...", opt: ["(x+3)/(x-2)", "(x+3)/(x+2)", "(x-3)/(x+2)", "(x-3)/(x-2)", "(x+2)/(x-3)"], a: 1 },
+  { q: "Nilai 3 1/8% bila dinyatakan dalam pecahan biasa menjadi ...", opt: ["4/25", "3/4", "5/12", "1/16", "1/32"], a: 4 },
+  { q: "Penyelesaian dari pertidaksamaan 5(2y-1) < 3(2y-1) adalah ...", opt: ["y < -1/4", "y > -1/4", "y < -1/2", "y > 1/2", "y < 1/2"], a: 4 },
+  { q: "Jika C = 4x² + 3x dan D = 5x – x² maka C – 2D adalah ...", opt: ["2x² – 7x", "3x² – 7x", "4x² – 7x", "5x² – 7x", "6x² – 7x"], a: 4 },
+  { q: "Bentuk sederhana dari (25x²y)/(15xy) adalah ...", opt: ["5x/3", "5x/3y", "5x²/3", "3x/5", "5y/3"], a: 0 },
+  { q: "Diketahui r = -3 dan s = 2, maka nilai r² – 3rs + 2s² adalah ...", opt: ["35", "36", "40", "42", "45"], a: 0 },
+  { q: "Hasil dari 18b⁴ : 2b² = ...", opt: ["18", "9", "9b²", "18b⁴", "9b²"], a: 2 },
+  { q: "Nilai y yang memenuhi 2(3y + 1/4) = 5(2y – 1/6) adalah ...", opt: ["1/6", "1/3", "1/2", "2/3", "3/4"], a: 1 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,496 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Yang mendapat predikat sebagai pahlawan Proklamator adalah ....",
+    "opt": ["Suharto", "Soekarno", "W.R. Supratman", "Supriyadi"],
+    "a": 1
+  },
+  {
+    "q": "Cita-cita bangsa dan negara Republik Indonesia tertuang pada Pembukaan UUD 1945 alinea ke- ....",
+    "opt": ["1", "2", "3", "4"],
+    "a": 3
+  },
+  {
+    "q": "Semboyan Bhineka Tunggal Ika memiliki arti ....",
+    "opt": ["bersatu kita teguh, bercerai kita runtuh", "tak gentar diri melawan penjajah", "berbeda-beda tetapi tetap satu jua", "berbeda-beda tak pernah bermasalah"],
+    "a": 2
+  },
+  {
+    "q": "Semboyan Bhineka Tunggal Ika diambil dari buku Sutasoma karangan ....",
+    "opt": ["Ir. Soekarno", "Patih Gajah Mada", "Mpu Tantular", "Mpu Prapanca"],
+    "a": 2
+  },
+  {
+    "q": "Pancasila sebagai dasar berpikir, berkata, dan bertindak dalam keseharian masyarakat Indonesia. Hal tersebut merupakan aplikasi fungsi Pancasila sebagai ....",
+    "opt": ["dasar negara", "ideologi bangsa", "pemersatu bangsa", "semua jawaban di atas benar"],
+    "a": 1
+  },
+  {
+    "q": "Perjuangan kemerdekaan Indonesia memang sangat panjang dan melelahkan. Salah satu pahlawan wanita yang gigih berjuang dan berasal dari Tanah Rencong adalah ....",
+    "opt": ["RA Kartini", "Dewi Sartika", "Tjut Nyak Dien", "Tjut Tari"],
+    "a": 2
+  },
+  {
+    "q": "Sila kelima dari Pancasila adalah Keadilan Sosial Bagi Seluruh Rakyat Indonesia, yang dilambangkan dengan ....",
+    "opt": ["rantai", "pohon beringin", "kepala banteng", "padi dan kapas"],
+    "a": 3
+  },
+  {
+    "q": "Negara menjamin kemerdekaan beragama bagi seluruh masyarakat Indonesia. Hal ini tercantum dalam UUD 1945 pasal ....",
+    "opt": ["29", "30", "31", "32"],
+    "a": 0
+  },
+  {
+    "q": "Indonesia sempat berganti haluan menjadi negara serikat pada tahun ....",
+    "opt": ["1947", "1949", "1950", "1965"],
+    "a": 2
+  },
+  {
+    "q": "Sesuai dengan UUD 1945, masa jabatan Presiden Indonesia adalah selama ....",
+    "opt": ["3 tahun", "4 tahun", "5 tahun", "6 tahun"],
+    "a": 2
+  },
+  {
+    "q": "Arti Proklamasi Kemerdekaan RI 1945 bagi dunia luar yaitu ...",
+    "opt": ["Bahwa kemerdekaan hanya dapat didapat melalui perjuangan dan doa.", "Bahwa bangsa Indonesia telah merdeka dan berdaulat", "Bahwa ada kecenderungan penjajahan mulai menjajah lagi di Indonesia", "Bangsa Indonesia berencana lepas dari belenggu penjajahan"],
+    "a": 1
+  },
+  {
+    "q": "Berikut ini adalah nama-nama Jenderal yang mendapat gelar kehormatan Pahlawan Revolusi, kecuali ...",
+    "opt": ["Letnan Jenderal Siswondo Parman", "Letnan Jenderal Ahmad Yani", "Letnan Jenderal Soedirman", "AIP Karel Satsuit Tubun"],
+    "a": 2
+  },
+  {
+    "q": "Sumpah Pemuda merupakan salah satu tonggak sejarah perjuangan bangsa Indonesia. Sumpah Pemuda dicanangkan oleh para pemuda pada ....",
+    "opt": ["5 Mei 1928", "28 Oktober 1928", "19 Oktober 1945", "17 Agustus 1945"],
+    "a": 1
+  },
+  {
+    "q": "Berikut ini adalah teks naskah Sumpah Pemuda, kecuali ...",
+    "opt": ["Kami Putra dan Putri Indonesia, mengaku bertumpah darah yang satu, tanah air Indonesia.", "Kami Putra dan Putri Indonesia, mengaku berbangsa yang satu, bangsa Indonesia.", "Kami Putra dan Putri Indonesia, mengakui bahasa persatuan, Bahasa Indonesia dan tanah air Indonesia", "Kami Putra dan Putri Indonesia, menjunjung bahasa persatuan, Bahasa Indonesia."],
+    "a": 2
+  },
+  {
+    "q": "Menempatkan Pancasila sebagai dasar dan ideologi negara serta sekaligus dasar filosofis negara sehingga setiap materi muatan peraturan perundang-undangan tidak boleh bertentangan dengan nilai-nilai yang terkandung dalam Pancasila. Hal tersebut merupakan wujud Pancasila sebagai ....",
+    "opt": ["Sumber dari segala sumber hukum negara", "Kepribadian bangsa Indonesia", "Perjanjian luhur", "Dasar negara"],
+    "a": 0
+  },
+  {
+    "q": "Arti Pancasila Sebagai Pandangan Hidup Bangsa yaitu ...",
+    "opt": ["Pancasila dapat memberikan gerak atau dinamika, serta membimbing ke arah tujuan guna mewujudkan masyarakat Pancasila.", "Bahwa pada tanggal 18 Agustus 1945 PPKI (sebagai wakil seluruh rakyat Indonesia) yang menetapkan dasar negara Pancasila secara konstitusional dalam Pembukaan UUD NRI Tahun 1945", "Pancasila merupakan kristalisasi pengalaman-pengalaman hidup dalam perjalanan sejarah bangsa Indonesia yang telah membentuk sikap, watak, perilaku, tata nilai, moral, etika yang melahirkan pandangan hidup.", "Pancasila yang dirumuskan dan terkandung dalam Pembukaan UUD Negara RI Tahun 1945, memuat cita-cita dan tujuan nasional (Alinea II dan IV)."],
+    "a": 2
+  },
+  {
+    "q": "Salah satu tokoh pergerakan kebangsaan yang berlatar belakang jurnalis, pernah menjadi pelopor terbentuknya ASEAN dan pernah menjabat sebagai wakil Presiden RI ketiga yaitu ...",
+    "opt": ["Ki Hajar Dewantara", "Adam Malik", "Abdul Rahman Saleh", "Agus Salim"],
+    "a": 1
+  },
+  {
+    "q": "Salah satu pemimpin wanita gerilyawan dari Aceh yang melakukan penyerangan terhadap kolonial Belanda dan merupakan istri dari Teuku Umar, yaitu ...",
+    "opt": ["Cut Nyak Dien", "Dewi Sartika", "Kartini", "Fatmawati"],
+    "a": 0
+  },
+  {
+    "q": "Sila ketiga Pancasila dilambangkan dengan ....",
+    "opt": ["Padi dan kapas", "Kepala Banteng", "Rantai", "Pohon Beringin"],
+    "a": 3
+  },
+  {
+    "q": "Berikut ini adalah nama-nama Bandara Udara yang berada di Jawa, kecuali ....",
+    "opt": ["Bandara El Tari", "Bandara Halim Perdana Kusuma", "Bandara Abdul Rahman Saleh", "Bandara Adi Sucipto"],
+    "a": 0
+  },
+  {
+    "q": "Berikut ini adalah nama-nama Bandara yang dikelola oleh PT Angkasa Pura II, kecuali ...",
+    "opt": ["Bandara Soekarno-Hatta, Bandara Kualanamu, Bandara Minangkabau", "Bandara Juanda, Bandara Kualanamu, Bandara Minangkabau", "Bandara Husein Sastranegara, Bandara Sultan Iskandar Muda, Bandara Soekarno-Hatta", "Bandara Halim Perdanakusuma, Bandara Sultan Thaha, Bandara Minangkabau"],
+    "a": 1
+  },
+  {
+    "q": "Sistem pemerintahan yang dianut oleh Negara Kesatuan Republik Indonesia adalah ....",
+    "opt": ["Parlementer", "Monarki", "Presidensial", "Komunis"],
+    "a": 2
+  },
+  {
+    "q": "Berikut ini merupakan lembaga pemerintahan yang dibentuk berdasarkan UU, kecuali ....",
+    "opt": ["KPK", "BPK", "Bank Indonesia", "Kejaksaan Agung"],
+    "a": 1
+  },
+  {
+    "q": "Lembaga negara yang dibentuk berdasarkan UU Nomor 21 Tahun 2011 yang berfungsi menyelenggarakan sistem pengaturan dan pengawasan yang terintegrasi terhadap keseluruhan kegiatan di dalam sektor jasa keuangan, disebut ....",
+    "opt": ["Komisi Pemilihan Umum", "Komisi Pemberantasan Korupsi", "Otoritas Jasa Keuangan", "Badan Pemeriksa Keuangan"],
+    "a": 2
+  },
+  {
+    "q": "Berikut ini adalah tugas dan wewenang MPR, kecuali ...",
+    "opt": ["mengubah dan menetapkan Undang-undang Dasar", "menetapkan Peraturan Pemerintah", "melantik Presiden dan Wakil Presiden berdasarkan hasil pemilihan umum, dalam Sidang Paripurna MPR", "memutuskan usul DPR berdasarkan putusan Mahkamah Konstitusi untuk memberhentikan Presiden dan/atau wakil presiden"],
+    "a": 1
+  },
+  {
+    "q": "Berikut ini area yang wajib memasang lambang negara Garuda Pancasila, kecuali ...",
+    "opt": ["kantor pelayanan publik", "sekolah", "rumah sakit", "pasar"],
+    "a": 3
+  },
+  {
+    "q": "Dalam menempatkan lambang negara Garuda Pancasila di dalam ruangan kantor yaitu diletakkan di....",
+    "opt": ["lambang Negara ditempatkan di sebelah kanan dan lebih tinggi daripada bendera negara", "lambang Negara ditempatkan di sebelah kiri dan lebih rendah daripada bendera negara", "lambang Negara ditempatkan di sebelah kanan dan lebih tinggi daripada bendera negara", "lambang Negara ditempatkan di sebelah kiri dan lebih tinggi daripada bendera negara"],
+    "a": 3
+  },
+  {
+    "q": "Lambang sila keempat Pancasila yaitu Kepala Banteng memiliki makna ....",
+    "opt": ["Mampu menempatkan persatuan, kesatuan, serta kepentingan dan keselamatan bangsa dan negara sebagai kepentingan bersama di atas kepentingan pribadi dan golongan.", "Mengutamakan musyawarah dalam mengambil keputusan untuk kepentingan bersama", "Tidak menggunakan hak milik untuk usaha-usaha yang bersifat pemerasan terhadap orang lain.", "Tidak memaksakan suatu agama dan kepercayaan terhadap Tuhan Yang Maha Esa kepada orang lain."],
+    "a": 1
+  },
+  {
+    "q": "Panitia sembilan merupakan panitia pencetus dasar negara yang tercantum dalam UUD 1945 beranggotakan sembilan orang yang terbentuk pada tanggal 1 Juni 1945. Adapun berikut ini adalah anggota yang termasuk dalam panitia sembilan, kecuali ...",
+    "opt": ["Mohammad Hatta", "K.H Wahid Hasyim", "Ahmad Dahlan", "Alexander Andries Maramis"],
+    "a": 2
+  },
+  {
+    "q": "Piagam Jakarta berisi garis-garis pemberontakan melawan imperialisme-kapitalisme dan fasisme, serta memulai dasar pembentukan Negara Republik Indonesia. Oleh karena pentingnya peran Piagam Jakarta, maka Piagam Jakarta disahkan sebagai ... dalam UUD 1945",
+    "opt": ["Tujuan", "Isi", "Pembukaan", "Penutup"],
+    "a": 2
+  },
+  {
+    "q": "Konferensi Meja Bundar atau KMB yang diselenggarakan tahun 1949 membahas tentang ....",
+    "opt": ["gencatan senjata antara Indonesia-Belanda", "hubungan bilateral antara Indonesia-Belanda", "pakta pertahanan bersama antara Indonesia-Belanda", "pengangkatan kedaulatan RIS oleh Belanda"],
+    "a": 3
+  },
+  {
+    "q": "Dari tinjauan historis, pelaksanaan demokrasi terpimpin dilakukan dengan cara ....",
+    "opt": ["merangkul golongan komunis", "merangkul Angkatan Udara", "merangkul Muhammadiyah dan NU", "menyingkirkan Angkatan Darat"],
+    "a": 0
+  },
+  {
+    "q": "Kehidupan masyarakat Indonesia dalam perjalanan yang lebih dari setengah abad diwarnai oleh kesenjangan sosial-ekonomi yang cukup dalam dikarenakan oleh ....",
+    "opt": ["utang luar negeri yang terlalu besar", "eksploitasi kekayaan alam oleh bangsa asing", "sentralisasi kekuasaan", "diskriminasi kesempatan berusaha"],
+    "a": 3
+  },
+  {
+    "q": "UUD 1945 telah diamandemen sebanyak ....",
+    "opt": ["1 kali", "2 kali", "3 kali", "4 kali"],
+    "a": 3
+  },
+  {
+    "q": "Di dalam UUD 1945, ketentuan tentang pembentukan Mahkamah Konstitusi terdapat pada bagian ....",
+    "opt": ["aturan peralihan pasal I", "aturan peralihan pasal II", "aturan peralihan pasal III", "aturan peralihan pasal IV"],
+    "a": 2
+  },
+  {
+    "q": "Untuk menjadi seorang warga negara, maka dia harus stelsel aktif. Maksudnya adalah ....",
+    "opt": ["memenuhi segala ketentuan yang berlaku", "berpartisipasi dalam pembangunan negara tersebut", "memberi sumbangan nyata terhadap negara", "memiliki inisiatif sebagai warga negara"],
+    "a": 3
+  },
+  {
+    "q": "Yang dimaksud dengan hukum privat adalah ....",
+    "opt": ["hukum yang berkenaan dengan kepentingan orang-orang", "hukum yang berkenaan dengan kepentingan perseorangan", "hukum yang berkenaan dengan hukum dagang dan hukum perdata", "semua jawaban di atas benar"],
+    "a": 3
+  },
+  {
+    "q": "Teori pemisahan kekuasaan atau trias politica dikemukakan oleh ....",
+    "opt": ["John Locke", "Montesquieu", "Machiavelli", "J.J. Rousseau"],
+    "a": 1
+  },
+  {
+    "q": "Tujuan negara menurut ahli tata negara Imanuel Kant adalah ....",
+    "opt": ["untuk melindungi hak dan kewajiban warga negara", "untuk mengatur kehidupan masyarakat bernegara", "untuk menjaga kesejahteraan masyarakat", "semua jawaban di atas benar"],
+    "a": 0
+  },
+  {
+    "q": "Ciri-ciri negara hukum adalah ....",
+    "opt": ["pengakuan terhadap HAM termasuk pemisahan kekuasaan untuk menjamin HAM", "pemerintah berdasarkan hukum", "pengadilan untuk menyelesaikan masalah akibat pelanggaran HAM", "semua jawaban benar"],
+    "a": 3
+  },
+  {
+    "q": "Pasal dalam UUD 1945 yang berkaitan dengan Pancasila sila ke-1 yaitu ...",
+    "opt": ["pasal 2", "pasal 25", "pasal 29", "pasal 27"],
+    "a": 2
+  },
+  {
+    "q": "Usulan rumusan Pancasila disampaikan oleh Soekarno pada ...",
+    "opt": ["20 Desember 1948", "17 Agustus 1945", "31 Mei 1945", "1 Juni 1945"],
+    "a": 3
+  },
+  {
+    "q": "Pada tanggal 7 Agustus 1945 BPUPKI dibubarkan oleh Jepang diganti menjadi PPKI. Dalam bahasa Jepang PPKI disebut juga dengan ...",
+    "opt": ["Dokuritsi Junbi Inkai", "Junbi Dokuritsi Inkai", "Dokuritsi Junbi", "Dokuritsi Inkai Junbi"],
+    "a": 0
+  },
+  {
+    "q": "Rumusan akhir tentang isi teks Pancasila ditetapkan oleh PPKI pada tanggal ...",
+    "opt": ["19 Desember 1945", "17 Agustus 1945", "18 Agustus 1945", "20 September 1965"],
+    "a": 2
+  },
+  {
+    "q": "Semboyan Bhinneka Tunggal Ika merupakan penggalan dari kitab Sutasoma karangan ...",
+    "opt": ["Mpu Purwa", "Mpu Tantular", "Mpu Kanwa", "Mpu Gandring"],
+    "a": 1
+  },
+  {
+    "q": "Perancang lambang negara Pancasila yaitu ...",
+    "opt": ["Agus Salim", "Moh. Hatta", "Soekarno", "Sultan Hamid II"],
+    "a": 3
+  },
+  {
+    "q": "Pada bentuk lambang negara Garuda Pancasila yang melambangkan hari Proklamasi Kemerdekaan Indonesia yaitu ....",
+    "opt": ["ekor", "pita", "perisai", "jumlah bulu Garuda"],
+    "a": 3
+  },
+  {
+    "q": "Penetapan lambang negara yaitu Garuda Pancasila secara resmi diatur dalam UUD 1945 yaitu ...",
+    "opt": ["pasal 36A", "pasal 27", "pasal 29", "pasal 25"],
+    "a": 0
+  },
+  {
+    "q": "Sila-sila dalam Pancasila memiliki makna bagi kehidupan berbangsa dan bernegara. Adapun makna sila kedua Pancasila yaitu ...",
+    "opt": ["bahwa setiap warga negara mengakui Tuhan Yang Maha Esa sebagai pencipta dan tujuan akhir, baik dalam hati dan tutur kata maupun dalam tingkah laku sehari-hari", "bahwa manusia diperlakukan sesuai dengan harkat dan martabatnya sebagai makhluk Tuhan Yang Maha Esa tanpa membeda-bedakan suku, keturunan, agama, dan kepercayaan, jenis kelamin, kedudukan sosial, warna kulit dan sebagainya.", "menumbuhkan sikap masyarakat untuk mencintai tanah air, bangsa dan negara Indonesia, ikut memperjuangkan kepentingan-kepentingannya, dan mengambil sikap solider serta loyal terhadap sesama warga negara. menempatkan manusia Indonesia pada persatuan, kesatuan, serta kepentingan dan keselamatan bangsa dan negara di atas kepentingan pribadi dan golongan.", "bahwa masyarakat dapat aktif memberikan sumbangan yang wajar sesuai dengan kemampuan dan kedudukan masing-masing kepada negara demi terwujudnya kesejahteraan umum, yaitu kesejahteraan lahir dan batin selengkap mungkin bagi seluruh rakyat."],
+    "a": 1
+  },
+  {
+    "q": "Makna sila Pancasila yang mencerminkan persamaan sosial dimana tidak adanya kesenjangan sosial antara satu dan yang lainnya yaitu tercermin pada sila ...",
+    "opt": ["kesatu", "keempat", "ketiga", "kelima"],
+    "a": 3
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

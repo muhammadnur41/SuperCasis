@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Super Casis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .loading-btn { pointer-events: none; opacity: 0.7; }
+        /* Style tambahan untuk input di dalam SweetAlert */
+        .swal2-input-custom {
+            height: 2.5rem !important;
+            font-size: 0.9rem !important;
+            margin: 0.5rem auto !important;
+            width: 80% !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-900 italic">SUPER <span class="text-yellow-500">CASIS</span></h1>
+            <p class="text-gray-500 text-sm mt-2">Masuk ke Dashboard Peserta</p>
+        </div>
+
+        <form id="loginForm" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Username</label>
+                <input type="text" name="username" id="username" required 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-[16px]" 
+                    placeholder="Masukkan username">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" name="password" id="password" required 
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-[16px]" 
+                        placeholder="••••••••">
+                    <button type="button" onclick="togglePasswordVisibility('password', 'eyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <button type="button" onclick="handleChangePassword()" class="text-xs text-blue-600 hover:underline font-semibold">Ganti Password?</button>
+                <button type="button" onclick="handleForgot()" class="text-xs text-blue-600 hover:underline font-semibold">Lupa Password?</button>
+            </div>
+
+            <button type="submit" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg">
+                MASUK SEKARANG
+            </button>
+        </form>
+
+        <div class="text-center mt-8 space-y-4">
+            <p class="text-sm text-gray-600">Belum punya akun? <a href="register.html" class="text-blue-600 font-bold hover:underline">Daftar</a></p>
+            <hr class="border-gray-100">
+            <a href="index.html" class="inline-block text-xs text-gray-400 hover:text-gray-600">← Kembali ke Beranda</a>
+        </div>
+    </div>
+
+    <script>
+        // Inisialisasi Ikon
+        lucide.createIcons();
+
+        // URL Apps Script Anda
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+        
+        const loginForm = document.getElementById('loginForm');
+        const btnLogin = document.getElementById('btnLogin');
+
+        // --- FUNGSI LIHAT PASSWORD ---
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === "password") {
+                input.type = "text";
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = "password";
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons(); // Re-render icon
+        }
+
+        // --- FUNGSI TOAST NOTIFICATION ---
+        function showToast(icon, title, text) {
+            Swal.fire({
+                icon: icon,
+                title: title,
+                text: text,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        }
+
+        // --- PROSES LOGIN ---
+        loginForm.addEventListener('submit', e => {
+            e.preventDefault();
+            
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = "Memverifikasi...";
+
+            const usernameVal = document.getElementById('username').value.trim();
+            const passwordVal = document.getElementById('password').value;
+
+            const formData = new FormData();
+            formData.append('action', 'login');
+            formData.append('username', usernameVal);
+            formData.append('password', passwordVal);
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userUsername', usernameVal);
+                        localStorage.setItem('userNama', result.nama);
+
+                        showToast('success', 'Berhasil', 'Selamat datang, ' + result.nama);
+                        
+                        setTimeout(() => {
+                            window.location.href = "app/index.html";
+                        }, 1500);
+                    } else {
+                        showToast('error', 'Gagal', result.message);
+                        btnLogin.disabled = false;
+                        btnLogin.innerHTML = "MASUK SEKARANG";
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'Terjadi kesalahan koneksi', 'error');
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = "MASUK SEKARANG";
+                });
+        });
+
+        // --- PROSES GANTI PASSWORD ---
+        function handleChangePassword() {
+            Swal.fire({
+                title: 'Ganti Password',
+                html: `
+                    <input type="text" id="cp-username" class="swal2-input swal2-input-custom" placeholder="Username">
+                    <input type="password" id="cp-oldPass" class="swal2-input swal2-input-custom" placeholder="Password Lama">
+                    <hr class="my-4">
+                    <input type="password" id="cp-newPass" class="swal2-input swal2-input-custom" placeholder="Password Baru">
+                    <input type="password" id="cp-confirmPass" class="swal2-input swal2-input-custom" placeholder="Konfirmasi Password Baru">
+                `,
+                confirmButtonText: 'Update Password',
+                confirmButtonColor: '#2563eb',
+                showCancelButton: true,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const username = Swal.getPopup().querySelector('#cp-username').value;
+                    const oldPass = Swal.getPopup().querySelector('#cp-oldPass').value;
+                    const newPass = Swal.getPopup().querySelector('#cp-newPass').value;
+                    const confirmPass = Swal.getPopup().querySelector('#cp-confirmPass').value;
+
+                    if (!username || !oldPass || !newPass || !confirmPass) {
+                        Swal.showValidationMessage(`Harap isi semua kolom`);
+                    }
+                    if (newPass !== confirmPass) {
+                        Swal.showValidationMessage(`Konfirmasi password baru tidak cocok`);
+                    }
+                    return { username: username, oldPass: oldPass, newPass: newPass };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                    
+                    const formData = new FormData();
+                    formData.append('action', 'change_password');
+                    formData.append('username', result.value.username);
+                    formData.append('oldPassword', result.value.oldPass);
+                    formData.append('newPassword', result.value.newPass);
+
+                    fetch(scriptURL, { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(resJson => {
+                        if(resJson.status === "success") {
+                            Swal.fire('Berhasil', 'Password Anda telah diperbarui.', 'success');
+                        } else {
+                            Swal.fire('Gagal', resJson.message || 'Gagal mengganti password.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire('Error', 'Terjadi kesalahan pada server.', 'error');
+                    });
+                }
+            });
+        }
+
+        // --- PROSES LUPA PASSWORD ---
+        function handleForgot() {
+            Swal.fire({
+                title: 'Lupa Password',
+                text: 'Masukkan username Anda untuk permintaan reset:',
+                input: 'text',
+                inputPlaceholder: 'Username Anda',
+                showCancelButton: true,
+                confirmButtonText: 'Kirim Permintaan',
+                confirmButtonColor: '#2563eb'
+            }).then((result) => {
+                if (result.value) {
+                    const formData = new FormData();
+                    formData.append('action', 'forgot_password');
+                    formData.append('username', result.value);
+
+                    fetch(scriptURL, { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(resJson => {
+                        if(resJson.status === "success") {
+                            Swal.fire('Terkirim', 'Permintaan reset telah dicatat admin.', 'success');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

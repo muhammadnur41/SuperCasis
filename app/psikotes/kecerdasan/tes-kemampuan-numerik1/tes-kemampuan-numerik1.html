@@ -1,0 +1,295 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    { q: "Lampu menyala 8 jam per hari. Selama 7 hari menyala selama …", opt: ["48 jam", "52 jam", "56 jam", "60 jam"], a: 2 },
+    { q: "Jika (48 ÷ 6) × (15 − 7) = x, maka nilai x adalah ….", opt: ["48", "58", "64", "72"], a: 2 },
+    { q: "Hasil dari 120 − (4 × 15) + 18 ÷ 3 adalah …", opt: ["66", "72", "84", "90"], a: 0 },
+    { q: "Jika (36 ÷ 3) + (8 × 4) − 10 = x, maka x = …", opt: ["30", "34", "36", "38"], a: 1 },
+    { q: "Nilai dari 75 − [5 × (6 − 3)] ÷ 5 adalah …", opt: ["70", "72", "74", "75"], a: 1 },
+    { q: "Jika (90 ÷ 9) × 4 − 8 = x, maka x adalah …", opt: ["28", "32", "36", "40"], a: 1 },
+    { q: "Jika 20% = x dari 150, maka x = …", opt: ["20", "25", "30", "35"], a: 2 },
+    { q: "25% dari 200 adalah …", opt: ["40", "45", "50", "60"], a: 2 },
+    { q: "Nilai meningkat dari 60 menjadi 72. Persentase kenaikan adalah …", opt: ["15%", "18%", "20%", "25%"], a: 2 },
+    { q: "Ani membaca 12 halaman dalam 15 menit. Dalam 1 jam Ani membaca …", opt: ["36 halaman", "40 halaman", "45 halaman", "48 halaman"], a: 3 },
+    { q: "Sebuah tangki penuh dalam 5 jam. Dalam 1 jam terisi …", opt: ["10%", "15%", "20%", "25%"], a: 2 },
+    { q: "Rina menabung Rp2.000 setiap hari. Selama 15 hari tabungannya menjadi …", opt: ["Rp25.000", "Rp30.000", "Rp35.000", "Rp40.000"], a: 1 },
+    { q: "Dalam kelas terdapat 40 siswa. Jika 60% perempuan, jumlah siswa laki-laki adalah …", opt: ["12", "14", "16", "18"], a: 2 },
+    { q: "Perbandingan umur A dan B adalah 3 : 5. Jika umur A 18 tahun, umur B adalah …", opt: ["25", "27", "30", "32"], a: 2 },
+    { q: "Perbandingan kelereng Andi dan Budi adalah 4 : 7. Jika Andi memiliki 20 kelereng, Budi memiliki …", opt: ["28", "30", "35", "40"], a: 2 },
+    { q: "Perbandingan uang Sinta dan Rani adalah 2 : 3. Jika total Rp100.000, uang Rani adalah …", opt: ["Rp 40.000", "Rp 50.000", "Rp 60.000", "Rp 70.000"], a: 2 },
+    { q: "Umur Ani 4 tahun lebih tua dari Budi. Jika umur Ani 20 tahun, umur Budi adalah …", opt: ["14", "15", "16", "17"], a: 2 },
+    { q: "Harga buku Rp3.000 lebih murah dari pulpen. Jika harga pulpen Rp8.000, harga buku adalah …", opt: ["Rp 4.000", "Rp 5.000", "Rp 6.000", "Rp 7.000"], a: 1 },
+    { q: "Jarak A ke B 60 km lebih jauh dari B ke C. Jika B ke C 40 km, maka A ke B adalah …", opt: ["80 km", "90 km", "100 km", "120 km"], a: 2 },
+    { q: "Tiga tahun yang lalu, umur A dua kali umur B. Lima tahun yang akan datang, jumlah umur mereka 56 tahun. Umur A sekarang adalah …", opt: ["24 tahun", "25 tahun", "26 tahun", "27 tahun"], a: 3 },
+    { q: "Umur seorang ayah saat ini 30 tahun lebih tua dari anaknya. Lima tahun yang lalu, umur ayah enam kali umur anak. Umur seorang ayah saat ini 30 tahun lebih tua dari anaknya. Lima tahun yang lalu, umur ayah enam kali umur anak. Umur seorang ayah saat ini 30 tahun lebih tua dari anaknya. Lima tahun yang lalu, umur ayah enam kali umur anak. Umur seorang ayah saat ini 30 tahun lebih tua dari anaknya. Lima tahun yang lalu, umur ayah enam kali umur anak. Umur ayah sekarang adalah …", opt: ["41 tahun", "45 tahun", "48 tahun", "50 tahun"], a: 0 },
+    { q: "Mobil melaju 60 km/jam selama 2 jam. Jarak tempuh adalah …", opt: ["100 km", "110 km", "120 km", "130 km"], a: 2 },
+    { q: "Jarak 150 km ditempuh dalam 3 jam. Kecepatannya adalah …", opt: ["40 km/jam", "45 km/jam", "50 km/jam", "55 km/jam"], a: 2 },
+    { q: "Sepeda menempuh 24 km dengan kecepatan 12 km/jam. Waktu yang diperlukan adalah …", opt: ["1 jam", "1,5 jam", "2 jam", "3 jam"], a: 2 },
+    { q: "Seseorang berjalan 30 menit dengan kecepatan 6 km/jam. Jarak yang ditempuh adalah …", opt: ["2 km", "2,5 km", "3 km", "3,5 km"], a: 2 },
+    { q: "24 + 36 ÷ 6 × 2 = …", opt: ["32", "36", "48", "60"], a: 1 },
+    { q: "(18 + 12) ÷ 6 × 4 = …", opt: ["16", "18", "20", "24"], a: 2 },
+    { q: "50 − 20 ÷ 5 × 3 = …", opt: ["26", "32", "38", "44"], a: 2 },
+    { q: "(40 ÷ 8) + 6 × 3 = …", opt: ["19", "21", "23", "25"], a: 2 },
+    { q: "60 ÷ (5 + 5) × 4 = …", opt: ["20", "24", "30", "40"], a: 1 },
+    { q: "3/4 + 1/2 = …", opt: ["4/6", "5/4", "3/2", "7/4"], a: 1 },
+    { q: "9/10 ÷ 3/5 = …", opt: ["1", "3/2", "2", "3"], a: 1 },
+    { q: "7/8 + 5/8 − 1/4 = …", opt: ["1", "11/8", "3/2", "5/4"], a: 3 },
+    { q: "√16 + √9 = …", opt: ["5", "7", "9", "13"], a: 1 },
+    { q: "3√5 − √5 = …", opt: ["√5", "2√5", "3√5", "4√5"], a: 1 },
+    { q: "√12 + √27 = …", opt: ["3√3", "5√3", "6√3", "7√3"], a: 1 },
+    { q: "√50 ÷ √2 = …", opt: ["5", "5√2", "10", "25"], a: 0 },
+    { q: "2√8 = …", opt: ["4√2", "8√2", "16", "2√4"], a: 0 },
+    { q: "Jika x = 4, nilai dari 3x + 5 adalah …", opt: ["12", "15", "17", "20"], a: 2 },
+    { q: "Jika a = 6, nilai dari a² − 2a adalah …", opt: ["12", "18", "24", "36"], a: 2 },
+    { q: "Jika p = 3, nilai dari 4p − p² adalah …", opt: ["3", "6", "9", "12"], a: 0 },
+    { q: "Jika y = 5, nilai dari (2y ÷ 5) + 4 adalah …", opt: ["4", "5", "6", "7"], a: 2 },
+    { q: "Jika m = 2, nilai dari 5m² − 3m adalah …", opt: ["8", "14", "16", "20"], a: 1 },
+    { q: "Manakah yang paling besar?", opt: ["3/6", "55%", "0,6", "1/2"], a: 2 },
+    { q: "Jika x = 4, manakah yang paling kecil?", opt: ["x − 1", "x ÷ 2", "0,75x", "3"], a: 1 },
+    { q: "Urutan dari terkecil ke terbesar adalah …", opt: ["40%, 0,5, 2/5", "2/5, 40%, 0,5", "0,5, 40%, 2/5", "40%, 2/5, 0,5"], a: 1 },
+    { q: "Jika y = 10, manakah yang paling besar?", opt: ["y ÷ 5", "25% dari y", "y − 7", "2"], a: 2 },
+    { q: "Nilai terbesar adalah …", opt: ["0,75", "70%", "2/3", "0,6"], a: 0 },
+    { q: "Sebuah barang berharga Rp400.000 mendapat diskon 10%. Harga setelah diskon adalah …", opt: ["Rp360.000", "Rp370.000", "Rp380.000", "Rp390.000"], a: 0 },
+    { q: "15% dari 80 adalah …", opt: ["10", "12", "14", "16"], a: 1 },
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            
+            <h3 id="keterangan-skor" style="margin-top: -10px; margin-bottom: 20px;"></h3>
+            
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    { q: "Saya akan tetap menjalankan perintah meskipun perintah itu membahayakan nyawa saya.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya mudah panik saat mendengar suara tembakan atau ledakan di dekat saya.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bisa tidur nyenyak setelah menyaksikan kejadian tragis dalam tugas.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya akan memilih mundur dari misi jika peralatan tidak memadai.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya tetap fokus pada target meskipun ada korban luka di sekitar saya.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering merasa cemas berlebihan saat akan bertugas di daerah konflik.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya mampu mengendalikan rasa takut dan tetap bertindak rasional.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya tidak akan meninggalkan pos meskipun diancam oleh musuh bersenjata.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya mudah putus asa jika misi yang direncanakan gagal.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya tetap bisa bekerja efektif setelah menerima kabar buruk dari keluarga.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih suka menghindari konfrontasi fisik jika memungkinkan, meskipun itu menunjukkan kelemahan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap tenang saat disandera atau diancam senjata.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering kali menarik diri dari pergaulan karena merasa tidak cocok dengan rekan kerja.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya mampu memaafkan rekan yang pernah mengkhianati saya demi tugas.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya akan tetap loyal pada pimpinan meskipun pimpinan itu tidak adil kepada saya.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya cenderung berganti-ganti pendapat tergantung tekanan dari kelompok.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bersedia ditempatkan di pos terpencil tanpa komunikasi dengan keluarga selama 6 bulan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering merasa iri dengan rekan yang mendapatkan tugas lebih bergengsi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bisa bekerja sama dengan siapa pun tanpa membedakan suku, agama, ras, dan golongan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya akan tetap menjalankan tugas meskipun dibenci oleh masyarakat yang saya lindungi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering mempertanyakan perintah atasan secara terbuka di depan umum.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya mampu menyimpan rahasia dinas tingkat tinggi tanpa tergoda membocorkan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih suka mengikuti jejak senior daripada berinovasi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap semangat meskipun sering dimarahi atasan tanpa alasan jelas.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya mudah tersinggung jika diperlakukan tidak hormat oleh masyarakat.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bersedia menjadi contoh disiplin bagi anggota yang lebih muda.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya pernah mengabaikan perintah karena menganggap perintah itu tidak penting.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya mampu membaca situasi dengan cepat dan mengambil keputusan dalam hitungan detik.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih suka menjadi pengikut daripada pemimpin.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap menghormati tawanan atau tersangka meskipun mereka bersikap kasar.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering kali menyalahkan orang lain ketika terjadi kesalahan dalam tim.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bersedia mengorbankan waktu pribadi untuk membantu rekan yang kesusahan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya mudah teralihkan oleh hal-hal kecil saat sedang patroli.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap tegas meskipun harus menindak anggota keluarga sendiri.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih nyaman bekerja di dalam ruangan daripada di lapangan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bisa mengatur strategi dalam tekanan waktu yang sangat singkat.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering kali menunda-nunda persiapan sebelum operasi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap tenang saat menghadapi provokator yang mencoba memancing emosi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih suka bekerja sendiri karena tim seringkali tidak efisien.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bersedia menjadi pelindung bagi yang lemah meskipun harus berhadapan dengan kelompok kuat.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering merasa rendah diri dibandingkan rekan sekelas di pendidikan.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya mampu memberikan motivasi kepada tim saat situasi sedang sulit.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya cenderung menghindari tanggung jawab tambahan di luar tugas pokok.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya akan tetap profesional saat harus mengamankan tokoh yang pernah berselisih dengan saya.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya mudah bosan dengan rutinitas patroli yang itu-itu saja.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bersedia mempelajari taktik terbaru meskipun sudah sangat berpengalaman.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya sering kali mengabaikan peringatan bahaya karena terlalu percaya diri.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya bisa tetap objektif meskipun harus menyidik kasus yang melibatkan teman dekat.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 },
+    { q: "Saya lebih suka diam saat rapat daripada menyampaikan ide yang mungkin ditolak.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 0 },
+    { q: "Saya yakin bahwa pengabdian kepada negara adalah kehormatan tertinggi.", opt: ["Sangat tidak setuju", "Tidak setuju", "Setuju", "Sangat setuju"], a: 3 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+
+        // --- Logika Penentuan Keterangan Skor ---
+        const keteranganSkorEl = document.getElementById('keterangan-skor');
+        if (finalScoreValue <= 50) {
+            keteranganSkorEl.innerText = "KURANG IDEAL";
+            keteranganSkorEl.style.color = "#e74c3c"; // Warna merah
+        } else {
+            keteranganSkorEl.innerText = "IDEAL";
+            keteranganSkorEl.style.color = "#2ecc71"; // Warna hijau
+        }
+        // ----------------------------------------
+
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

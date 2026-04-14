@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daftar - Super Casis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }</style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md my-10">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-900 italic">SUPER <span class="text-yellow-500">CASIS</span></h1>
+            <p class="text-gray-500 text-sm mt-2">Buat akun untuk mulai berlatih</p>
+        </div>
+
+        <form id="registerForm" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nama Lengkap</label>
+                <input type="text" name="nama" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Nama Lengkap">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nomor WhatsApp</label>
+                <input type="number" name="nomor" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="0812xxxxxxxx">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Email</label>
+                <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="email@anda.com">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" name="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Minimal 6 karakter">
+                    <button type="button" onclick="togglePassword('password')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ulangi Password</label>
+                <input type="password" id="confirm_password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Ketik ulang password">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Bukti Transfer (JPG/PNG)</label>
+                <input type="file" id="bukti_bayar" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+                <input type="hidden" name="fileData" id="fileData">
+                <input type="hidden" name="fileName" id="fileName">
+            </div>
+
+            <button type="submit" id="btnRegister" class="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-yellow-200 mt-2">
+                DAFTAR SEKARANG
+            </button>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <p class="text-xs font-bold text-blue-800 mb-1 underline">PEMBAYARAN:</p>
+                <p class="text-[13px] text-blue-700 leading-relaxed">
+                    Berlangganan 1 Bulan: <b>Rp 50.000</b><br>
+                    BRI: 2259 0100 5257 536 a/n MUHAMMAD IRWAN NUR
+                </p>
+            </div>
+        </form>
+
+        <div class="text-center mt-8 space-y-4">
+            <p class="text-sm text-gray-600">Sudah punya akun? <a href="login.html" class="text-blue-600 font-bold hover:underline">Login di sini</a></p>
+            <hr class="border-gray-100">
+            <a href="index.html" class="inline-block text-xs text-gray-400">← Kembali ke Beranda</a>
+        </div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+        const form = document.getElementById('registerForm');
+        const btn = document.getElementById('btnRegister');
+
+        function togglePassword(id) {
+            const el = document.getElementById(id);
+            el.type = el.type === "password" ? "text" : "password";
+        }
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            
+            const pass = document.getElementById('password').value;
+            const confirmPass = document.getElementById('confirm_password').value;
+
+            if(pass !== confirmPass) {
+                Swal.fire('Error', 'Konfirmasi password tidak cocok!', 'error');
+                return;
+            }
+
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = "Memproses...";
+
+            const fileInput = document.getElementById('bukti_bayar');
+            if (fileInput.files.length === 0) {
+                Swal.fire('Error', 'Harap unggah bukti transfer!', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.readAsDataURL(file);
+            reader.onload = function() {
+                const base64Data = reader.result.split(',')[1];
+                document.getElementById('fileData').value = base64Data;
+                document.getElementById('fileName').value = file.name;
+
+                const formData = new FormData(form);
+                formData.append('action', 'register');
+
+                fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === "success" || result.result === "success") {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Pendaftaran sukses. Akun Anda akan diverifikasi admin.',
+                            confirmButtonColor: '#1E3A8A'
+                        }).then(() => { window.location.href = "login.html"; });
+                    } else {
+                        Swal.fire('Gagal', result.message || 'Terjadi kesalahan saat mendaftar.', 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    Swal.fire('Koneksi Error', 'Periksa koneksi internet atau setelan Apps Script Anda.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            };
+        });
+    </script>
+</body>
+</html>

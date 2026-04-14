@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            
+            <h3 id="keterangan-skor" style="margin-top: -10px; margin-bottom: 20px;"></h3>
+            
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+{ q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya benci duduk diam; saya butuh aktivitas fisik yang konstan dan ritme kerja yang kencang", "Saya adalah pendengar yang luar biasa empatik saat rekan kerja menghadapi masalah keluarga"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu mematuhi Standar Operasional Prosedur (SOP) tanpa toleransi pelanggaran sedikit pun", "Saya lebih suka langsung mengeksekusi tugas dengan cepat daripada menghabiskan waktu untuk berdiskusi"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya menyukai sistem kerja di mana saya bisa mengendalikan sepenuhnya alur informasi di departemen saya", "Begitu sebuah tugas didelegasikan kepada saya, saya langsung mengebut mengerjakannya saat itu juga"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mampu mengambil keputusan kritis yang berisiko tinggi dalam hitungan detik", "Kecepatan fisik dan kelincahan saya dalam menyelesaikan pekerjaan operasional sulit ditandingi"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Memecahkan rekor penjualan atau performa tertinggi adalah target utama saya setiap bulan", "Saya dikenal sebagai karyawan yang bekerja dengan laju paling cepat di departemen saya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya menyukai pekerjaan yang menuntut saya banyak bergerak ke sana kemari tanpa henti", "Menelaah dan membedah akar permasalahan secara mendalam adalah keahlian utama saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu menjaga tempo kerja saya di level maksimal untuk memastikan tidak ada waktu yang terbuang sia-sia", "Memiliki pekerjaan yang sangat bervariasi setiap harinya membuat saya terhindar dari rasa bosan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya tidak akan pulang sebelum seluruh target harian saya tuntas seratus persen", "Saya bergerak dan merespons pekerjaan lebih cepat dibandingkan rekan-rekan kerja saya yang lain"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Membangun portofolio karier yang diakui secara nasional adalah target jangka panjang saya", "Laju pekerjaan saya sangat dinamis, cepat, dan selalu mendahului target yang diminta"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya terbiasa melakukan multitasking dengan kecepatan penuh tanpa kehilangan momentum", "Kualitas pekerjaan yang tanpa cacat dan sempurna adalah satu-satunya standar saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya percaya bahwa ritme kerja yang serba cepat adalah kunci utama kemajuan sebuah perusahaan", "Berdebat untuk mempertahankan posisi yang saya yakini benar adalah hal biasa bagi saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya tidak suka pekerjaan yang santai; saya butuh ritme kerja yang memburu tenggat waktu", "Saya selalu menyiapkan rencana cadangan (Plan B dan Plan C) untuk menghindari kegagalan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat mudah membangun jaringan koneksi yang luas dengan berbagai klien penting", "Saya sering merasa tidak sabar jika harus menunggu orang lain yang bekerja terlalu lambat"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Memastikan bahwa saya tidak melanggar aturan HRD adalah prioritas utama saya dalam bekerja", "Bagi saya, kecepatan menyelesaikan tugas sama pentingnya dengan hasil tugas itu sendiri"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat peduli pada tata rias dan penampilan profesional saya saat bertemu eksekutif", "Daripada menunda, saya akan merampungkan pekerjaan saat itu juga dengan secepat-cepatnya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memeriksa ulang setiap data numerik berulang kali hingga bebas dari kesalahan sekecil apa pun", "Saya selalu bekerja dengan tempo yang sangat cepat dan gesit setiap harinya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya menetapkan parameter yang sangat kaku bagi kolega saya agar mereka tidak bertindak sembarangan", "Ketika yang lain sedang santai beristirahat, saya masih bergerak cepat menuntaskan sisa pekerjaan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memiliki kemampuan luar biasa dalam menahan emosi dan bersikap tenang di bawah tekanan", "Saya memiliki energi yang seakan tidak pernah habis untuk terus bekerja dengan cepat"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya rela masuk bekerja di hari libur jika perusahaan memang sedang membutuhkan tenaga saya", "Bekerja lambat dan bertele-tele adalah hal yang paling membuat saya frustrasi di kantor"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya menyelesaikan rutinitas administratif harian saya dalam waktu separuh dari yang dibutuhkan orang lain", "Saya mengorbankan kenyamanan pribadi demi menyelesaikan pekerjaan yang menguras tenaga secara ekstrem"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Pekerjaan fisik yang memacu saya untuk bergerak serba cepat adalah spesialisasi yang saya kuasai", "Menuntaskan satu pekerjaan besar seratus persen tuntas jauh lebih membanggakan daripada memulai lima proyek baru"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Ritme kerja saya yang super cepat sering kali membuat rekan setim saya kewalahan mengikuti", "Saya tidak ragu berkonfrontasi dan berdebat keras untuk mempertahankan efisiensi kerja"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Bergerak dengan tempo yang ngebut sudah menjadi kebiasaan saya, bahkan untuk hal-hal kecil sekalipun", "Saya memandang setiap masalah baru sebagai ajang pembuktian diri untuk bersinar secara intelektual"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Bertindak sigap dan bekerja tanpa menunda-nunda adalah gaya kerja alami saya", "Saya memiliki ambisi yang sangat kuat untuk mencapai puncak karier di perusahaan ini"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mengedepankan logika objektif dan tidak mudah terbawa perasaan dalam lingkungan profesional", "Saya memprioritaskan penyelesaian tugas secara kilat agar saya bisa segera melangkah ke proyek berikutnya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih memilih menuntaskan 10 tugas dengan cepat daripada 2 tugas dengan lambat", "Menjadi figur otoritas yang dipatuhi dan dihormati adalah hal yang sangat memotivasi saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Ketekunan saya dalam mengulang pekerjaan yang sama untuk mencari kesalahan sangat bisa diandalkan", "Saya sangat energik dan laju produktivitas saya jarang sekali bisa diimbangi oleh orang sekeliling saya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sangat mahir dalam merumuskan konsep teoretis dan strategi bisnis jangka panjang", "Saya selalu menetapkan ritme kerja yang tinggi untuk memastikan efisiensi waktu maksimal"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Meraih ketenaran dan eksposur media adalah hal yang sangat saya impikan dalam perjalanan karier", "Saya adalah tipe pekerja yang bertindak dan menyelesaikan operasional dengan tempo yang luar biasa cepat"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya sering kali menyelesaikan tugas jauh mendahului tenggat waktu yang ditetapkan", "Saya memastikan seluruh jadwal dan arsip saya tertata dengan sistematika yang sempurna"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Kelincahan dan kecepatan saya dalam menangani masalah operasional sangat bisa diandalkan", "Saya berusaha keras menjaga perdamaian dan menghindari perselisihan antar rekan kerja"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Semakin cepat sebuah pekerjaan bisa saya singkirkan dari meja saya, semakin saya merasa lega", "Saya lebih suka memikirkan gambaran besar (big picture) dan mengabaikan detail-detail kecil"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Jika ada cara untuk menyelesaikan suatu prosedur lebih cepat, saya pasti akan memanfaatkannya", "Meninggalkan pekerjaan yang belum selesai sepenuhnya membuat pikiran saya sangat terganggu"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mengandalkan gerak cepat dan efisiensi tenaga untuk menuntaskan tumpukan dokumen", "Berada di lingkungan kerja yang sangat kompetitif membuat bakat terbaik saya keluar"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Kecepatan saya dalam menindaklanjuti email dan permintaan klien sangat diapresiasi oleh manajemen", "Saya memastikan tidak ada satu dokumen pun yang ditandatangani tanpa melalui proses peninjauan mendalam saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya adalah inovator yang selalu membawa ide-ide baru yang radikal ke dalam perusahaan", "Langkah kerja saya selalu selangkah lebih maju dan lebih cepat dari yang diharapkan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Laju kerja saya secara konsisten berada di gigi tertinggi dari pagi hingga sore hari", "Saya mendambakan pengakuan publik dan penghargaan formal atas kontribusi luar biasa saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya secara alami selalu mengambil alih kendali dan memimpin tim saat terjadi krisis", "Saya tidak betah berdiam diri dan selalu mencari cara agar pekerjaan segera terselesaikan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu bersedia pasang badan dan membela tim saya di hadapan manajemen tingkat atas", "Bekerja dengan ritme yang lambat sangat menyiksa batin saya; saya butuh kecepatan"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya selalu berusaha memangkas waktu pengerjaan proyek menjadi jauh lebih singkat", "Saya sangat teliti dalam memastikan tidak ada satu pun salah ketik dalam dokumen penting"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Kecepatan dan ketangkasan dalam bekerja adalah atribut profesional yang paling saya banggakan", "Saya tidak pernah ragu mengambil alih tanggung jawab atas setiap kegagalan anggota tim saya"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya tidak pernah berjalan santai di kantor; saya selalu bergerak dengan tergesa dan sigap", "Memeras keringat dan kelelahan setelah bekerja keras adalah hal yang sangat saya nikmati"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Mengerjakan tugas dengan kecepatan tinggi memberikan sensasi adrenalin yang saya sukai", "Saya memiliki ketahanan mental untuk fokus mengerjakan perhitungan matematis yang rumit seharian penuh"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memproses tumpukan pekerjaan harian dengan kecepatan yang sering membuat kagum atasan saya", "Kepuasan terbesar saya adalah ketika saya berhasil membimbing dan mengembangkan potensi bawahan"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya lebih memilih metode eksekusi langsung dan cepat daripada rapat perencanaan yang berkepanjangan", "Saya menyusun ceklis harian agar pekerjaan saya selalu terorganisir dengan sangat rapi"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memastikan setiap meja dan ruangan kerja saya selalu dalam keadaan bersih dan teratur", "Menyelesaikan pekerjaan dengan kecepatan kilat adalah kebanggaan profesional saya"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya mengatur siapa yang harus berbicara dan kapan mereka boleh berpendapat dalam rapat kerja", "Saya sering kali merasa rekan-rekan kerja saya membuang-buang waktu dengan bekerja terlalu santai"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya memantau secara ketat kedisiplinan dan cara kerja bawahan saya agar tidak melenceng", "Saat orang lain baru mulai bersiap, saya biasanya sudah menyelesaikan separuh dari tugas tersebut"], a: 1 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya merasa paling produktif saat saya bisa berlari dari satu tugas ke tugas lainnya tanpa henti", "Saya sanggup memikul beban kerja fisik dan mental yang sangat berat berhari-hari"], a: 0 },
+    { q: "Pilih Salah Satu dari 2 pernyataan berikut !", opt: ["Saya akan memotong dan menginterupsi bawahan yang mencoba membantah perintah operasional saya", "Saya terdorong untuk menyikat habis seluruh daftar tugas saya dengan tempo kilat setiap harinya"], a: 1 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+
+        // --- Logika Penentuan Keterangan Skor ---
+        const keteranganSkorEl = document.getElementById('keterangan-skor');
+        if (finalScoreValue <= 60) {
+            keteranganSkorEl.innerText = "Bekerja dengan santai, lambat, namun mungkin lebih berhati-hati";
+            keteranganSkorEl.style.color = "#e74c3c"; // Warna merah
+        } else {
+            keteranganSkorEl.innerText = "Bekerja dengan sangat cepat, gesit, dan ingin semuanya segera selesai";
+            keteranganSkorEl.style.color = "#2ecc71"; // Warna hijau
+        }
+        // ----------------------------------------
+
+        document.getElementById('stats-text').innerText = `Jawaban Ideal: ${correct} | Jawaban Kurang Ideal: ${quizData.length - correct}`;        
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

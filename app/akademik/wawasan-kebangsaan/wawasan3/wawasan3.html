@@ -1,0 +1,496 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    q: `Berdasarkan UUD 1945 pasal 14, Presiden dapat memberi grasi dan rehabilitasi dengan memperhatikan pertimbangan ....`,
+    opt: ["Mahkamah Agung", "Dewan Perwakilan Rakyat", "Badan Pemeriksa Keuangan", "Majelis Permusyawaratan Rakyat"],
+    a: 0
+  },
+  {
+    q: `UUD 1945 mengalami amandemen sebanyak .... kali`,
+    opt: ["satu kali", "dua kali", "tiga kali", "empat kali"],
+    a: 3
+  },
+  {
+    q: `Amandemen UUD 1945 pertama disahkan pada tanggal ...`,
+    opt: ["21 Januari 1999", "19 Oktober 2000", "19 Oktober 1999", "15 Desember 2000"],
+    a: 2
+  },
+  {
+    q: `Pada amandemen pertama UUD 1945 dilakukan perubahan pada pasal ...`,
+    opt: ["pasal 5, 7, 8, 13, 14, 15, 17, 21, 22", "pasal 5, 7, 9, 12, 14, 16, 17, 20, 21", "pasal 6, 7, 8, 13, 14, 15, 17, 20, 21", "pasal 5, 7, 9, 13, 14, 15, 17, 20, 21"],
+    a: 3
+  },
+  {
+    q: `Salah satu kesepakatan dasar dalam melakukan amandemen UUD 1945 yaitu perubahan dilakukan dengan cara adendum. Adendum yaitu ...`,
+    opt: ["perubahan dilakukan dengan mengubah naskah asli UUD 1945 dan naskah perubahan diletakkan melekat pada naskah asli.", "perubahan dilakukan dengan tetap mempertahankan naskah asli UUD 1945 sesuai dengan yang terdapat dalam Lembaran Negara Nomor 75 Tahun 1959 dan naskah perubahan diletakkan melekat pada naskah asli.", "perubahan dilakukan dengan tetap mempertahankan naskah asli UUD 1945 sesuai dengan yang terdapat dalam Lembaran Negara Nomor 75 Tahun 1959 dan naskah perubahan diletakkan tersendiri.", "perubahan tidak mengacu pada naskah asli UUD 1945 dan naskah perubahan tidak diletakkan melekat pada naskah asli."],
+    a: 1
+  },
+  {
+    q: `Hasil amandemen UUD 1945 berkaitan dengan sistem pemerintahan yang dianut negara Indonesia yaitu menjadi Sistem Pemerintahan Presidensial. Adapun ciri sistem pemerintahan tersebut yaitu, kecuali ...`,
+    opt: ["Presiden sebagai kepala negara sekaligus kepala pemerintahan", "Presiden tidak tunduk kepada parlemen. Presiden dan parlemen tidak dapat saling menjatuhkan/membubarkan.", "Masa jabatan presiden adalah lima tahun dan sesudahnya dapat dipilih kembali.", "Presiden dan wakil presiden dipilih oleh rakyat secara langsung dan bertanggung jawab kepada rakyat."],
+    a: 2
+  },
+  {
+    q: `Tujuan dilakukannya amandemen UUD 1945 yaitu ....`,
+    opt: ["untuk menyempurnakan aturan dasar agar sesuai dengan perkembangan aspirasi dan kebutuhan bangsa", "untuk membantu pemerintahan dalam mengganti sistem yang sudah terlaksana", "untuk memberi tambahan peraturan agar lebih terjamin efektivitas penerapan peraturan di Indonesia", "untuk mengoreksi pasal-pasal yang berkaitan dengan pembagian kekuasan saja."],
+    a: 0
+  },
+  {
+    q: `Menurut pasal 7B ayat 1 UUD 1945 usul pemberhentian Presiden dan atau Wakil Presiden dapat diajukan oleh Dewan Perwakilan Rakyat kepada Majelis Permusyawaratan Rakyat hanya dengan terlebih dahulu mengajukan permintaan kepada ...`,
+    opt: ["Menteri", "Majelis Permusyawaratan Rakyat", "Mahkamah Konstitusi", "Dewan Perwakilan Rakyat"],
+    a: 2
+  },
+  {
+    q: `Menurut pasal 20A, Dewan Perwakilan Rakyat memiliki fungsi seperti berikut, kecuali ...`,
+    opt: ["fungsi legislatif", "fungsi pendidikan", "fungsi anggaran", "fungsi pengawasan"],
+    a: 1
+  },
+  {
+    q: `Berikut ini adalah pasal-pasal dalam UUD 1945 yang mengatur hak asasi manusia sebagai warga negara, kecuali ...`,
+    opt: ["pasal 29", "pasal 28", "pasal 26", "pasal 27"],
+    a: 2
+  },
+  {
+    q: `Negara menjamin kemerdekaan tiap-tiap penduduk untuk memeluk agamanya masing-masing dan untuk beribadat menurut agamanya dan kepercayaannya itu. Hal ini diatur dalam UUD1945 pasal ....`,
+    opt: ["pasal 27", "pasal 28", "pasal 30", "pasal 29"],
+    a: 3
+  },
+  {
+    q: `Lambang negara Garuda Pancasila dengan semboyan Bhinneka Tunggal Ika diatur dalam UUD 1945 pasal ...`,
+    opt: ["pasal 30", "pasal 28", "pasal 35", "pasal 36A"],
+    a: 3
+  },
+  {
+    q: `Ketetapan MPR Nomor IV/MPR/1983 tentang Referendum menyatakan bahwa bila MPR berkehendak mengubah UUD 1945, terlebih dahulu harus minta pendapat rakyat melalui referendum. Referendum memiliki persamaan makna dengan ...`,
+    opt: ["pemungutan", "jajak pendapat", "partai politik", "sistem pemerintahan"],
+    a: 1
+  },
+  {
+    q: `Tindak pidana korupsi di Indonesia diatur pelaksanaan hukum pidananya dalam suatu undang-undang. Undang-undang yang mengatur tentang Pemberantasan Tindak Pidana Korupsi yaitu ....`,
+    opt: ["UU Nomor 31 Tahun 1999", "UU Nomor 23 Tahun 1999", "UU Nomor 21 Tahun 1999", "UU Nomor 35 Tahun 1999"],
+    a: 0
+  },
+  {
+    q: `Pemerintah menjamin kesehatan masyarakat dalam suatu struktur jaminan sosial. Adapun peraturan tentang jaminan sosial ini secara resmi ditetapkan dalam ....`,
+    opt: ["Undang-Undang No 34 Tahun 2011", "Undang-Undang No 14 Tahun 2011", "Undang-Undang No 4 Tahun 2011", "Undang-Undang No 24 Tahun 2011"],
+    a: 3
+  },
+  {
+    q: `Rumusan Pancasila yang terdiri dari 5 aspek, yaitu Peri Kebangsaan, Peri Kemanusiaan, Peri Ketuhanan, Peri Kerakyatan, dan Kesejahteraan rakyat dicetuskan oleh ....`,
+    opt: ["Ir. Soekarno", "Dr. Radjiman Wedyodiningrat", "Moh. Yamin", "Moh. Hatta", "Notonagoro"],
+    a: 2
+  },
+  {
+    q: `Sidang BPUPKI yang kedua dilaksanakan pada tanggal ....`,
+    opt: ["10-17 Juni 1945", "11-18 Juni 1945", "9-17 Juli 1945", "10-17 Juli 1945", "11-18 Juli 1945"],
+    a: 3
+  },
+  {
+    q: `Yang bukan merupakan isi dari Dekrit Presiden 5 Juli 1959 adalah ....`,
+    opt: ["Pembubaran Konstituante", "Berlakunya kembali UUD 1945 dan tidak berlakunya lagi UUDS 1950", "Akan dibentuk MPRS dalam waktu singkat", "Akan dibentuk DPAS dalam waktu singkat", "Pemilihan presiden dan wakil presiden"],
+    a: 4
+  },
+  {
+    q: `Rumusan dan tata urutan Pancasila diatur di dalam ....`,
+    opt: ["INPRES Nomor 12/1968", "INPRES Nomor 13/1968", "INPRES Nomor 14/1968", "INPRES Nomor 11/1969", "INPRES Nomor 12/1969"],
+    a: 0
+  },
+  {
+    q: `Pancasila sebagai ideologi negara mengandung arti sebagai ....`,
+    opt: ["cita-cita bangsa", "kepribadian bangsa", "dasar dalam menata negara", "perjanjian luhur bangsa", "pedoman bangsa"],
+    a: 2
+  },
+  {
+    q: `Yang bukan termasuk rumusan dasar negara yang diusulkan oleh Ir. Soekarno pada tanggal 1 Juni 1945 adalah ....`,
+    opt: ["Demokrasi", "Kekeluargaan", "Peri Kemanusiaan", "Kesejahteraan sosial", "Kebangsaan Indonesia"],
+    a: 1
+  },
+  {
+    q: `Pancasila sebagai ideologi terbuka memiliki ciri khas, yaitu ....`,
+    opt: ["dibenarkan melakukan pengorbanan", "tidak diciptakan negara", "terdiri atas tuntutan", "isinya tidak operasional", "tidak bersifat kaku"],
+    a: 3
+  },
+  {
+    q: `Keadilan sosial menurut Pancasila seperti termaksud dalam pasal 33 UUD 1945 adalah bahwa ....`,
+    opt: ["Perekonomian disusun atas dasar kekeluargaan.", "Setiap orang bebas bersaing.", "Fakir miskin mendapat pekerjaan yang layak.", "Tidak dibenarkan adanya perusahaan swasta yang monopoli.", "Perusahaan asing diprioritaskan dalam perekonomian."],
+    a: 0
+  },
+  {
+    q: `Secara yuridis, Pancasila terletak dalam ....`,
+    opt: ["Penjelasan UUD 1945", "Proklamasi Kemerdekaan RI", "Pembukaan UUD 1945", "Batang Tubuh UUD 1945", "Tap MPR"],
+    a: 2
+  },
+  {
+    q: `Pancasila sebagai sumber nilai mencerminkan ....`,
+    opt: ["asumsi dasar", "nilai pokok filsafat hidup", "asumsi teoritis yang umum", "gagasan ilmiah", "konsep falsafah"],
+    a: 1
+  },
+  {
+    q: `Dalam hal terjadi kekosongan Wakil Presiden, selambat-lambatnya dalam jangka waktu beberapa hari Majelis Permusyawaratan Rakyat menyelenggarakan sidang untuk memilih Wakil Presiden dari dua calon yang diusulkan oleh Presiden?`,
+    opt: ["20 hari", "30 hari", "60 hari", "70 hari", "90 hari"],
+    a: 2
+  },
+  {
+    q: `Macam dan harga mata uang ditetapkan dengan undang-undang merupakan bunyi pasal ....`,
+    opt: ["23A", "23B", "23C", "23D", "23E"],
+    a: 1
+  },
+  {
+    q: `Menurut Undang-Undang Dasar 1945 pasal 2 ayat (1), Majelis Permusyawaratan Rakyat terdiri atas ....`,
+    opt: ["anggota Dewan Perwakilan Rakyat, anggota Dewan Perwakilan Rakyat Daerah, dan anggota Dewan Perwakilan Daerah", "anggota Dewan Perwakilan Rakyat dan anggota Dewan Perwakilan Daerah", "anggota Dewan Perwakilan Daerah", "anggota Dewan Perwakilan Rakyat", "anggota Dewan Perwakilan Rakyat, anggota Dewan Perwakilan Daerah, dan Utusan Daerah"],
+    a: 1
+  },
+  {
+    q: `Presiden dengan persetujuan Dewan Perwakilan Rakyat menyatakan perang, membuat perdamaian, dan perjanjian dengan negara lain. Penjelasan tersebut terdapat dalam pasal ....`,
+    opt: ["Pasal 10", "Pasal 11 ayat (1)", "Pasal 11 ayat (2)", "Pasal 12", "Pasal 13"],
+    a: 1
+  },
+  {
+    q: `Bunyi pasal 18 ayat (2) Undang-Undang Dasar 1945 yang telah diamandemen adalah ....`,
+    opt: ["Pemerintahan daerah provinsi, daerah kabupaten, dan kota mengatur dan mengurus sendiri urusan pemerintahan menurut asas otonomi dan tugas pembantuan.", "Pemerintahan daerah provinsi, daerah kabupaten, dan kota memiliki Dewan Perwakilan Rakyat Daerah yang anggota-anggotanya dipilih melalui pemilihan umum.", "Gubernur, Bupati, dan Wali kota masing-masing sebagai kepala pemerintahan daerah provinsi, kabupaten, dan kota dipilih secara demokratis.", "Pemerintahan daerah menjalankan otonomi seluas-luasnya, kecuali urusan pemerintahan yang oleh undang-undang ditentukan sebagai urusan Pemerintah Pusat.", "Pemerintahan daerah berhak menetapkan peraturan daerah dan peraturan-peraturan lain untuk melaksanakan otonomi dan tugas pembantuan."],
+    a: 0
+  },
+  {
+    q: `Menurut Undang-Undang Dasar 1945 pasal 24A ayat (3), calon Hakim Agung diusulkan .... kepada ....`,
+    opt: ["Mahkamah Konstitusi kepada Dewan Perwakilan Daerah", "Kehakiman kepada Dewan Perwakilan Daerah", "Presiden kepada Dewan Perwakilan Daerah", "Dewan Perwakilan Rakyat kepada Majelis Permusyawaratan Rakyat", "Komisi Yudisial kepada Dewan Perwakilan Rakyat"],
+    a: 4
+  },
+  {
+    q: `Menurut Undang-Undang Dasar 1945 pasal 26, yang menjadi warga negara ialah ....`,
+    opt: ["orang-orang bangsa Indonesia asli", "orang-orang bangsa Indonesia asli dan orang asing yang bertempat tinggal di Indonesia", "orang-orang bangsa Indonesia asli dan orang-orang bangsa lain yang disahkan dengan undang-undang sebagai warga negara", "orang-orang bangsa Indonesia asli dan orang-orang bangsa lain yang telah bertempat tinggal di Indonesia untuk sekurang-kurangnya 10 tahun", "orang-orang bangsa Indonesia asli dan orang-orang bangsa lain yang telah mengajukan permohonan untuk menjadi warga negara"],
+    a: 2
+  },
+  {
+    q: `Bunyi pasal 28D ayat (2) Undang-Undang Dasar 1945 yang telah diamandemen adalah ....`,
+    opt: ["Setiap orang berhak atas pengakuan, jaminan, perlindungan dan kepastian hukum yang adil serta perlakuan yang sama di hadapan hukum.", "Setiap warga negara berhak memperoleh kesempatan yang sama dalam pemerintah.", "Setiap orang berhak atas status kewarganegaraan.", "Setiap orang berhak untuk bekerja serta mendapat imbalan dan perlakuan yang adil dan layak dalam hubungan kerja.", "Setiap anak berhak atas kelangsungan hidup, tumbuh dan berkembang serta berhak atas perlindungan dari kekerasan dan diskriminasi."],
+    a: 3
+  },
+  {
+    q: `Usaha pertahanan dan keamanan negara dilaksanakan melalui sistem pertahanan dan keamanan rakyat semesta di mana kekuatan utama untuk itu menjadi tugas dan tanggung jawab ....`,
+    opt: ["Tentara Nasional Indonesia dan Kepolisian Negara Republik Indonesia", "Tentara Nasional Indonesia, Kepolisian Negara Republik Indonesia, dan rakyat", "Tentara Nasional Indonesia", "Kepolisian Negara Republik Indonesia", "segenap rakyat Indonesia"],
+    a: 1
+  },
+  {
+    q: `Sekurang-kurangnya berapa persen (%) dari anggaran pendapatan dan belanja negara serta dari anggaran pendapatan dan belanja daerah yang diprioritaskan negara untuk memenuhi kebutuhan penyelenggaraan pendidikan nasional?`,
+    opt: ["10%", "15%", "20%", "25%", "30%"],
+    a: 2
+  },
+  {
+    q: `Berikut ini yang tidak termasuk dalam anggota tetap Dewan Keamanan PBB dan tidak mempunyai hak veto adalah ....`,
+    opt: ["Amerika Serikat", "Rusia", "Inggris", "Perancis", "Mesir"],
+    a: 4
+  },
+  {
+    q: `Indonesia menjadi anggota Perserikatan Bangsa-Bangsa (PBB) pada tanggal 28 September 1950. Pada tanggal 7 Januari 1965 Indonesia keluar dari keanggotaan Perserikatan Bangsa-Bangsa (PBB) dan kembali menjadi anggota pada tanggal ....`,
+    opt: ["1 Januari 1966", "7 Januari 1966", "17 Agustus 1966", "28 September 1966", "31 Desember 1966"],
+    a: 3
+  },
+  {
+    q: `Pendirian Bijeenkomst voor Federale Overleg atau BFO dicetuskan oleh ....`,
+    opt: ["Wim Schermerhorn", "Van Maarseveen", "Chritchley", "Van Mook", "Mohammad Roem"],
+    a: 3
+  },
+  {
+    q: `Urutan tingkatan koperasi dari atas ke bawah adalah ....`,
+    opt: ["koperasi pusat-koperasi induk-koperasi gabungan-koperasi primer", "koperasi gabungan-koperasi pusat-koperasi induk-koperasi primer", "koperasi induk-koperasi gabungan-koperasi pusat-koperasi primer", "koperasi primer-koperasi pusat-koperasi gabungan-koperasi induk", "koperasi induk-koperasi pusat-koperasi gabungan-koperasi primer"],
+    a: 2
+  },
+  {
+    q: `Dasar berlakunya sistem pemerintahan parlementer di awal kemerdekaan RI sampai 27 Desember 1949 adalah ....`,
+    opt: ["Undang-Undang Dasar 1945", "Maklumat Pemerintah 14 November 1945", "Proklamasi Kemerdekaan 17 Agustus 1945", "Konstitusi RIS 1949", "Undang-Undang Dasar Sementara 1950"],
+    a: 1
+  },
+  {
+    q: `KTT APEC di Bali dilaksanakan pada tanggal ....`,
+    opt: ["2-9 September 2012", "3-10 November 2012", "1-8 Oktober 2013", "11-18 Oktober 2013", "21-28 September 2014"],
+    a: 2
+  },
+  {
+    q: `Hukum yang mengatur hubungan antara negara dengan alat-alat perlengkapannya atau hubungan antara negara dengan warga negara adalah ....`,
+    opt: ["hukum publik", "hukum pidana", "hukum perdata", "hukum internasional", "hukum privat"],
+    a: 0
+  },
+  {
+    q: `Sikap yang seharusnya dilakukan negara terhadap bahasa daerah adalah ....`,
+    opt: ["menyebarluaskan bahasa daerah ke daerah-daerah lain", "menghapus bahasa daerah agar tercipta satu bahasa kesatuan di Indonesia, yaitu bahasa Indonesia", "mendirikan balai bahasa daerah di setiap daerah", "menghormati dan memelihara bahasa daerah sebagai kekayaan budaya nasional", "mewajibkan warga masyarakat di daerah untuk menggunakan bahasa daerah"],
+    a: 3
+  },
+  {
+    q: `Meningkatnya keimanan dan ketakwaan serta akhlak mulia dalam rangka mencerdaskan kehidupan bangsa yang diatur dengan undang-undang merupakan tujuan dari ....`,
+    opt: ["pendidikan nasional", "pertahanan dan keamanan nasional", "wawasan kebangsaan", "pembangunan nasional", "kebudayaan nasional"],
+    a: 0
+  },
+  {
+    q: `Dalam upaya menyelesaikan konflik Indonesia–Belanda, UNCI mempunyai tugas dan wewenang sebagai berikut, kecuali ....`,
+    opt: ["Berhak mengajukan berbagai saran atau usul yang membantu tercapainya perdamaian antara Indonesia dan Belanda.", "Mengurus pengembalian kekuasaan pemerintah Republik Indonesia menggunakan sistem parlemen dan kerajaan di daerah.", "Membantu penyelesaian Irian Barat.", "Mengamati plebisit di daerah-daerah RI yang dikuasai Belanda.", "Membantu kelancaran perundingan antara Indonesia dan Belanda."],
+    a: 2
+  },
+  {
+    q: `Semboyan pendidikan nasional, Tut Wuri Handayani, berarti ....`,
+    opt: ["di depan seorang guru memberikan contoh keteladanan yang baik", "di belakang seorang guru memberikan semangat untuk terus berkarya", "di belakang seorang guru menyusun kekuatan untuk dapat memberikan dorongan untuk terus maju", "dari belakang seorang guru harus bisa memberikan dorongan dan arahan", "di depan seorang guru memberikan tarikan dan semangat untuk terus maju"],
+    a: 3
+  },
+  {
+    q: `Berikut ini termasuk kata baku, kecuali ....`,
+    opt: ["cabai", "indera", "diagnosa", "antre", "ekstrem"],
+    a: 2
+  },
+  {
+    q: `Pada tanggal 19 Agustus 1945 Panitia Persiapan Kemerdekaan Indonesia (PPKI) memutuskan pembagian wilayah Republik Indonesia menjadi ....`,
+    opt: ["8 provinsi", "10 provinsi", "12 provinsi", "15 provinsi", "17 provinsi"],
+    a: 0
+  },
+  {
+    q: `Kata Indonesia berasal dari bahasa Yunani, yaitu Indos dan nesos. Apakah arti dua kata tersebut dan maknanya secara keseluruhan berdasarkan asal katanya?`,
+    opt: ["Indos berarti India dan nesos berarti pulau sehingga Indonesia bermakna kepulauan yang berada di wilayah India.", "Indos berarti khatulistiwa dan nesos berarti pulau sehingga Indonesia bermakna kepulauan yang berada di wilayah khatulistiwa.", "Indos berarti pulau dan nesos berarti khatulistiwa sehingga Indonesia bermakna kepulauan yang berada di wilayah khatulistiwa.", "Indos berarti India dan nesos berarti wilayah yang dekat sehingga Indonesia bermakna wilayah yang berdekatan dengan India.", "Indos berarti timur dan nesos berarti pulau sehingga Indonesia bermakna kepulauan yang berada di wilayah timur."],
+    a: 0
+  },
+  {
+    q: `Kalimat “Bhinneka Tunggal Ika” berasal dari kalimat yang terdapat di dalam sebuah kitab tulisan pujangga Indonesia masa lalu. Apa nama kitab tersebut dan siapakah pengarangnya?`,
+    opt: ["Kitab Sutasoma karangan Mpu Kanwa", "Kitab Bharatayuddha karangan Mpu Sedah", "Kitab Hariwangsa karangan Mpu Panuluh", "Kitab Sutasoma karangan Mpu Tantular", "Kitab Negarakertagama karangan Mpu Prapanca"],
+    a: 3
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

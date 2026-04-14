@@ -1,0 +1,504 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "QUESTION 1 - 4<br><p style='text-indent: 30px;'>As the oldest university in the English-speaking world, Oxford is a unique and historic institution. There is no clear date of foundation, but teaching existed at Oxford in some form in 1096 and developed rapidly from 1167, when Henry II banned English students from attending the University of Paris.</p><p style='text-indent: 30px;'>In 1188, the historian, Gerald of Wales, gave a public reading to the assembled Oxford dons and in about 1190 the arrival of Emo of Friesland, the first known overseas student, set in motion the University’s tradition of international scholarly links. By 1201, the University was headed by a magister scolarum Oxonie, on whom the title of Chancellor was conferred in 1214, and in 1231 the masters were recognised as a universitas or corporation.</p><p style='text-indent: 30px;'>In the 13th century, rioting between town and gown (townspeople and students) hastened the establishment of primitive halls of residence. These were succeeded by the first of Oxford’s colleges, which began as medieval ‘halls of residence’ or endowed houses under the supervision of a Master. University, Balliol and Merton Colleges, which were established between 1249 and 1264, are the oldest.</p><p style='text-indent: 30px;'>Less than a century later, Oxford had achieved eminence above every other seat of learning, and won the praises of popes, kings and sages by virtue of its antiquity, curriculum, doctrine and privileges. In 1355, Edward III paid tribute to the University for its invaluable contribution to learning; he also commented on the services rendered to the state by distinguished Oxford graduates.</p><p style='text-indent: 30px;'>From its early days, Oxford was a centre for lively controversy, with scholars involved in religious and political disputes. John Wyclif, a 14th-century Master of Balliol, campaigned for a bible in the vernacular, against the wishes of the papacy. In 1530, Henry VIII forced the University to accept his divorce from Catherine of Aragon, and during the Reformation in the 16th century, the Anglican churchmen Cranmer, Latimer and Ridley were tried for heresy and burnt at the stake in Oxford.</p><p style='text-indent: 30px;'>The University was Royalist in the Civil War, and Charles I held a counter-Parliament in Convocation House, and in the late 17th century, the Oxford philosopher John Locke, suspected of treason, was forced to flee the country. The 18th century, when Oxford was said to have forsaken port for politics, was also an era of scientific discovery and religious revival. Edmund Halley, Professor of Geometry, predicted the return of the comet that bears his name; John and Charles Wesley's prayer meetings laid the foundations of the Methodist Society.</p><p style='text-indent: 30px;'>The University assumed a leading role in the Victorian era, especially in religious controversy. From 1833 onwards The Oxford Movement sought to revitalise the Catholic aspects of the Anglican Church. One of its leaders, John Henry Newman, became a Roman Catholic in 1845 and was later made a Cardinal. In 1860 the new University Museum was the scene of a famous debate between Thomas Huxley, champion of evolution, and Bishop Wilberforce.</p><p style='text-indent: 30px;'>From 1878, academic halls were established for women and they were admitted to full membership of the University in 1920. Five all-male colleges first admitted women in 1974 and, since then, all colleges have changed their statutes to admit both women and men. St Hilda's College, which was originally for women only, was the last of Oxford's single sex colleges. It has admitted both men and women since 2008.</p><p style='text-indent: 30px;'>During the 20th and early 21st centuries, Oxford added to its humanistic core a major new research capacity in the natural and applied sciences, including medicine. In so doing, it has enhanced and strengthened its traditional role as an international focus for learning and a forum for intellectual debate.</p><br>(\"A Brief History of the University\")<br><br>We know that Oxford University ... from the passage above.",
+    "opt": [
+      "was headed by king Edward III.",
+      "was built under a rabblement time.",
+      "always hold a debate on science and medicine.",
+      "was founded by king to displace University of Paris.",
+      "did not have humanistic as its major before 20th."
+    ],
+    "a": 1
+  },
+  {
+    "q": "QUESTION 1 - 4<br><p style='text-indent: 30px;'>As the oldest university in the English-speaking world, Oxford is a unique and historic institution. There is no clear date of foundation, but teaching existed at Oxford in some form in 1096 and developed rapidly from 1167, when Henry II banned English students from attending the University of Paris.</p><p style='text-indent: 30px;'>In 1188, the historian, Gerald of Wales, gave a public reading to the assembled Oxford dons and in about 1190 the arrival of Emo of Friesland, the first known overseas student, set in motion the University’s tradition of international scholarly links. By 1201, the University was headed by a magister scolarum Oxonie, on whom the title of Chancellor was conferred in 1214, and in 1231 the masters were recognised as a universitas or corporation.</p><p style='text-indent: 30px;'>In the 13th century, rioting between town and gown (townspeople and students) hastened the establishment of primitive halls of residence. These were succeeded by the first of Oxford’s colleges, which began as medieval ‘halls of residence’ or endowed houses under the supervision of a Master. University, Balliol and Merton Colleges, which were established between 1249 and 1264, are the oldest.</p><p style='text-indent: 30px;'>Less than a century later, Oxford had achieved eminence above every other seat of learning, and won the praises of popes, kings and sages by virtue of its antiquity, curriculum, doctrine and privileges. In 1355, Edward III paid tribute to the University for its invaluable contribution to learning; he also commented on the services rendered to the state by distinguished Oxford graduates.</p><p style='text-indent: 30px;'>From its early days, Oxford was a centre for lively controversy, with scholars involved in religious and political disputes. John Wyclif, a 14th-century Master of Balliol, campaigned for a bible in the vernacular, against the wishes of the papacy. In 1530, Henry VIII forced the University to accept his divorce from Catherine of Aragon, and during the Reformation in the 16th century, the Anglican churchmen Cranmer, Latimer and Ridley were tried for heresy and burnt at the stake in Oxford.</p><p style='text-indent: 30px;'>The University was Royalist in the Civil War, and Charles I held a counter-Parliament in Convocation House, and in the late 17th century, the Oxford philosopher John Locke, suspected of treason, was forced to flee the country. The 18th century, when Oxford was said to have forsaken port for politics, was also an era of scientific discovery and religious revival. Edmund Halley, Professor of Geometry, predicted the return of the comet that bears his name; John and Charles Wesley's prayer meetings laid the foundations of the Methodist Society.</p><p style='text-indent: 30px;'>The University assumed a leading role in the Victorian era, especially in religious controversy. From 1833 onwards The Oxford Movement sought to revitalise the Catholic aspects of the Anglican Church. One of its leaders, John Henry Newman, became a Roman Catholic in 1845 and was later made a Cardinal. In 1860 the new University Museum was the scene of a famous debate between Thomas Huxley, champion of evolution, and Bishop Wilberforce.</p><p style='text-indent: 30px;'>From 1878, academic halls were established for women and they were admitted to full membership of the University in 1920. Five all-male colleges first admitted women in 1974 and, since then, all colleges have changed their statutes to admit both women and men. St Hilda's College, which was originally for women only, was the last of Oxford's single sex colleges. It has admitted both men and women since 2008.</p><p style='text-indent: 30px;'>During the 20th and early 21st centuries, Oxford added to its humanistic core a major new research capacity in the natural and applied sciences, including medicine. In so doing, it has enhanced and strengthened its traditional role as an international focus for learning and a forum for intellectual debate.</p><br>(\"A Brief History of the University\")<br><br>When we learn the history of Oxford University we cannot overlook the discussion of religion since ...",
+    "opt": [
+      "The college took part in Catholic church reformation.",
+      "Most scholars were against church and adhered mysticism.",
+      "The college became a place for bishop debate and bible campaigning.",
+      "The university prepared the scholars to be a pope.",
+      "The leaders of Oxford University must be a cardinal."
+    ],
+    "a": 0
+  },
+  {
+    "q": "QUESTION 1 - 4<br><p style='text-indent: 30px;'>As the oldest university in the English-speaking world, Oxford is a unique and historic institution. There is no clear date of foundation, but teaching existed at Oxford in some form in 1096 and developed rapidly from 1167, when Henry II banned English students from attending the University of Paris.</p><p style='text-indent: 30px;'>In 1188, the historian, Gerald of Wales, gave a public reading to the assembled Oxford dons and in about 1190 the arrival of Emo of Friesland, the first known overseas student, set in motion the University’s tradition of international scholarly links. By 1201, the University was headed by a magister scolarum Oxonie, on whom the title of Chancellor was conferred in 1214, and in 1231 the masters were recognised as a universitas or corporation.</p><p style='text-indent: 30px;'>In the 13th century, rioting between town and gown (townspeople and students) hastened the establishment of primitive halls of residence. These were succeeded by the first of Oxford’s colleges, which began as medieval ‘halls of residence’ or endowed houses under the supervision of a Master. University, Balliol and Merton Colleges, which were established between 1249 and 1264, are the oldest.</p><p style='text-indent: 30px;'>Less than a century later, Oxford had achieved eminence above every other seat of learning, and won the praises of popes, kings and sages by virtue of its antiquity, curriculum, doctrine and privileges. In 1355, Edward III paid tribute to the University for its invaluable contribution to learning; he also commented on the services rendered to the state by distinguished Oxford graduates.</p><p style='text-indent: 30px;'>From its early days, Oxford was a centre for lively controversy, with scholars involved in religious and political disputes. John Wyclif, a 14th-century Master of Balliol, campaigned for a bible in the vernacular, against the wishes of the papacy. In 1530, Henry VIII forced the University to accept his divorce from Catherine of Aragon, and during the Reformation in the 16th century, the Anglican churchmen Cranmer, Latimer and Ridley were tried for heresy and burnt at the stake in Oxford.</p><p style='text-indent: 30px;'>The University was Royalist in the Civil War, and Charles I held a counter-Parliament in Convocation House, and in the late 17th century, the Oxford philosopher John Locke, suspected of treason, was forced to flee the country. The 18th century, when Oxford was said to have forsaken port for politics, was also an era of scientific discovery and religious revival. Edmund Halley, Professor of Geometry, predicted the return of the comet that bears his name; John and Charles Wesley's prayer meetings laid the foundations of the Methodist Society.</p><p style='text-indent: 30px;'>The University assumed a leading role in the Victorian era, especially in religious controversy. From 1833 onwards The Oxford Movement sought to revitalise the Catholic aspects of the Anglican Church. One of its leaders, John Henry Newman, became a Roman Catholic in 1845 and was later made a Cardinal. In 1860 the new University Museum was the scene of a famous debate between Thomas Huxley, champion of evolution, and Bishop Wilberforce.</p><p style='text-indent: 30px;'>From 1878, academic halls were established for women and they were admitted to full membership of the University in 1920. Five all-male colleges first admitted women in 1974 and, since then, all colleges have changed their statutes to admit both women and men. St Hilda's College, which was originally for women only, was the last of Oxford's single sex colleges. It has admitted both men and women since 2008.</p><p style='text-indent: 30px;'>During the 20th and early 21st centuries, Oxford added to its humanistic core a major new research capacity in the natural and applied sciences, including medicine. In so doing, it has enhanced and strengthened its traditional role as an international focus for learning and a forum for intellectual debate.</p><br>(\"A Brief History of the University\")<br><br>The following statements that fairly describes paragraph 5 is ...",
+    "opt": [
+      "Practice of crime occurred at Oxford University.",
+      "There were many early scholars from religion and political parties.",
+      "The scholar was against the Pope through his studies.",
+      "The university was used to campaign and claim divorce.",
+      "The university at first was full of dissension."
+    ],
+    "a": 4
+  },
+  {
+    "q": "QUESTION 1 - 4<br><p style='text-indent: 30px;'>As the oldest university in the English-speaking world, Oxford is a unique and historic institution. There is no clear date of foundation, but teaching existed at Oxford in some form in 1096 and developed rapidly from 1167, when Henry II banned English students from attending the University of Paris.</p><p style='text-indent: 30px;'>In 1188, the historian, Gerald of Wales, gave a public reading to the assembled Oxford dons and in about 1190 the arrival of Emo of Friesland, the first known overseas student, set in motion the University’s tradition of international scholarly links. By 1201, the University was headed by a magister scolarum Oxonie, on whom the title of Chancellor was conferred in 1214, and in 1231 the masters were recognised as a universitas or corporation.</p><p style='text-indent: 30px;'>In the 13th century, rioting between town and gown (townspeople and students) hastened the establishment of primitive halls of residence. These were succeeded by the first of Oxford’s colleges, which began as medieval ‘halls of residence’ or endowed houses under the supervision of a Master. University, Balliol and Merton Colleges, which were established between 1249 and 1264, are the oldest.</p><p style='text-indent: 30px;'>Less than a century later, Oxford had achieved eminence above every other seat of learning, and won the praises of popes, kings and sages by virtue of its antiquity, curriculum, doctrine and privileges. In 1355, Edward III paid tribute to the University for its invaluable contribution to learning; he also commented on the services rendered to the state by distinguished Oxford graduates.</p><p style='text-indent: 30px;'>From its early days, Oxford was a centre for lively controversy, with scholars involved in religious and political disputes. John Wyclif, a 14th-century Master of Balliol, campaigned for a bible in the vernacular, against the wishes of the papacy. In 1530, Henry VIII forced the University to accept his divorce from Catherine of Aragon, and during the Reformation in the 16th century, the Anglican churchmen Cranmer, Latimer and Ridley were tried for heresy and burnt at the stake in Oxford.</p><p style='text-indent: 30px;'>The University was Royalist in the Civil War, and Charles I held a counter-Parliament in Convocation House, and in the late 17th century, the Oxford philosopher John Locke, suspected of treason, was forced to flee the country. The 18th century, when Oxford was said to have forsaken port for politics, was also an era of scientific discovery and religious revival. Edmund Halley, Professor of Geometry, predicted the return of the comet that bears his name; John and Charles Wesley's prayer meetings laid the foundations of the Methodist Society.</p><p style='text-indent: 30px;'>The University assumed a leading role in the Victorian era, especially in religious controversy. From 1833 onwards The Oxford Movement sought to revitalise the Catholic aspects of the Anglican Church. One of its leaders, John Henry Newman, became a Roman Catholic in 1845 and was later made a Cardinal. In 1860 the new University Museum was the scene of a famous debate between Thomas Huxley, champion of evolution, and Bishop Wilberforce.</p><p style='text-indent: 30px;'>From 1878, academic halls were established for women and they were admitted to full membership of the University in 1920. Five all-male colleges first admitted women in 1974 and, since then, all colleges have changed their statutes to admit both women and men. St Hilda's College, which was originally for women only, was the last of Oxford's single sex colleges. It has admitted both men and women since 2008.</p><p style='text-indent: 30px;'>During the 20th and early 21st centuries, Oxford added to its humanistic core a major new research capacity in the natural and applied sciences, including medicine. In so doing, it has enhanced and strengthened its traditional role as an international focus for learning and a forum for intellectual debate.</p><br>(\"A Brief History of the University\")<br><br>From the passage above we may conclude that ...",
+    "opt": [
+      "Oxford University was at first only for men and not for women.",
+      "Women started studying in the college in 1920.",
+      "Oxford University was founded by Pope and King in England.",
+      "The university was at first politically and religiously misused by the scholar.",
+      "Oxford University was at first a Catholic college for bishop and king."
+    ],
+    "a": 3
+  },
+  {
+    "q": "Raisa ran outside to see what ...",
+    "opt": ["Happening.", "Was", "It", "Were", "Is"],
+    "a": 1
+  },
+  {
+    "q": "Shopkeeper: “Excuse me, sir … ?”<br>Customer: “Sure, I need a sport jacket for me.”",
+    "opt": [
+      "Do you want to buy something",
+      "Could you stay outside please",
+      "Do you see something new here",
+      "Is there anything I can do for you",
+      "Could you entrust your bag in the corner there"
+    ],
+    "a": 3
+  },
+  {
+    "q": "If Roni had chosen play badminton instead of going to Semarang with his friends on their motor bikes, he would not have got that terrible accident. From the above sentence we may conclude that now Roni is …",
+    "opt": [
+      "Still at the football field.",
+      "Enjoying the holiday.",
+      "Hospitalized.",
+      "In Puncak.",
+      "Very tired."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Mrs. Rida … pink coated, is eating in the restaurant.",
+    "opt": ["Whose", "Whom", "Who", "Who man", "What"],
+    "a": 0
+  },
+  {
+    "q": "“Your wife will be operated on tomorrow afternoon. She … have a good rest tonight,” the doctor said.",
+    "opt": ["May", "Should", "Might", "Must", "Can"],
+    "a": 3
+  },
+  {
+    "q": "Mr. Yoga … car and money stolen last night, is in the police office now.",
+    "opt": ["Of whom", "Who is", "Whose", "Of which", "Whom"],
+    "a": 2
+  },
+  {
+    "q": "This school which is very famous with its achievement was … by the minister of education and culture in 2001.",
+    "opt": ["Contribute", "Discovered", "Founded", "Invented", "Composed"],
+    "a": 2
+  },
+  {
+    "q": "… a few million rupiahs, David went on a tour to America.",
+    "opt": ["Saved", "He has saved", "He was saved", "Has saved", "Having saved"],
+    "a": 4
+  },
+  {
+    "q": "The process of modernisation is irreversible. The trend towards nuclear family will manifold. Appropriate social policies must be implemented not reverse the tide, which is impossible, but to slow down to manageable proportions.<br><br>The passage is mainly about …",
+    "opt": [
+      "There is an increasing need for the elderly.",
+      "Up to date nuclear family.",
+      "The nuclear family system should be discouraged.",
+      "Modernisation must be showed down.",
+      "Social policies can stop trends to towards social changes."
+    ],
+    "a": 1
+  },
+  {
+    "q": "… in the first list often budget will not necessarily be in final list.",
+    "opt": ["What appears", "Despite its appearance", "It appears", "When appears", "Although it appears"],
+    "a": 0
+  },
+  {
+    "q": "Ferdi will not be able to attend the event tonight because …",
+    "opt": [
+      "He must to teach a class.",
+      "Of he will teach a class.",
+      "He will have teaching a class.",
+      "He will not have teaching a class.",
+      "He will be teaching a class."
+    ],
+    "a": 4
+  },
+  {
+    "q": "Vitamin B is necessary for the prevention and … of stroke.",
+    "opt": ["Cures", "For curing", "To cure", "It cures", "Cure"],
+    "a": 4
+  },
+  {
+    "q": "Fani wishes that she had enough time to finish her work. It means …",
+    "opt": [
+      "She has enough time.",
+      "She is lazy.",
+      "She doesn’t have enough time.",
+      "She always busy.",
+      "she always have enough time."
+    ],
+    "a": 2
+  },
+  {
+    "q": "If you coming this weekend, we don’t be home as we … by then.",
+    "opt": [
+      "will be to Paris",
+      "will have gone to Paris",
+      "would go to Paris",
+      "would have gone to Paris",
+      "would have been going to Paris"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Melly : “Have you got the extra money from your boss?”<br>Nabila : “Of course I have, What about you, Melly?”<br>Melly : “Yes, I have. And what are you going to spend it for?”<br>Nabila : “Well, … buying a new shoes.”",
+    "opt": [
+      "I am thinking of",
+      "I’d like",
+      "I’d prefer",
+      "I am interested in",
+      "I want"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Harry is my spouse. We … a month ago.",
+    "opt": ["Married", "Talked", "Ceased living", "Planned", "Get on together"],
+    "a": 0
+  },
+  {
+    "q": "Inflation is worldwide. Governments are toppling. Individual do not understand inflation and blame their leaders may indeed be at fault, but beyond domestic transgressions, there is the global problem. It would be sad if the same citizens who see only their own local problem followed the same provincialism in seeking nationalistic remedies quotas, tarrifs, and beggar my neighbour restrictions. This could turn global inflation into global recession.<br><br>The passage is talking about …",
+    "opt": [
+      "Nationalistic remedies.",
+      "Neighbour restriction.",
+      "Domestic transgression.",
+      "Global inflation.",
+      "Worldwide recession."
+    ],
+    "a": 3
+  },
+  {
+    "q": "“Safira’s wedding dress is really beautiful!”<br>“I heard that she had her friend to design it.”<br>The implies that Safira’s friend …",
+    "opt": [
+      "Designed the wedding dress.",
+      "Is having the wedding dress designed.",
+      "Has a beautiful wedding dress.",
+      "Is going to get married.",
+      "Is very beautiful friend."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Galang: “We need someone to put together a slide show for our class presentation!”<br>Alex: “How about Nanda?”<br>The purpose of the Alex’s assertion is …",
+    "opt": [
+      "Nanda can organize the show.",
+      "Nanda has seen the slide show.",
+      "How does Nanda feel about it?",
+      "Nanda can buy a slide show.",
+      "What was Nanda’s presentation?"
+    ],
+    "a": 0
+  },
+  {
+    "q": "… is not yet now.",
+    "opt": [
+      "When he is involved in the trade of fake rice",
+      "He is involved in the trade of fake rice",
+      "Whether he is involved in the trade of fake rice",
+      "If he involved in the trade of fake rice",
+      "If he was involved in the trade of fake rice"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dani: “So how do you like these painting?”<br>Dhea: “I am more impressed by the sculptures. If I had enough room for one these in my apartment. I’d probably place it …”<br><br>This conversations probably take place at …",
+    "opt": [
+      "A paint store.",
+      "Studio.",
+      "Museum.",
+      "An art gallery.",
+      "The Dhea’s apartment."
+    ],
+    "a": 3
+  },
+  {
+    "q": "Thea: “When did you get the shipment?”<br>Sheyla: “Two days ago, my family … when the postman arrived.”",
+    "opt": [
+      "will have had lunch",
+      "have been having lunch",
+      "were having lunch",
+      "have lunch",
+      "will have lunch"
+    ],
+    "a": 2
+  },
+  {
+    "q": "If you don’t hurry, the event … by the time you get there.",
+    "opt": ["Starts", "Will be started", "Will start", "Will have started", "Would have started"],
+    "a": 3
+  },
+  {
+    "q": "“Semester exam will start in a week.”<br>“I know, I … all next weekend.”",
+    "opt": ["Study", "Have studied", "Studied", "Will have been studying", "Will be studying"],
+    "a": 4
+  },
+  {
+    "q": "“Why were Elsya’s eyes red?”<br>“Because …”",
+    "opt": ["She has cried.", "She has been crying.", "She had been crying.", "She is cries.", "She cries."],
+    "a": 2
+  },
+  {
+    "q": "“Why didn’t you choose those bags? You seemed to like them.”<br>“I would have if they had been cheaper.”<br><br>They answer means …",
+    "opt": [
+      "I did buy the bags.",
+      "I looked for more expensive pair.",
+      "The bags were a bargain.",
+      "I was not against the price.",
+      "The bags were to expensive."
+    ],
+    "a": 4
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

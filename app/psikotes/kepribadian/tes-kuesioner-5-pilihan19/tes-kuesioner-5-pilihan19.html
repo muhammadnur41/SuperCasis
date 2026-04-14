@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            
+            <h3 id="keterangan-skor" style="margin-top: -10px; margin-bottom: 20px;"></h3>
+            
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    { q: "Anda memimpin tim penyidik dalam kasus korupsi besar. Di tengah penyelidikan, Anda menemukan bukti kuat yang mengarah pada keterlibatan mantan atasan yang dulu sangat berjasa menyelamatkan karir Anda dari fitnah. Beliau sebentar lagi akan pensiun. Tindakan Anda:", opt: ["Mengesampingkan bukti tersebut sebagai bentuk balas budi, toh beliau akan segera pensiun.", "Menyarankan mantan atasan untuk segera pensiun dini agar terhindar dari jerat hukum.", "Melaporkan temuan tersebut kepada pimpinan komisi dan tetap memproses bukti sesuai prosedur hukum tanpa pandang bulu.", "Menyerahkan kasus ini kepada tim lain dengan alasan adanya benturan kepentingan (conflict of interest), tanpa menyebutkan buktinya.", "Menemui mantan atasan secara pribadi untuk memintanya menyerahkan diri sebelum bukti dipublikasikan."], a: 2 },
+    { q: "Dalam sebuah operasi penangkapan gembong narkoba yang bersenjata api, SOP mengharuskan Anda menunggu unit taktis (SWAT/Brimob) tiba di lokasi. Namun, Anda melihat pelaku mulai menyiramkan bensin ke sekandera (sandera) dan bersiap menyalakan api. Tindakan Anda:", opt: ["Tetap menunggu unit taktis sesuai SOP karena bertindak sendiri melanggar aturan dan membahayakan nyawa Anda.", "Mengambil inisiatif melakukan tindakan terukur untuk melumpuhkan pelaku demi menyelamatkan nyawa sandera, meskipun menyalahi SOP menunggu bantuan.", "Menembak peringatan ke udara agar pelaku panik dan mengurungkan niatnya.", "Mencoba bernegosiasi dengan pelaku dari jarak jauh sambil merekam kejadian.", "Mundur dari lokasi agar tidak menjadi korban ledakan."], a: 1 },
+    { q: "Tim Anda bertugas mengamankan aksi demonstrasi yang mulai memanas. Tiba-tiba, seorang demonstran jatuh pingsan di dekat barikade Anda karena kelelahan, sementara massa di belakangnya terus mendorong dengan beringas. Langkah prioritas Anda:", opt: ["Tetap mempertahankan formasi barikade agar massa tidak jebol, membiarkan demonstran lain yang menolongnya.", "Menembakkan gas air mata untuk memecah konsentrasi massa agar korban bisa dievakuasi.", "Menarik korban ke belakang barikade kepolisian secara cepat untuk diberikan pertolongan medis darurat, sambil menginstruksikan tim merapatkan formasi.", "Keluar dari barikade sendirian untuk menolong korban di tengah kerumunan massa.", "Menghubungi ambulans dan menunggu paramedis yang mengambil tindakan."], a: 2 },
+    { q: "Anda menemukan bahwa sistem keamanan siber di instansi Anda memiliki celah (vulnerability) yang sangat rentan diretas. Anda sudah melaporkannya ke Kepala Divisi IT, namun beliau mengabaikannya karena kekurangan anggaran. Seminggu kemudian, data instansi bocor. Sikap Anda:", opt: ["Segera membocorkan ke publik bahwa Kepala Divisi IT mengabaikan laporan Anda agar Anda tidak disalahkan.", "Diam saja dan pura-pura tidak tahu karena Anda sudah pernah melapor.", "Membantu tim forensik menyelidiki kebocoran, serta kembali mengajukan memo perbaikan sistem secara tertulis melalui jalur hierarki yang benar.", "Menyalahkan Kepala Divisi IT secara terbuka di rapat pimpinan darurat.", "Memperbaiki sistem tersebut sendirian secara diam-diam meskipun itu bukan wewenang Anda."], a: 2 },
+    { q: "Saat menginterogasi tersangka terorisme yang diduga telah memasang bom waktu di pusat perbelanjaan, tersangka bungkam. Rekan Anda yang frustrasi mulai menggunakan kekerasan fisik yang melanggar hak asasi manusia untuk memaksa tersangka bicara. Waktu tersisa hanya 30 menit. Tindakan Anda:", opt: ["Membiarkan rekan Anda melakukan kekerasan karena nyawa ribuan orang di mal lebih penting daripada HAM satu teroris.", "Ikut melakukan kekerasan agar tersangka lebih cepat mengaku.", "Menghentikan tindakan rekan Anda, mengambil alih interogasi dengan pendekatan psikologis taktis (seperti menawarkan kesepakatan perlindungan keluarga) untuk memancing informasi.", "Meninggalkan ruangan karena tidak tahan melihat kekerasan.", "Mengeluarkan ancaman palsu bahwa keluarga tersangka sudah ditangkap dan akan disiksa."], a: 2 },
+    { q: "Anda menerima laporan dari warga (A) bahwa ia ditipu oleh (B). Namun setelah dilakukan visum dan penyidikan awal, ternyata (A) membuat laporan palsu untuk mencemarkan nama baik (B) yang merupakan saingan bisnisnya. (A) menawarkan sejumlah uang besar agar Anda tetap memproses (B). Tindakan Anda:", opt: ["Menerima uang tersebut dan memproses (B) secara lambat agar (A) merasa puas tanpa harus memenjarakan (B).", "Menolak uang tersebut secara halus dan menghentikan penyelidikan tanpa memproses siapapun.", "Menolak tegas uang tersebut, menghentikan kasus terhadap (B), dan justru memproses hukum (A) atas tindak pidana laporan palsu dan percobaan penyuapan aparat.", "Menyarankan (A) dan (B) berdamai dengan syarat uang penyuapan disumbangkan ke panti asuhan.", "Mengambil uangnya sebagai barang bukti namun membiarkan (A) pergi."], a: 2 },
+    { q: "Sebuah video yang dipotong (diedit) sedemikian rupa viral di media sosial, menampilkan Anda seolah-olah sedang memukul seorang pedagang kaki lima tanpa alasan. Padahal aslinya, pedagang tersebut mengeluarkan senjata tajam dan Anda melakukan teknik bela diri untuk melumpuhkannya. Masyarakat mulai menghujat instansi Anda. Langkah strategis Anda:", opt: ["Segera membuat video klarifikasi pribadi di akun media sosial Anda dengan marah-marah menuntut penyebar video.", "Menutup semua akun media sosial pribadi dan bersembunyi hingga situasi mereda.", "Melaporkan kronologi sebenarnya kepada komandan dan divisi Humas, menyertakan bukti rekaman CCTV utuh, agar instansi mengeluarkan pernyataan resmi yang objektif.", "Mencari pedagang tersebut dan memaksanya membuat video permintaan maaf.", "Meminta keluarga dan teman-teman Anda untuk menyerang akun-akun yang menghujat di kolom komentar."], a: 2 },
+    { q: "Dalam patroli perbatasan hutan lindung, Anda menangkap basah warga miskin setempat yang menebang beberapa pohon untuk membangun rumahnya yang rubuh akibat badai. Di sisi lain, hukum melarang keras penebangan hutan lindung tanpa terkecuali. Sikap Anda:", opt: ["Melepaskan warga tersebut karena alasan kemanusiaan dan kemiskinan.", "Menyita kayunya namun tidak menangkap warga tersebut.", "Tetap memproses warga tersebut sesuai hukum pidana kehutanan, namun berkoordinasi dengan dinas sosial/pemerintah daerah untuk memberikan bantuan tempat tinggal baginya.", "Pura-pura tidak melihat dan memutar arah patroli.", "Memarahi warga tersebut lalu menyuruhnya menanam kembali pohon yang ditebang."], a: 2 },
+    { q: "Anda mendapati dua anggota senior di tim intelijen sering memberikan laporan intelijen palsu (asal bapak senang) kepada pimpinan agar terlihat rajin bekerja. Hal ini berpotensi menyebabkan kesalahan fatal dalam pengambilan keputusan operasional. Tindakan Anda:", opt: ["Mengumpulkan bukti-bukti otentik mengenai pemalsuan data tersebut, kemudian melaporkannya kepada Propam/Pengawas Internal secara rahasia.", "Menegur kedua senior tersebut di depan pimpinan saat rapat.", "Membiarkannya karena mereka senior dan Anda tidak ingin dikucilkan di tim.", "Ikut-ikutan membuat laporan asal-asalan agar standar kerja di tim menjadi sama.", "Menghubungi pimpinan secara anonim melalui surat kaleng."], a: 0 },
+    { q: "Terjadi bencana alam gempa bumi hebat. Anda ditugaskan menjaga gudang logistik makanan yang terbatas. Sekelompok warga yang kelaparan datang memaksa meminta makanan tanpa mendata diri sesuai prosedur, karena anak-anak mereka menangis kelaparan. Tindakan Anda:", opt: ["Mempertahankan gudang dengan menembakkan peringatan agar warga tertib aturan.", "Mengusir mereka dan menyuruh mereka pergi ke posko pendaftaran yang jaraknya sangat jauh.", "Menenangkan warga dengan empati, mendata mereka secara darurat dan cepat di tempat, lalu mendistribusikan logistik secukupnya agar tidak terjadi kerusuhan dan kelaparan massal.", "Membuka gudang lebar-lebar dan membiarkan warga menjarah karena ini kondisi darurat.", "Meninggalkan pos jaga untuk mencari bantuan petugas lain, membiarkan warga mengambil sendiri."], a: 2 },
+    { q: "Anda adalah seorang komandan regu. Saat melakukan penggerebekan, seorang anak buah Anda melakukan kesalahan fatal yang mengakibatkan buronan utama lepas. Atasan tertinggi sangat marah dan menuntut pertanggungjawaban. Sikap Anda sebagai komandan:", opt: ["Mengorbankan anak buah Anda dengan menyalahkannya sepenuhnya di depan atasan.", "Mengambil alih tanggung jawab penuh atas kegagalan operasi di hadapan atasan sebagai bentuk kepemimpinan, lalu memberikan evaluasi dan sanksi internal kepada anak buah tersebut secara proporsional.", "Berbohong kepada atasan bahwa buronan dibantu oleh kelompok bersenjata misterius.", "Meminta atasan menghukum seluruh anggota regu agar adil.", "Mengundurkan diri dari jabatan komandan karena merasa gagal."], a: 1 },
+    { q: "Anda menangani kasus peretasan bank. Analisis forensik awal menunjukkan IP address pelaku berasal dari komputer milik rekan kerja Anda di departemen siber. Anda tahu rekan Anda ini sangat jenius tapi sedang mengalami kesulitan finansial. Apa langkah investigasi pertama Anda?", opt: ["Langsung menangkap dan memborgol rekan Anda di mejanya.", "Mengkonfrontasi rekan Anda secara empat mata untuk memintanya mengaku.", "Tidak gegabah, Anda melakukan penyidikan mendalam secara senyap untuk memastikan apakah komputer rekan Anda tersebut dijadikan 'zombie' (diretas dari jarak jauh oleh pelaku asli) atau memang dia pelakunya, sebelum melapor ke atasan.", "Menghapus jejak IP tersebut dari laporan demi solidaritas sesama korps siber.", "Menyekap rekan Anda dan memaksanya mentransfer kembali uang bank."], a: 2 },
+    { q: "Anda diundang sebagai perwakilan instansi dalam acara makan malam kenegaraan yang dihadiri pengusaha asing. Salah satu pengusaha memberikan 'cinderamata' berupa jam tangan mewah ke dalam tas Anda saat Anda lengah. Anda baru menyadarinya saat sudah di hotel. Tindakan Anda:", opt: ["Menyimpannya karena Anda tidak memintanya secara langsung.", "Mengembalikannya keesokan harinya kepada pengusaha tersebut dengan marah dan ancaman penangkapan.", "Melaporkan penerimaan barang tersebut kepada Unit Pengendalian Gratifikasi instansi/KPK selambatnya 30 hari kerja untuk diputuskan status kepemilikannya.", "Menjual jam tangan tersebut dan menyumbangkan uangnya ke masjid/gereja.", "Membuang jam tangan tersebut agar tidak menjadi masalah."], a: 2 },
+    { q: "Di tengah konflik pemilihan kepala daerah, ada isu hoaks yang sangat memprovokasi suku mayoritas untuk menyerang suku minoritas. Pimpinan Anda menginstruksikan untuk memblokir internet di seluruh wilayah tersebut secara diam-diam. Anda tahu pemblokiran tanpa dasar hukum yang sah melanggar kebebasan sipil. Sikap Anda:", opt: ["Melaksanakan perintah pimpinan tanpa bertanya, karena keamanan adalah yang utama.", "Menolak perintah pimpinan secara kasar dan membocorkannya ke jurnalis independen.", "Memberikan pertimbangan strategis kepada pimpinan bahwa pemblokiran sepihak dapat memicu eskalasi konflik dan protes nasional, serta menyarankan alternatif seperti kontra-narasi masif dan patroli siber terarah pada akun provokator.", "Memblokir internet namun hanya di wilayah minoritas saja.", "Mengabaikan perintah pimpinan dan pura-pura mengalami gangguan teknis."], a: 2 },
+    { q: "Anda dihadapkan pada dua pilihan tugas: Tugas A menjamin kenaikan pangkat luar biasa namun hanya berdampak pada karir individu Anda, sementara Tugas B tidak memberikan pengakuan publik/pangkat namun sangat vital untuk menyelamatkan nyawa seorang saksi kunci yang terancam dibunuh. Anda akan:", opt: ["Memilih Tugas A, lalu menugaskan bawahan yang kurang kompeten untuk Tugas B.", "Memilih Tugas B dengan dedikasi penuh, karena integritas dan perlindungan masyarakat adalah esensi sejati seorang aparat penegak hukum melebihi ambisi personal.", "Meminta atasan untuk memberikan jaminan kenaikan pangkat jika Anda mengambil Tugas B.", "Mengambil kedua tugas dan mengerjakannya setengah-setengah.", "Memilih Tugas A dan menyarankan saksi kunci tersebut bersembunyi sendiri."], a: 1 },
+    { q: "Saat Anda bertugas mengawasi jalannya tes fisik calon anggota baru, seorang calon peserta tiba-tiba mengalami serangan jantung. Di saat yang sama, peserta lain terjatuh dan mengalami patah tulang terbuka yang pendarahannya deras. Anda hanya sendirian bersama tim medis yang masih dalam perjalanan (5 menit lagi). Siapa yang Anda tangani terlebih dahulu?", opt: ["Menangani peserta yang patah tulang karena lukanya terlihat paling mengerikan.", "Menangani peserta serangan jantung karena itu adalah kondisi henti napas/nadi yang mengancam nyawa dalam hitungan detik (Triage Merah/Prioritas 1).", "Menunggu tim medis datang karena Anda takut salah penanganan.", "Meminta peserta lain yang sedang tes untuk menolong salah satunya.", "Menangani secara bergantian setiap 1 menit."], a: 1 },
+    { q: "Sebuah institusi media ternama merilis artikel investigasi yang membeberkan kelemahan sistem kerja unit Anda secara rinci dan valid. Alih-alih introspeksi, atasan Anda malah memerintahkan Anda untuk memimpin tim mengintimidasi jurnalis tersebut. Sikap Anda:", opt: ["Mematuhi atasan dan mengintimidasi jurnalis karena loyalitas tegak lurus.", "Menolak perintah tersebut dengan tegas, memberikan argumen bahwa tindakan intimidasi akan semakin merusak citra institusi, dan mengusulkan pembentukan tim perbaikan sistem untuk merespons kritik secara elegan.", "Membocorkan perintah intimidasi tersebut ke jurnalis lain agar atasan Anda dihujat.", "Mengulur-ulur waktu pelaksanaan perintah sampai atasan lupa.", "Menemui jurnalis tersebut untuk berdebat panjang mengenai artikelnya."], a: 1 },
+    { q: "Anda sedang memimpin negosiasi dengan seorang pria yang mengancam akan melompat dari gedung tinggi karena bangkrut. Pria tersebut meminta Anda mendatangkan mantan istrinya, namun mantan istrinya menolak keras untuk datang karena trauma kekerasan KDRT. Langkah Anda:", opt: ["Menjemput paksa mantan istrinya demi menyelamatkan nyawa pria tersebut.", "Berbohong bahwa istrinya sedang dalam perjalanan untuk mengulur waktu agar tim penyelamat bisa menyergap dari belakang.", "Menghargai hak dan trauma mantan istrinya, lalu menggunakan teknik komunikasi empatik untuk membangun koneksi emosional dengan pria tersebut dan membujuknya mencari jalan keluar lain selain bunuh diri.", "Mengatakan pada pria tersebut bahwa mantan istrinya sudah tidak peduli padanya.", "Membiarkan pria tersebut melompat karena itu adalah keputusannya sendiri."], a: 2 },
+    { q: "Di sebuah perempatan yang macet total akibat lampu merah mati, seorang jenderal bintang dua membunyikan sirene dan memerintahkan ajudannya membuka jalan paksa, padahal tidak dalam keadaan darurat (hanya menuju acara makan malam). Anda adalah petugas lalu lintas di perempatan tersebut. Tindakan Anda:", opt: ["Membuka jalan dan memarahi warga yang menghalangi mobil jenderal.", "Tetap memprioritaskan mengurai kemacetan secara adil berdasarkan penumpukan kendaraan, dan dengan sikap hormat meminta konvoi jenderal untuk bersabar mengikuti rekayasa lalu lintas demi ketertiban bersama.", "Menghentikan mobil jenderal dan menilangnya karena menggunakan sirene tanpa alasan darurat.", "Pura-pura tidak melihat konvoi tersebut dan pergi mengatur di sudut lain.", "Meminta warga mengalah karena yang lewat adalah pimpinan tertinggi."], a: 1 },
+    { q: "Tim investigasi Anda menyita puluhan laptop dari sindikat judi online. Anda menemukan satu dompet kripto (crypto wallet) di salah satu laptop yang tidak masuk dalam daftar barang bukti resmi karena disembunyikan dalam folder sistem. Saldo kripto tersebut bernilai miliaran rupiah. Sikap Anda:", opt: ["Mentransfer saldo tersebut ke dompet anonim karena toh uang tersebut dari hasil kejahatan dan tidak ada yang tahu.", "Melaporkan penemuan tersebut secara resmi untuk dicatat dalam Berita Acara Penyitaan tambahan sebagai aset hasil kejahatan yang disita negara.", "Meminta bagian IT untuk merusak laptop tersebut agar uangnya hilang selamanya dan tidak diperebutkan.", "Mendiamkan temuan tersebut sampai kasus selesai di pengadilan.", "Membagikan kunci dompet kripto tersebut kepada seluruh anggota tim investigasi sebagai bonus operasi."], a: 1 },
+    { q: "Anda adalah penyidik senior. Bawahan Anda yang baru lulus pendidikan memiliki metode penyidikan modern menggunakan analisis big data yang jauh lebih cepat dari metode konvensional Anda, namun ia bersikap arogan. Saat menangani kasus rumit, bawahan ini menemukan petunjuk penting yang Anda lewatkan. Reaksi Anda:", opt: ["Mengabaikan petunjuknya untuk menunjukkan bahwa pengalaman adalah segalanya.", "Mengambil ide petunjuk tersebut dan mempresentasikannya kepada atasan seolah-olah itu hasil kerja keras Anda.", "Mengakui validitas petunjuk tersebut, menerapkan metodenya demi keberhasilan kasus, sambil memberikan bimbingan (mentoring) mengenai etika komunikasi dan kerja sama tim.", "Memarahi sifat arogannya dan mengeluarkannya dari tim inti.", "Merasa rendah diri dan menyerahkan seluruh kendali kasus kepadanya."], a: 2 },
+    { q: "Saat pemeriksaan TKP pembunuhan, Anda menemukan bahwa bercak darah di lantai membentuk pola jatuhnya cairan pada sudut 90 derajat secara berulang di satu titik. Kesimpulan forensik paling logis berdasarkan hukum gravitasi dan dinamika fluida adalah:", opt: ["Korban berlari sambil berdarah dari ruangan lain.", "Terjadi perkelahian hebat yang menyebabkan darah memercik (spatter) ke mana-mana.", "Korban diam (statis) dan berdarah di titik tersebut dalam waktu yang cukup lama sebelum dipindahkan.", "Darah tersebut berasal dari pembuluh nadi (arteri) yang terpotong.", "Pelaku membersihkan darah di tempat lain dan memindahkannya ke titik tersebut."], a: 2 },
+    { q: "Anda ditugaskan ke wilayah yang masyarakat hukum adatnya sangat kuat. Terjadi kasus pencurian ringan di mana warga ingin menghukum pelaku sesuai hukum adat (berupa denda babi dan dikucilkan), sementara KUHP mengharuskan pelaku dipidana penjara. Pendekatan Anda:", opt: ["Langsung menangkap pelaku dan mengancam warga dengan pasal menghalangi tugas kepolisian.", "Membiarkan hukum adat berjalan dan polisi mundur sepenuhnya dari kasus tersebut.", "Memfasilitasi mediasi menggunakan konsep Restorative Justice (Keadilan Restoratif) dengan mengedepankan hukum adat untuk pemulihan hak korban, selama tidak melanggar HAM, dan mencatatnya sebagai penyelesaian sengketa di luar pengadilan.", "Menghukum pelaku dengan hukum adat ditambah memenjarakannya agar efek jeranya ganda.", "Menangkap tetua adat karena mengambil alih peran penegak hukum."], a: 2 },
+    { q: "Anggota tim Anda memberikan kesaksian palsu di pengadilan demi memastikan seorang pembunuh berantai yang licin bisa divonis mati, karena bukti sah yang ada sangat lemah dan berpotensi membebaskan tersangka. Anda mengetahui kesaksian palsu ini. Tindakan Anda:", opt: ["Mendukung kesaksian tersebut karena tujuannya mulia (menghukum penjahat kejam).", "Melaporkan tindakan sumpah palsu anggota Anda ke hakim dan institusi pengawasan, karena penegakan hukum tidak boleh dilakukan dengan cara melanggar hukum (integritas prosedural).", "Menasihati anggota Anda setelah sidang selesai tanpa melakukan tindakan hukum apa pun.", "Meminta anggota Anda menarik kesaksiannya dengan alasan sakit ingatan.", "Menyarankan pembunuh berantai tersebut dihukum tanpa pengadilan saja."], a: 1 },
+    { q: "Anda mendapat informasi intelijen A1 (Sangat Terpercaya) bahwa akan ada penyergapan dari kelompok separatis terhadap rombongan patroli Anda 10 menit lagi di jalan ngarai di depan. Memutar balik membutuhkan waktu 20 menit (pasti tersusul). Langkah taktis komandan:", opt: ["Memacu kendaraan secepat mungkin melewati ngarai berharap tidak terkena tembakan.", "Berhenti dan menyerah kepada kelompok separatis untuk menghindari pertumpahan darah.", "Segera menghentikan konvoi sebelum masuk ngarai, mengambil posisi bertahan taktis (perimeter defense) di medan yang menguntungkan, dan memanggil bantuan udara/pasukan terdekat.", "Memerintahkan anggota berpencar melarikan diri ke dalam hutan secara individual.", "Membunyikan klakson dan sirene sekeras mungkin untuk menakuti kelompok separatis."], a: 2 },
+    { q: "Atasan Anda memerintahkan Anda untuk merekayasa hasil tes urine seorang anak pejabat yang positif narkoba menjadi 'negatif'. Atasan mengatakan bahwa jika Anda menolak, mutasi ke pulau terluar sudah menanti. Keputusan Anda:", opt: ["Menuruti perintah atasan karena takut karir Anda hancur di pulau terluar.", "Merekam perintah tersebut dan langsung memviralkannya di TikTok/Twitter.", "Tetap mengeluarkan hasil tes positif yang otentik, menolak perintah rekayasa dengan tegas, dan bersedia menerima segala konsekuensi mutasi sebagai wujud pengabdian tanpa kompromi pada integritas.", "Meminta uang suap dalam jumlah sangat besar sebagai ganti risiko merekayasa tes.", "Mengganti urine tersebut dengan urine Anda sendiri agar hasilnya murni negatif tanpa 'rekayasa data'."], a: 2 },
+    { q: "Di sebuah asrama pendidikan aparat, seorang teman sekamar Anda terlihat menunjukkan gejala depresi berat dan pernah mengutarakan niat mengakhiri hidup karena tekanan latihan. Namun ia memohon Anda merahasiakannya karena jika ketahuan instruktur, ia akan dikeluarkan. Langkah Anda:", opt: ["Menjaga rahasianya sebagai teman sejati dan mencoba menghiburnya setiap malam.", "Melaporkannya ke instruktur pengasuh atau psikolog lembaga, karena keselamatan nyawanya jauh lebih berharga daripada status pendidikannya, meskipun ia akan marah pada Anda.", "Mengolok-oloknya agar mentalnya menjadi lebih kuat dan tahan banting.", "Menjauhinya dan meminta pindah kamar karena takut terbawa energi negatif.", "Membiarkannya mengundurkan diri secara sukarela tanpa campur tangan Anda."], a: 1 },
+    { q: "Saat Anda memeriksa sebuah kontainer kargo di pelabuhan yang dicurigai membawa barang selundupan, pemilik kargo yang merupakan donatur besar kegiatan sosial di kota Anda meminta Anda tidak memeriksa kontainer tersebut dengan imbalan donasi yayasan atas nama instansi Anda. Tindakan Anda:", opt: ["Menyetujui karena uang tersebut akan digunakan untuk kegiatan amal instansi yang bermanfaat.", "Meminta bagian donasi ditransfer dulu sebelum Anda menghentikan pemeriksaan.", "Menolak segala bentuk iming-iming, tetap melakukan pemeriksaan menyeluruh sesuai manifes kargo karena hukum tidak bisa dinegosiasikan dengan alasan amal.", "Memeriksa kontainer tersebut setengah-setengah saja.", "Melaporkan pemilik kargo tersebut ke panti asuhan agar sumbangannya dikembalikan."], a: 2 },
+    { q: "Sebuah kecelakaan beruntun terjadi di jalan tol karena kabut asap tebal. Anda adalah aparat pertama di lokasi. Kendaraan saling bertabrakan dan jarak pandang hampir nol. Langkah taktis pertama yang paling vital untuk mencegah jumlah korban bertambah:", opt: ["Langsung berlari ke mobil pertama untuk mengecek korban meninggal.", "Mengatur dan menutup lajur tol dari arah belakang sejauh mungkin dari titik kecelakaan (memasang flare/rambu peringatan) agar tidak ada lagi kendaraan yang menabrak dari belakang, lalu meminta evakuasi medis.", "Mencari penyebab kabut asap dan memadamkannya sendirian.", "Memotret pelat nomor semua kendaraan untuk keperluan asuransi dan barang bukti.", "Berteriak menggunakan megafon menyuruh semua korban keluar dari mobil ke tengah jalan."], a: 1 },
+    { q: "Anda menemukan celah hukum di mana Anda bisa menggunakan anggaran operasional sisa akhir tahun untuk membeli peralatan kantor mewah yang sebenarnya tidak mendesak, dan tindakan ini 100% legal dan disetujui secara prosedural. Namun, Anda tahu bahwa anggaran tersebut bisa dikembalikan ke negara (SILPA) untuk menambal defisit ekonomi. Keputusan Anda sebagai Kuasa Pengguna Anggaran:", opt: ["Menghabiskan anggaran untuk beli fasilitas mewah karena aturannya memperbolehkan (legal).", "Mengembalikan sisa anggaran tersebut ke kas negara demi efisiensi dan kepentingan perekonomian nasional, yang mencerminkan etika publik yang lebih tinggi dari sekadar kepatuhan hukum literal.", "Menghabiskan anggaran tersebut dengan membagikannya ke staf sebagai uang lembur fiktif.", "Menggunakan uang tersebut untuk makan-makan divisi sebagai apresiasi kerja satu tahun.", "Mengendapkan uang tersebut di rekening pribadi untuk sementara waktu guna mengambil bunganya."], a: 1 },
+    { q: "Bawahan Anda berhasil menangkap buronan kelas kakap yang sudah lama dicari. Namun, dalam proses penangkapannya, ia melakukan penggeledahan rumah tanpa membawa surat perintah yang sah (melanggar prosedur). Sikap Anda sebagai pimpinan:", opt: ["Memberikan penghargaan atas penangkapan tersebut dan mengabaikan pelanggaran prosedurnya karena hasil akhir lebih penting.", "Membebaskan buronan tersebut karena penangkapannya cacat hukum.", "Menghukum bawahan tersebut dengan pemecatan tanpa peduli pada keberhasilannya.", "Memproses pelanggaran disiplin/SOP bawahan tersebut sesuai aturan, namun tetap memproses hukum buronan tersebut berdasarkan bukti-bukti sah yang ditemukan di luar penggeledahan ilegal.", "Memalsukan tanggal surat perintah agar penangkapan tersebut terlihat sah di mata hukum."], a: 3 },
+    { q: "Saat patroli malam di area sepi, Anda dan rekan Anda menemukan tas berisi uang tunai ratusan juta rupiah tanpa identitas. Rekan Anda menangis dan memohon agar uang itu dibagi dua untuk biaya operasi anaknya yang sedang kritis, dan berjanji tidak akan ada yang tahu. Tindakan Anda:", opt: ["Membaginya dua demi menyelamatkan nyawa anak rekan Anda, karena nyawa manusia di atas segalanya.", "Mengambil seluruh uang tersebut untuk disumbangkan ke panti asuhan agar lebih berkah.", "Menolak dengan tegas, mengamankan uang tersebut sebagai barang temuan ke markas, dan berusaha membantu rekan Anda mencari bantuan dana sosial atau donasi legal dari instansi.", "Pura-pura tidak melihat tas tersebut dan meninggalkan lokasi.", "Menasihati rekan Anda dan membiarkan uang tersebut tetap di jalanan."], a: 2 },
+    { q: "Sebuah video amatir viral di media sosial memperlihatkan Anda sedang menyelamatkan seorang anak dari kebakaran. Netizen menganggap Anda pahlawan tunggal, padahal evakuasi tersebut berhasil berkat kerja keras tim pemadam kebakaran, sedangkan Anda hanya kebetulan menggendong anak itu di detik terakhir. Sikap Anda:", opt: ["Menikmati pujian tersebut karena hal itu bisa menaikkan citra baik instansi Anda.", "Menggunakan momentum tersebut untuk meminta kenaikan pangkat kepada atasan.", "Membuat pernyataan publik (klarifikasi) yang jujur bahwa keberhasilan tersebut adalah kerja keras dan dedikasi tim pemadam kebakaran, bukan aksi heroik individu Anda.", "Menghapus video tersebut dari internet dengan bantuan divisi siber.", "Mengabaikan pemberitaan tersebut dan tidak memberikan komentar apa pun."], a: 2 },
+    { q: "Anda ditugaskan sebagai pengawal pribadi (VIP protection) untuk seorang pejabat negara. Selama bertugas, Anda melihat pejabat tersebut sering membentak dan melakukan kekerasan verbal kepada staf rumah tangganya tanpa alasan jelas. Sikap Anda:", opt: ["Ikut membentak staf tersebut untuk menunjukkan loyalitas kepada pejabat VIP.", "Menegur pejabat tersebut secara kasar di depan umum agar ia malu.", "Tetap fokus pada tugas pengamanan fisik VIP secara profesional, namun secara rahasia melaporkan tindakan tidak etis pejabat tersebut kepada atasan Anda untuk dievaluasi penugasannya.", "Meninggalkan tugas pengawalan sebagai bentuk protes atas sikap pejabat tersebut.", "Merekam kejadian tersebut dan menjualnya ke wartawan gosip."], a: 2 },
+    { q: "Atasan di divisi siber memerintahkan Anda untuk meretas ponsel seorang tokoh oposisi politik tanpa adanya surat perintah pengadilan, dengan dalih 'demi stabilitas keamanan nasional'. Tindakan Anda:", opt: ["Melaksanakannya karena atasan yang akan menanggung risikonya.", "Menolak secara langsung dan menantang atasan berkelahi.", "Meminta perintah tersebut secara tertulis; jika tidak diberikan atau melanggar undang-undang privasi/ITE, Anda berhak dan wajib menolak perintah tersebut demi menjunjung supremasi hukum.", "Meretas ponsel tersebut namun menghapus datanya segera setelah diserahkan.", "Membocorkan niat atasan tersebut ke tokoh oposisi secara anonim."], a: 2 },
+    { q: "Terjadi letusan gunung berapi yang dahsyat. Anda tergabung dalam tim SAR gabungan. Atasan memerintahkan Anda untuk mengevakuasi sebuah rumah sakit yang terjebak abu vulkanik. Di saat yang sama, Anda tahu bahwa rumah keluarga Anda sendiri berada di zona bahaya dan belum dievakuasi. Keputusan Anda:", opt: ["Membantah perintah dan pergi menyelamatkan keluarga Anda terlebih dahulu.", "Menjalankan perintah evakuasi rumah sakit dengan profesionalitas penuh, sambil mempercayakan dan mengoordinasikan evakuasi keluarga Anda kepada tim SAR lain yang bertugas di sektor tersebut.", "Menghubungi keluarga Anda dan menyuruh mereka berlari menyelamatkan diri sendiri.", "Berpura-pura cedera agar Anda bisa izin pulang dan menyelamatkan keluarga.", "Menyelamatkan keluarga terlebih dahulu secara sembunyi-sembunyi, lalu menyusul ke rumah sakit."], a: 1 },
+    { q: "Anda menginterogasi seorang remaja usia 15 tahun yang tertangkap mencuri obat-obatan mahal di apotek. Remaja tersebut menangis dan terbukti mencuri semata-mata karena ibunya sedang sekarat di rumah dan mereka sangat miskin. Pendekatan hukum Anda:", opt: ["Tetap memenjarakannya tanpa ampun karena pencurian adalah tindak pidana murni.", "Melepaskan remaja tersebut dan memberinya uang saku.", "Memproses kasusnya dengan mengedepankan asas Sistem Peradilan Pidana Anak (pendekatan Restorative Justice atau diversi), serta berkoordinasi dengan dinas sosial dan dinas kesehatan untuk menangani ibunya yang sakit.", "Memaksa pemilik apotek untuk mencabut laporan jika tidak ingin apoteknya dipersulit urusan izinnya.", "Menghukum remaja tersebut dengan hukuman fisik (push-up) lalu menyuruhnya pulang."], a: 2 },
+    { q: "Anda tiba di Tempat Kejadian Perkara (TKP) pembunuhan dan melihat seorang perwira senior sedang menaruh sebuah pistol (yang bukan milik pelaku) ke tangan jenazah untuk merekayasa bahwa ini adalah kasus tembak-menembak. Perwira tersebut meminta Anda tutup mulut. Tindakan Anda:", opt: ["Menyetujui permintaannya karena ia adalah senior yang dihormati.", "Mendokumentasikan TKP aslinya secara diam-diam, lalu segera melaporkan tindakan obstruction of justice (perintangan penyidikan) perwira tersebut kepada Divisi Propam/Pengawas Internal.", "Ikut membantu membersihkan sidik jari perwira tersebut di pistol.", "Menembakkan pistol tersebut ke dinding agar rekayasanya lebih meyakinkan.", "Menegur perwira tersebut dan mengajaknya berkelahi di TKP."], a: 1 },
+    { q: "Eskalasi kerusuhan massa meningkat tajam. Komandan memerintahkan penembakan gas air mata dan peluru karet. Namun, dari teropong, Anda melihat provokator sengaja menempatkan anak-anak kecil dan wanita hamil di barisan paling depan sebagai tameng hidup. Tindakan taktis Anda:", opt: ["Tetap menembak karena itu adalah perintah komandan mutlak.", "Mengabaikan perintah dan langsung membuang senjata Anda.", "Menahan tembakan, segera melaporkan situasi visual (adanya tameng hidup rentan) kepada komandan melalui radio, dan menyarankan perubahan taktik seperti pengerahan water cannon bertekanan rendah atau negosiator.", "Menembak ke arah atas namun berpura-pura senjata Anda macet.", "Berlari ke tengah massa untuk menyelamatkan anak-anak tersebut sendirian tanpa perlindungan."], a: 2 },
+    { q: "Seorang tokoh agama yang sangat dihormati di daerah Anda datang ke kantor untuk mengurus surat izin keramaian. Beliau meminta agar berkasnya diproses saat itu juga tanpa perlu mengantre seperti warga sipil lainnya karena beliau memiliki jadwal ceramah yang padat. Sikap Anda:", opt: ["Segera memprosesnya karena menolak tokoh agama bisa memicu kemarahan warga.", "Menolak dengan kasar dan menyuruhnya mengambil nomor antrean.", "Menyambut dengan sopan, menjelaskan secara humanis bahwa sistem antrean terkomputerisasi tidak bisa dilewati agar adil bagi warga lain yang sudah menunggu lama, namun memastikan pelayanannya cepat saat gilirannya tiba.", "Meminta warga lain untuk mengalah dan memberikan antreannya.", "Meminta staf lain yang tidak melayani loket untuk memprosesnya secara diam-diam di ruang belakang."], a: 2 },
+    { q: "Anda ditugaskan mengaudit keuangan sebuah divisi. Anda menemukan bahwa dana anggaran operasional sering 'disunat' untuk mendanai acara ulang tahun atasan dan hadiah mewah untuk istri atasan. Anda diancam akan dipersulit karirnya jika membocorkan hal ini. Sikap Anda:", opt: ["Menghentikan audit dan memberikan status 'Wajar Tanpa Pengecualian' agar karir aman.", "Merekam temuan tersebut sebagai alat tawar (blackmail) untuk meminta promosi.", "Tetap mencatat temuan penyelewengan tersebut secara detail dan melaporkannya ke badan pemeriksa yang lebih tinggi dengan meminta perlindungan whistleblower.", "Mengambil sedikit dana tersebut untuk diri sendiri mumpung atasan juga melakukannya.", "Membocorkan data keuangan tersebut ke media sosial menggunakan akun palsu."], a: 2 },
+    { q: "Saat melakukan patroli batas wilayah hutan lindung yang sangat terpencil, mobil dinas Anda mogok dan komunikasi radio terputus. Seorang gembong penyelundup kayu (yang sedang tidak membawa barang bukti) lewat dengan mobilnya dan menawarkan tumpangan ke kota terdekat. Tindakan Anda:", opt: ["Menerima tumpangan dan menganggapnya sebagai kebaikan warga biasa.", "Menumpang mobilnya sambil menginterogasinya sepanjang jalan.", "Menolak tumpangan dengan alasan etika, dan lebih memilih mengamankan kendaraan dinas di pos terdekat sambil menunggu tim patroli cadangan melintas.", "Menerima tumpangan tapi memborgolnya ke setir mobil.", "Memaksa merampas mobil penyelundup tersebut untuk dipakai kembali ke markas."], a: 2 },
+    { q: "Anda adalah perwira muda yang baru lulus dan langsung ditugaskan memimpin sebuah tim operasional. Seluruh anggota tim Anda usianya jauh lebih tua, lebih berpengalaman di lapangan, dan cenderung meremehkan instruksi taktis modern yang Anda berikan. Strategi kepemimpinan Anda:", opt: ["Memberikan hukuman disiplin setiap kali mereka meremehkan Anda untuk menunjukkan otoritas.", "Mengalah dan membiarkan mereka bekerja dengan cara lama mereka sendiri.", "Melakukan pendekatan personal, menghargai pengalaman lapangan mereka, namun mengkolaborasikannya dengan taktik modern melalui diskusi tim yang produktif agar tujuan tercapai efektif.", "Mengajukan surat pindah ke kesatuan lain karena merasa tidak dihargai.", "Menerapkan sistem otoriter di mana yang membantah akan langsung dicopot."], a: 2 },
+    { q: "Dalam pengejaran seorang perampok bersenjata api, perampok tersebut terpojok masuk ke dalam pasar tradisional yang sangat padat pengunjung. Saat berlari, pistol perampok terjatuh ke aspal, namun ia terus berlari. Prioritas Anda:", opt: ["Mengabaikan pistol tersebut dan terus berlari mengejar perampok agar tidak lepas.", "Menembak kaki perampok di tengah keramaian pasar.", "Segera mengamankan pistol tersebut terlebih dahulu agar tidak diambil orang lain/anak-anak yang membahayakan publik, lalu berkoordinasi via radio untuk memblokade pintu keluar pasar.", "Berteriak meminta warga pasar mengejar dan menangkap perampok tersebut.", "Membuang pistol tersebut ke tong sampah terdekat lalu melanjutkan lari."], a: 2 },
+    { q: "Sebuah LSM hak asasi manusia merilis laporan yang menuduh unit Anda melakukan kekerasan sistematis. Padahal tuduhan itu murni berdasarkan kesalahpahaman data. Atasan Anda ingin langsung menuntut LSM tersebut dengan pasal pencemaran nama baik. Saran strategis Anda:", opt: ["Mendukung atasan karena nama baik instansi tidak boleh diinjak-injak LSM.", "Mengirim preman untuk menteror kantor LSM tersebut agar mencabut laporannya.", "Menyarankan atasan untuk mengundang LSM tersebut dalam audiensi atau konferensi pers transparan yang membedah dan mengklarifikasi data otentik, guna menunjukkan profesionalisme institusi dan menghindari polemik berkepanjangan.", "Membiarkan atasan menuntut mereka namun Anda menolak ikut campur.", "Menyerang LSM tersebut di media sosial instansi dengan narasi yang agresif."], a: 2 },
+    { q: "Saat sedang memperbarui sistem, Anda tidak sengaja menghapus basis data buronan nasional. Tidak ada backup otomatis, dan belum ada orang lain yang menyadari kesalahan ini. Jika Anda diam, kesalahan ini bisa dituduhkan ke peretas anonim. Sikap Anda:", opt: ["Diam saja dan menyalahkan serangan hacker asing.", "Meminta teknisi menghancurkan server agar buktinya hilang.", "Segera melapor kepada atasan dan tim siber, mengakui kesalahan human error tersebut dengan jujur agar upaya pemulihan (data recovery) bisa segera dilakukan sebelum file tertimpa permanen.", "Memperbaikinya sendirian dengan mencoba-coba perangkat lunak dari internet.", "Segera mengajukan pengunduran diri dan menghilang dari kantor."], a: 2 },
+    { q: "Anda bertugas jaga malam di daerah pegunungan yang sangat dingin. Rekan jaga Anda membawa minuman keras dan meminumnya dengan dalih untuk menghangatkan badan agar tidak hipotermia. Ia menawarkan sebagian kepada Anda. Tindakan Anda:", opt: ["Ikut minum sedikit saja demi solidaritas dan agar tubuh hangat.", "Menolak minum namun membiarkan rekan Anda menghabiskannya.", "Menolak dengan tegas, menginstruksikan rekan untuk membuang minuman tersebut karena alkohol menurunkan kewaspadaan dan dilarang dalam dinas, serta menyarankan penggunaan jaket ekstra atau kopi panas.", "Membuang minumannya secara diam-diam saat ia ke toilet.", "Memotretnya lalu memviralkannya keesokan paginya."], a: 2 },
+    { q: "Anda memberhentikan sebuah mobil kedutaan asing yang melaju kencang dan menabrak pembatas jalan. Sopirnya, seorang diplomat, dalam keadaan mabuk. Ia menolak diperiksa dan menuntut dilepaskan karena memiliki hak Kekebalan Diplomatik (Diplomatic Immunity). Langkah yang tepat:", opt: ["Tetap memukul dan memborgolnya karena hukum pidana berlaku untuk semua.", "Membiarkannya pergi membawa mobilnya kembali karena takut memicu konflik internasional.", "Mencegahnya mengemudi kembali demi keselamatan publik, mengamankan lokasi, mencatat pelat nomor dan identitas, serta segera menghubungi perwira penghubung atau Kementerian Luar Negeri untuk verifikasi status diplomatiknya sesuai protokol internasional.", "Menyita mobilnya dan membiarkannya pulang berjalan kaki.", "Menilangnya secara biasa dan memaksanya membayar denda di tempat."], a: 2 },
+    { q: "Anda sedang menyelidiki korporasi raksasa yang sengaja membuang limbah beracun ke sungai desa. Tiba-tiba Anda dipanggil atasan yang menawarkan beasiswa S2 ke luar negeri dan promosi jabatan bergengsi, asalkan Anda mau menyatakan sungai tersebut 'tercemar secara alami'. Keputusan Anda:", opt: ["Menerima tawaran tersebut karena itu kesempatan emas untuk karir Anda.", "Menolak tawaran tersebut dengan kasar dan menuduh atasan disuap.", "Menolak secara profesional dengan menyatakan bahwa Anda terikat sumpah jabatan untuk melaporkan kebenaran materiel, dan tetap meneruskan penyidikan dengan bukti laboratorium yang ada.", "Menerima beasiswa tersebut, namun memindahkan dokumen penyidikan ke jurnalis rahasia.", "Menunda jawaban Anda sampai Anda mendapatkan beasiswa tersebut lalu melanggar janji Anda."], a: 2 },
+    { q: "Dalam situasi penyanderaan di sebuah bank, pelaku meminta diantarkan sekotak makanan ringan dan air minum ke depan pintu, atau ia akan melukai sandera dalam waktu 5 menit. Tim negosiator ahli baru akan tiba 20 menit lagi. Anda adalah komandan perimeter terdekat. Tindakan Anda:", opt: ["Mengabaikan permintaan pelaku dan menembak gas air mata ke dalam bank.", "Meminta pelaku menunggu 20 menit sampai negosiator tiba.", "Memenuhi permintaannya (mengantar makanan dengan aman ke depan pintu) sebagai taktik menunda waktu (stalling for time) dan menurunkan tensi pelaku agar keselamatan sandera tetap terjaga hingga ahli tiba.", "Menaruh makanan yang sudah dicampur racun tidur agar pelaku pingsan.", "Menyuruh keluarga pelaku datang untuk mengantarkan makanan tersebut."], a: 2 }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                // Jika ini adalah jawaban yang BENAR
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                // Jika user memilih ini dan jawabannya SALAH
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        // Navigasi
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        
+        // Atur tampilan tombol review
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        // Otomatis pindah ke nomor selanjutnya
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+
+        // --- Logika Penentuan Keterangan Skor ---
+        const keteranganSkorEl = document.getElementById('keterangan-skor');
+        if (finalScoreValue <= 50) {
+            keteranganSkorEl.innerText = "KURANG IDEAL";
+            keteranganSkorEl.style.color = "#e74c3c"; // Warna merah
+        } else {
+            keteranganSkorEl.innerText = "IDEAL";
+            keteranganSkorEl.style.color = "#2ecc71"; // Warna hijau
+        }
+        // ----------------------------------------
+
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; // Mode review aktif setelah skor muncul
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; // Mulai dari nomor 1
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

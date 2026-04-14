@@ -1,0 +1,796 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Salah satu prinsip dasar demokrasi adalah partisipasi aktif masyarakat dalam pengambilan keputusan publik. Namun, dalam praktiknya, banyak negara demokrasi menghadapi tantangan berupa rendahnya tingkat partisipasi masyarakat, khususnya dalam pemilu. Jika Anda seorang pemimpin yang ingin meningkatkan partisipasi masyarakat, strategi mana yang paling mencerminkan prinsip demokrasi sekaligus efektif?",
+    "opt": [
+      "Mengadakan kampanye massal dengan hadiah menarik bagi pemilih yang datang ke tempat pemungutan suara.",
+      "Memberikan sanksi hukum kepada masyarakat yang tidak menggunakan hak pilihnya.",
+      "Melibatkan masyarakat dalam penyusunan kebijakan melalui forum diskusi publik dan survei.",
+      "Mengurangi jumlah tempat pemungutan suara untuk meningkatkan efisiensi proses pemilu.",
+      "Menunjuk wakil rakyat tanpa pemilihan untuk mempercepat pengambilan keputusan."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Salah satu tantangan dalam demokrasi adalah bagaimana pemerintah dapat menjaga kebebasan berpendapat tanpa mengabaikan stabilitas sosial. Jika di sebuah negara terjadi penyebaran berita hoaks yang memicu konflik antar kelompok, langkah mana yang paling sesuai dengan prinsip demokrasi untuk mengatasinya?",
+    "opt": [
+      "Membatasi kebebasan media sosial secara total untuk mencegah penyebaran hoaks.",
+      "Mendorong masyarakat untuk melaporkan berita hoaks sambil meningkatkan literasi digital.",
+      "Memberikan kontrol penuh kepada pemerintah untuk menyensor semua konten daring.",
+      "Melarang semua diskusi publik yang bersifat kontroversial di ruang publik dan media.",
+      "Mengabaikan isu tersebut demi menjaga kebebasan berbicara."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Demokrasi menekankan pentingnya keadilan dalam proses pengambilan keputusan. Dalam situasi di mana kelompok minoritas merasa kepentingannya tidak diperhatikan dalam suatu kebijakan publik, langkah apa yang paling mencerminkan prinsip demokrasi?",
+    "opt": [
+      "Meminta kelompok mayoritas untuk mendominasi keputusan tanpa konsultasi dengan minoritas.",
+      "Menyelenggarakan referendum nasional yang memungkinkan semua warga memilih.",
+      "Mengadakan dialog khusus antara pemerintah dan kelompok minoritas untuk mencari solusi bersama.",
+      "Memberikan hak veto kepada kelompok minoritas dalam semua kebijakan.",
+      "Menunda kebijakan hingga semua pihak setuju tanpa batas waktu."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Sistem hukum di Indonesia menganut asas kedaulatan hukum, yang berarti hukum menjadi pedoman tertinggi dalam kehidupan berbangsa dan bernegara. Namun, dalam praktiknya, masih ditemukan kasus di mana hukum tidak ditegakkan secara adil. Berdasarkan teori supremasi hukum, langkah apa yang paling tepat untuk memperkuat penegakan hukum di Indonesia?",
+    "opt": [
+      "Memberikan kekuasaan lebih besar kepada lembaga eksekutif untuk mengatur penegakan hukum.",
+      "Meningkatkan independensi lembaga peradilan dari pengaruh politik atau ekonomi.",
+      "Mengurangi kewenangan lembaga legislatif untuk mengesahkan undang-undang baru.",
+      "Memberikan insentif kepada aparat hukum untuk mempercepat proses hukum.",
+      "Membatasi hak masyarakat untuk mengajukan banding guna mempercepat penyelesaian kasus."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Dalam implementasi sistem hukum di Indonesia, sering kali terjadi kesenjangan antara hukum yang tertulis (law in books) dan pelaksanaannya (law in action). Misalnya, meskipun korupsi dianggap sebagai kejahatan berat, kasus korupsi masih terus terjadi. Apa langkah strategis yang dapat dilakukan untuk mengatasi kesenjangan ini?",
+    "opt": [
+      "Memperbanyak peraturan baru yang lebih ketat terkait tindak pidana korupsi.",
+      "Meningkatkan transparansi proses hukum dan melibatkan pengawasan masyarakat.",
+      "Memberikan pengampunan bagi pelaku korupsi yang mengembalikan uang negara.",
+      "Mengurangi hukuman pidana agar pelaku korupsi lebih mudah mengakui perbuatannya.",
+      "Menyerahkan sepenuhnya proses penegakan hukum kepada lembaga internasional."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Indonesia memiliki sistem hukum yang memadukan tiga elemen utama: hukum adat, hukum agama, dan hukum nasional. Namun, konflik sering terjadi ketika ketiganya tidak selaras dalam penerapannya, seperti pada kasus-kasus sengketa tanah adat. Langkah apa yang paling mencerminkan pendekatan demokratis untuk menyelesaikan konflik tersebut?",
+    "opt": [
+      "Menghapus hukum adat agar seluruh konflik tunduk pada hukum nasional.",
+      "Mengutamakan hukum agama sebagai solusi utama dalam penyelesaian konflik.",
+      "Melibatkan semua pihak terkait dalam dialog mediasi untuk mencapai kesepakatan bersama.",
+      "Menyerahkan sepenuhnya penyelesaian konflik kepada pemerintah pusat.",
+      "Mengabaikan konflik yang terjadi untuk menjaga kestabilan masyarakat."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Masyarakat madani (civil society) adalah konsep yang mengacu pada masyarakat yang mandiri, memiliki kesadaran akan hak dan kewajiban, serta berperan aktif dalam kehidupan publik. Salah satu karakteristik masyarakat madani adalah adanya ruang publik yang bebas. Dalam konteks ini, apa peran utama ruang publik dalam mewujudkan masyarakat madani?",
+    "opt": [
+      "Menjadi tempat untuk mempromosikan kepentingan pemerintah tanpa oposisi.",
+      "Memberikan kesempatan bagi individu untuk menyampaikan pendapat dan memperjuangkan hak secara damai.",
+      "Membatasi diskusi yang dapat menimbulkan konflik di antara anggota masyarakat.",
+      "Menyediakan forum bagi pemimpin politik untuk mengatur kebijakan tanpa partisipasi masyarakat.",
+      "Mewajibkan seluruh warga negara untuk mengikuti agenda pemerintah."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Dalam upaya membangun masyarakat madani di Indonesia, salah satu tantangan yang sering dihadapi adalah lemahnya partisipasi masyarakat dalam proses pengambilan keputusan publik. Strategi apa yang paling efektif untuk meningkatkan partisipasi masyarakat sesuai dengan prinsip masyarakat madani?",
+    "opt": [
+      "Memberlakukan aturan yang mewajibkan semua warga untuk hadir dalam forum diskusi publik.",
+      "Mengedukasi masyarakat tentang pentingnya partisipasi publik dan memberikan ruang dialog yang inklusif.",
+      "Memberikan insentif finansial kepada warga yang aktif dalam diskusi publik.",
+      "Mengurangi keterlibatan masyarakat agar proses pengambilan keputusan lebih efisien.",
+      "Mengutamakan pandangan kelompok mayoritas tanpa mempertimbangkan minoritas."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Salah satu ciri masyarakat madani adalah adanya toleransi dan penghormatan terhadap keberagaman. Namun, di Indonesia, masih sering terjadi konflik antar kelompok yang disebabkan oleh perbedaan agama, budaya, atau pandangan politik. Apa langkah yang paling sesuai untuk membangun harmoni dalam masyarakat madani?",
+    "opt": [
+      "Menghapus semua bentuk keberagaman demi persatuan nasional.",
+      "Meningkatkan dialog antar kelompok untuk saling memahami dan menghargai perbedaan.",
+      "Memberikan perlakuan istimewa kepada kelompok mayoritas untuk menjaga stabilitas.",
+      "Membatasi kebebasan berpendapat demi mencegah konflik di masyarakat.",
+      "Menghindari diskusi mengenai isu-isu sensitif yang melibatkan perbedaan."
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pancasila sebagai sumber nilai dilaksanakan dalam kehidupan bermasyarakat, berbangsa dan bernegara, dengan demikian sebagai sumber nilai Pancasila memiliki makna ....",
+    "opt": [
+      "etika dalam kehidupan remaja bangsa Indonesia sebagai generasi penerus bangsa.",
+      "etika pergaulan bangsa Indonesia dengan bangsa-bangsa lain di dunia yang sederajat.",
+      "dasar moral tentang estetika berkaitan dengan sikap dan tingkah laku antar golongan.",
+      "dasar moral tentang baik buruk berkaitan dengan sikap dan tingkah laku bangsa Indonesia.",
+      "etis moral yang menjadi pedoman pejabat negara dalam menjalankan pemerintahan."
+    ],
+    "a": 3
+  },
+  {
+    "q": "Ideologi Pancasila yang bersifat dinamis memberikan dampak positif terhadap perubahan dan perkembangan bangsa Indonesia. Alasan bangsa Indonesia membutuhkan Pancasila sebagai Ideologi terbuka karena ideologi Pancasila ….",
+    "opt": [
+      "sangat bersifat statis terhadap perubahan dan perkembangan zaman.",
+      "selalu berkembang sesuai dengan kepentingan dan tujuan penguasa.",
+      "sangat terbuka terhadap seluruh dampak negatif perkembangan jaman.",
+      "bersifat terbuka terhadap masuknya pengaruh positif perkembangan jaman.",
+      "bersifat statis dan bersifat dinamis terhadap perubahan dan perkembangan jaman."
+    ],
+    "a": 3
+  },
+  {
+    "q": "Indonesia mempunyai dasar negara yang dikenal dengan nama Pancasila. Kelima sila Pancasila hanya dapat ditemukan secara utuh dalam dasar negara Indonesia. Fakta ini menunjukkan bahwa ....",
+    "opt": [
+      "materi yang terdapat dalam Pancasila menjadi pedoman hidup bangsa-bangsa di dunia.",
+      "materi Pancasila begitu agung hingga tidak ada satu bangsa pun yang mampu menandinginya.",
+      "muatan materi dalam dasar negara sangat dipengaruhi kultur budaya masyarakat.",
+      "Pancasila bisa menjadi dasar negara paling ideal untuk dilaksanakan.",
+      "para perumus dasar negara mempunyai pandangan visioner."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Sebagai suatu ideologi yang mampu menyesuaikan diri dengan perkembangan zaman sehingga nilai-nilai yang dikandung tidak bersifat statis tetapi dinamis dan mampu menjawab tantangan zaman, inilah makna Pancasila sebagai ideologi terbuka. Adapun nilai-nilai Pancasila yang dapat menyesuaikan diri dengan perkembangan zaman meliputi nilai instrumental dan praksis. Yang dimaksud nilai instrumental adalah ….",
+    "opt": [
+      "sistem politik negara yang sedang berjalan.",
+      "sistem pemerintahan dengan diikuti sistem multipartai.",
+      "peraturan perundang-undangan yang dikeluarkan oleh pemerintah.",
+      "sikap saling hormat menghormati antar masyarakat yang berbeda latar belakang.",
+      "partisipasi rakyat dalam memberi kritikan dan masukan pada kekuasaan pemerintah."
+    ],
+    "a": 2
+  },
+  {
+    "q": "Ancaman dari luar berupa penetrasi nilai-nilai budaya luar sulit dibendung. Kemajuan teknologi informatika mengakibatkan dunia menjadi desa global tempat interaksi antar masyarakat dunia. Yang terjadi tidak hanya transfer informasi, tetapi juga transformasi dan sublimasi nilai-nilai luar secara serta merta sulit dikontrol. Berikut ini yang merupakan salah satu bentuk ancaman di bidang sosial budaya adalah ....",
+    "opt": [
+      "Semakin memudarnya apresiasi terhadap nilai-nilai budaya lokal yang melahirkan gaya hidup individualistis, konsumerisme, dan permisif.",
+      "Semakin maraknya penyeludupan narkoba, imigran gelap masuk ke Indonesia.",
+      "Semakin mudahnya kita mendapatkan informasi di bidang apa saja dengan kecanggihan teknologi informatika.",
+      "Semakin maraknya perdebatan antar elit-elit politik yang berdampak pada menipisnya kepercayaan masyarakat kepada elit politik.",
+      "Semakin terpuruknya pendapatan pengusaha kecil di Indonesia, karena tidak mampu bersaing harga dengan produk luar."
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pada hakikatnya ancaman dalam kebhinnekaan yang berdimensi politik dan bersumber dari dalam negeri dapat berupa …",
+    "opt": [
+      "pengerahan massa, provokasi, blokade politik hingga tindakan separatisme.",
+      "pengaruh gaya hidup kebarat-baratan (westernisasi).",
+      "penghapusan seluruh batasan dan hambatan terhadap arus modal, barang dan jasa.",
+      "tidak mencintai budaya sendiri.",
+      "agresi/invasi, pelanggaran wilayah dan pemberontakan bersenjata."
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pada kenyataannya suatu negara pasti memiliki sebuah konstitusi yang mengatur tentang praktek kehidupan kenegaraan dan melindungi segenap hak-hak asasi warga negaranya. Konstitusi merupakan obyek penting yang terkandung dalam kehidupan ketatanegaraan suatu negara karena konstitusi ....",
+    "opt": [
+      "mengatur penerapan pemisahan kekuasaan antarlembaga-lembaga negara.",
+      "mengatur bagaimana penyelenggaraan pemilihan umum yang demokratis.",
+      "merupakan kesepakatan mayoritas pemegang suara terbanyak di parlemen.",
+      "menjamin terpenuhinya seluruh hak-hak asasi dari warga negaranya.",
+      "merupakan kesepakatan tentang format kelembagaan organisasi negara."
+    ],
+    "a": 4
+  },
+  {
+    "q": "Salah satu makna dari Pembukaan UUD NRI Tahun 1945 alinea IV adalah bahwa negara bertujuan memajukan kesejahteraan umum. Hal ini diwujudkan melalui ....",
+    "opt": [
+      "penerapan sistem pengawasan keuangan.",
+      "pelaksanaan sistem perwakilan.",
+      "peningkatan Pendidikan.",
+      "pelaksanaan otonomi daerah secara penuh.",
+      "pelaksanaan pembangunan nasional."
+    ],
+    "a": 4
+  },
+  {
+    "q": "Sebagai warga negara Indonesia kita sudah tidak asing lagi dengan slogan Bhinneka Tunggal Ika. Slogan yang merupakan prinsip dari pandangan hidup negara kita terhadap kemajemukan suku-suku yang ada di dalamnya. Berdasarkan hal tersebut dapat disimpulkan bahwa fungsi dari Bhinneka Tunggal Ika adalah ….",
+    "opt": [
+      "menjadi landasan mewujudkan persatuan dan juga kesatuan bangsa Indonesia.",
+      "sebagai pedoman untuk mengembangkan kebudayaan daerah masing-masing.",
+      "menjadi landasan dalam berperilaku antarsuku bangsa yang berbeda-beda.",
+      "sebagai pedoman menyusun amandemen terhadap UUD NRI Tahun 1945.",
+      "menjadi landasan dalam menerapkan Pancasila sebagai ideologi terbuka."
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan pernyataan berikut! <br>(1) Mencapai masyarakat adil dan makmur; <br>(2) Melindungi segenap bangsa Indonesia dan seluruh tumpah darah Indonesia; <br>(3) Memajukan kesejahteraan umum; <br>(4) Mencerdaskan kehidupan bangsa. <br>Negara Indonesia dibentuk memiliki tujuan negara yang hendak diwujudkan seperti tercantum dalam Pembukaan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 seperti ditunjukkan pada pernyataan nomor …",
+    "opt": [
+      "(1), (2), dan (3)",
+      "(1), (2), dan (4)",
+      "(1), (3), dan (4)",
+      "(2), (3), dan (4)",
+      "Semuanya benar"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Perhatikan pernyataan berikut! <br>(1) Tujuan negara yang akan diwujudkan oleh pemerintah Negara;, <br>(2) Ketentuan diadakannya Undang-Undang Dasar; <br>(3) Bentuk pemerintahan; <br>(4) Dasar Negara; <br>(5) Perjuangan bangsa sudah mencapai tingkat yang menentukan; <br>(6) Motivasi spiritual. <br>Prinsip-prinsip negara Indonesia yang tercantum dalam Pembukaan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 ditunjukkan nomor …",
+    "opt": [
+      "(1), (2), (3), dan (4)",
+      "(1), (3), (4), dan (5)",
+      "(2), (3), (4), dan (5)",
+      "(3), (4), (5), dan (6)",
+      "Semuanya benar"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Berikut contoh implementasi nilai Pancasila <br>1) Pemilihan kepala desa dilakukan serentak <br>2) Made bersama keluarga beribadat di pura <br>3) Para pemuda sukses mengikrarkan \"Sumpah Pemuda\" <br>4) Pemerintah menjamin hak warga negara untuk mendapatkan pendidikan <br>5) Ayub memperlakukan orang tuanya yang sedang sakit dengan baik. <br>Apabila implementasi nilai Pancasila disusun secara hierarkis, susunan yang benar ditunjukkan oleh nomor",
+    "opt": [
+      "4), 2), 3), 1) dan 5)",
+      "3), 4), 5), 2) dan 1)",
+      "3), 1), 4), 5) dan 2)",
+      "2), 5), 3), 1) dan 4)",
+      "1), 4), 3), 5) dan 2)"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Perhatiakan gambar di bawah ini! <br><img src='TWK2_soal22.png'> <br>Berdasarkan Skema Kekuasaan Negara RI Lembaga-Lembaga Negara di atas, pemegang kekuasaan legislatif dan konstitutif adalah….",
+    "opt": [
+      "BPK dan Presiden",
+      "DPR dan MPR",
+      "MPR dan DPD",
+      "MA dan MK",
+      "MPR dan Presiden"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Berdasarkan UUD NRI Tahun 1945 setiap Lembaga-Lembaga Negara mempunyai tugas dan kewenangan masing-masing. Lembaga Negara yang antara lain mempunyai tugas dan kewenangan untuk membuat/memutuskan perkara pada tingkat kasasi adalah ...",
+    "opt": [
+      "Mahkamah Agung",
+      "Kejaksaan Agung",
+      "Mahkamah Konstitusi",
+      "Majelis Permusyawaratan Rakyat",
+      "Dewan Perwakilan Rakyat"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Hubungan fungsional antara pemerintah pusat dengan pemerintah daerah adalah menjalankan otonomi seluas-luasnya, artinya keleluasaan daerah untuk menyelenggarakan pemerintahan yang mencakup kewenangan semua bidang pemerintahan. Pelimpahan wewenang pemerintahan oleh Pemerintah kepada Gubernur sebagai wakil pemerintah dan/atau kepada instansi vertikal di wilayah tertentu, disebut ....",
+    "opt": [
+      "Asas Desentralisasi",
+      "Asas Sentralisasi",
+      "Asas Otonomi Daerah",
+      "Asas Dekonsentrasi",
+      "Asas Tugas Pembantuan"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Berdasarkan UUD NRI Tahun 1945 setiap Lembaga-Lembaga Negara mempunyai tugas dan kewenangan masing-masing. Lembaga Negara yang antara lain mempunyai kekuasaan dan kewenangan untuk menguji secara material hanya terhadap peraturan perundang-undangan di bawah Undang-undang adalah ....",
+    "opt": [
+      "Majelis Permusyawaratan Rakyat",
+      "Mahkamah Konstitusi",
+      "Kejaksaan Agung",
+      "Mahkamah Agung",
+      "Dewan Perwakilan Rakyat"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Perlindungan hukum sebagai upaya pemerintah untuk menjamin adanya kepastian hukum dan memberikan perlindungan kepada warga negara agar hak-haknya sebagai warga Negara tidak dilanggar dan bagi yang melanggarnya akan mendapat sanksi sesuai peraturan yang berlaku. Perhatikan Pasal-pasal UUD NRI 1945 berikut ini: <br>1. Pasal 27 ayat (1) UUD NRI 1945 <br>2. Pasal 28 D ayat (1) UUD NRI 1945 <br>3. Pasal 28 ayat (5) UUD NRI 1945 <br>4. Pasal 24 ayat (1) UUD NRI 1945 <br>5. Pasal 30 ayat (4) UUD NRI 1945 <br>6. Pasal 20 ayat (2) UUD NRI 1945 <br>Yang termasuk perlindungan hukum bagi warga Negara adalah…",
+    "opt": [
+      "1,2,4, dan 5",
+      "1,2,3, dan 6",
+      "1,3,4, dan 6",
+      "1,2,4, dan 6",
+      "2,4,5 dan 6"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Sebagai warga negara Indonesia, kita harus memahami nilai-nilai dalam sistem hukum dan peradilan di Indonesia, berikut ini adalah contoh penegakkan dan perlindungan hukum di lingkungan masyarakat adalah... <br>1) Di wilayah perbatasan RI dan Malaysia adanya perlindungan warga negara di sana agar tetap aman dan tidak menimbulkan konflik di perbatasan <br>2) Melindungi para TKI yang berada di luar negeri yang tersangkut masalah dan dirundingkan untuk pembelaan <br>3) KPK menangkap para koruptor dan menegakkan hukum sesuai undang-undang <br>4) Satuan polisi lalu lintas melakukan operasi patuh jaya di sepanjang jalan protokol dan meminta uang tebusan <br>5) Satgas organisasi kemasyarakatan melakukan pengawasan pemilihan umum <br>Dari data di atas yang benar adalah…",
+    "opt": [
+      "1,2 dan 3",
+      "1,3 dan 4",
+      "2,3 dan 4",
+      "2,3 dan 5",
+      "3,4 dan 5"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Integrasi nasional sebagai proses penyatuan suatu bangsa yang mencakup semua aspek kehidupan baik sosial, politik, ekonomi dan budaya. Berikut ini faktor pembentuk integrasi nasional sebagai berikut: <br>1) Adanya konsensus nasional dalam perwujudan proklamasi kemerdekaan, Pancasila dan UUD NRI 1945 <br>2) Adanya rasa senasib dan sepenanggungan yang diakibatkan faktor pengalaman Sejarah <br>3) Adanya keinginan untuk bersatu di kalangan bangsa Indonesia sebagaimana sumpah pemuda 28 Oktober 1928 <br>4) Masih besarnya ketidakmerataan pembangunan dan hasil-hasilnya sehingga menimbulkan rasa tidak puas bangsa Indonesia <br>5) Adanya kepribadian dan pandangan hidup bangsa Indonesia yaitu Pancasila. <br>Faktor pembentuk integrasi nasional yang tepat adalah…",
+    "opt": [
+      "1,2 dan 3",
+      "1,3 dan 4",
+      "1,4 dan 5",
+      "1,2 dan 4",
+      "3,4 dan 5"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Dengan jaringan yang tersedia seperti yang terdapat pada beberapa situs yang menyediakan perjudian secara online, para penjudi tidak perlu pergi ke tempat khusus untuk memenuhi keinginannya secara instan. Hal tersebut merupakan pengaruh negatif IPTEK di bidang.......",
+    "opt": [
+      "ideologi",
+      "ekonomi",
+      "politik",
+      "sosial budaya",
+      "pertahanan dan keamanan"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Persatuan dan Kesatuan bangsa menjadi modal utama dalam mempertahankan Negara Kesatuan Republik Indonesia. Berikut ini merupakan pernyataan yang benar, bentuk upaya pemerintah dalam menjaga dan mempertahankan NKRI adalah : <br>1) Dalam pasal 37 UUD NRI 1945 Bentuk negara kesatuan tidak boleh diubah <br>2) Adanya jaminan atas hak asasi manusia dan hak-hak warga negara <br>3) Adanya pembatasan kekuasaan pemerintahan <br>4) Memperbolehkan berdirinya kerajaan-kerajaan baru di NKRI <br>5) Kedaulatan berada di tangan rakyat dan dilakukan menurut UUD NRI 1945",
+    "opt": [
+      "1, 2, 3 dan 4",
+      "2, 3, 4 dan 5",
+      "1, 3, 4 dan 5",
+      "1, 2, 4 dan 5",
+      "1, 2, 3 dan 5"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Untuk menghindari sistem pemerintahan yang absolut atau otoriter dalam praktik ketatanegaraan, perlu adanya pemisahan atau pembagian kekuasaan yang ditujukan sebagai upaya untuk…",
+    "opt": [
+      "Terjalinya kerjasama antara lembaga pemerintahan seluas-luasnya.",
+      "Menghasilkan kebijakan yang menguntungkan lembaga-lembaga Negara.",
+      "Menghemat anggaran karena masing-masing lembaga Negara menjadi satu koordinasi.",
+      "Mewujudkan konsep kekuasaan Negara eksekutif, legislatif dan fedaratif.",
+      "Terjadinya kontrol dan keseimbangan antara lembaga pemegang kekuasaan."
+    ],
+    "a": 4
+  },
+  {
+    "q": "Perhatikan pernyataan di bawah ini, yang termasuk upaya untuk mempertahankan persatuan dan kesatuan NKRI adalah : <br>1) Sebagai WNI menuntut hak terlebih dahulu <br>2) Menjalankan Pancasila dengan murni dan konsekuen <br>3) Menjalankan UUD NRI 1945 dengan baik <br>4) Belajar dengan baik <br>5) Menjalankan kewajiban sebagai WNI <br>Dari uraian di atas jawaban yang paling tepat adalah.....",
+    "opt": [
+      "1,2,3 dan 4",
+      "2,3,4 dan 5",
+      "3,4,5 dan 1",
+      "4,5,1 dan 2",
+      "5,1,2 dan 3"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Unsur negara yang merupakan satu kesatuan wilayah daratan, perairan pedalaman, perairan kepulauan dan laut teritorial beserta dasar laut dan tanah di bawahnya serta ruang udara di atasnya termasuk seluruh sumber daya alam di dalamnya adalah...",
+    "opt": [
+      "wilayah kedaulatan",
+      "wilayah negara",
+      "wilayah ekstrateritorial",
+      "wilayah teritorial",
+      "wilayah bangsa"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Dalam pemerintahan demokrasi rakyat memiliki hak dalam berbagai bidang kehidupan baik dalam bidang politik, ekonomi, sosial budaya maupun dalam bidang pertahanan dan keamanan. Perhatikan pernyataan yang berkaitan dengan kehidupan demokrasi di Indonesia sebagai berikut: <br>1) Kehidupan di bidang politik misalnya memiliki hak untuk dipilih dan memilih dalam pemilihan umum <br>2) Kewenangan di bidang pendidikan misalnya memiliki hak untuk memperoleh pendidikan, mengembangkan karier pendidikan, hak mendirikan lembaga pendidikan swasta <br>3) Kewenangan di bidang ekonomi misalnya warga negara memiliki hak untuk memperoleh pekerjaan, penghidupan yang layak, memiliki barang dan berusaha <br>4) Kewenangan di bidang sosial budaya setiap warga negara berhak mendapatkan pelayanan sosial, kesehatan, pendidikan, pengembangan bahasa, adat istiadat dan mendirikan lembaga sosial <br>5) Kewenangan dalam bidang pertahanan, warga negara dapat bebas memiliki senjata untuk membela negara <br>6) Kewenangan di bidang demokrasi setiap warga negara berhak dalam pelaksanaan kehidupan demokrasi yang berkembang tidak hanya memajukan sistem demokrasi Pancasila <br>Dari pernyataan di atas yang benar adalah....",
+    "opt": [
+      "1,2,3 dan 4",
+      "1,3,4 dan 5",
+      "2,3,4 dan 5",
+      "2,4,5 dan 6",
+      "3,4,5 dan 6"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Ancaman adalah usaha yang bersifat mengubah atau merombak kebijaksanaan yang dilakukan secara konsepsional melalui tindak kriminal dan politis. Ancaman separatis ditunjukkan dengan banyaknya wilayah negara yang ingin merdeka dan lepas dari NKRI. Ancaman yang datang dari para provokator yang membuat keonaran dan tidak stabil kehidupan berbangsa dan bernegara. Berikut ini berbagai macam ancaman yang ada bagi NKRI baik yang datang dari dalam maupun luar negeri : <br>1) agresi militer <br>2) pelanggaran wilayah oleh negara lain <br>3) konflik horizontal <br>4) aksi kekerasan yang bernuansa SARA <br>5) gerakan separatisme <br>6) spionase <br>7) pengrusakan fasilitas publik <br>8) aksi teror jaringan internasional <br>Dari data tersebut yang termasuk ancaman dari luar negeri adalah...",
+    "opt": [
+      "1, 2, 3 dan 4",
+      "1, 2, 6 dan 8",
+      "2, 3, 4 dan 5",
+      "3, 4, 5 dan 7",
+      "4, 5, 6 dan 8"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Indonesia merupakan negara yang masyarakatnya heterogen, sehingga diperlukan upaya-upaya untuk menciptakan persatuan dan kesatuan bangsa. Perilaku yang menunjukkan mencintai persatuan dan kesatuan harus nampak dalam kehidupan sehari-hari seperti semboyan “Bersatu kita teguh, bercerai kita runtuh”. Perhatikan macam-macam perilaku dalam semangat persatuan dan kesatuan bangsa di bawah ini: <br>1) Menanamkan semangat etnosentrisme agar mau membangun daerahnya guna kesejahteraan rakyat di daerah seluruh Indonesia. <br>2) Meningkatkan semangat kekeluargaan, gotong royong dan musyawarah. <br>3) Meningkatkan kualitas hidup bangsa Indonesia di berbagai aspek kehidupan. <br>4) Meningkatkan pembangunan dan keadilan bagi seluruh rakyat Indonesia. <br>5) Melaksanakan otonomi daerah guna meningkatkan kesejahteraan masyarakat di daerah. <br>6) Menanamkan semangat provinsialisme agar mau membangun daerahnya guna kesejahteraan rakyat di daerah seluruh Indonesia. <br>Berdasarkan pernyataan di atas yang tepat adalah...",
+    "opt": [
+      "1,2,3 dan 4",
+      "1,2,3 dan 5",
+      "2,3,4 dan 5",
+      "2,3,4 dan 6",
+      "3,4,5 dan 6"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Setiap warga Negara menginginkan kehidupan yang tentram dan damai yang memberikan rasa nyaman dalam kehidupan bermasyarakat. Perhatikanlah beberapa pernyataan berikut : <br>1) Arogansi <br>2) Keterbukaan <br>3) Politik Uang <br>4) Demokratisasi <br>5) Perubahan ketatanegaraan <br>6) Radikalisme dan teroris <br>Berdasarkan pernyataan tersebut, pengaruh yang menjadi ancaman dalam bidang politik ditunjukkan oleh nomor.....",
+    "opt": [
+      "1, 3 dan 4",
+      "2, 3 dan 5",
+      "1, 3 dan 6",
+      "3, 4 dan 6",
+      "4, 5 dan 6"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Tugas dan kewenangan lembaga-lembaga negara sudah digariskan dalam UUD NRI Tahun 1945 dan peraturan perundang-undangan lainnya. Akan tetapi, tugas dan kewenangan lembaga-lembaga tersebut tidak akan optimal apabila tidak mendapatkan dukungan dari rakyat. Oleh karena itu peran serta rakyat dalam sistem politik Indonesia sangat penting. Salah satu contoh bentuk peran tersebut adalah ….",
+    "opt": [
+      "berpartisipasi aktif dalam setiap proses penyusunan kebijakan publik oleh pemerintah.",
+      "memelihara ketertiban dan keamanan lingkungan tempat tinggalnya masing-masing.",
+      "menciptakan produk-produk yang kreatif dan inovatif sesuai dengan keahliannya.",
+      "mengkritisi setiap kebijakan yang diambil pemerintah baik di tingkat pusat maupun daerah.",
+      "ikut serta dalam usaha pembelaan negara sesuai dengan tugas dan perannya masing-masing."
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pembukaan Undang-Undang Dasar NRI Tahun 1945 dijabarkan dalam pasal-pasalnya. Penjabaran kalimat “… Atas berkat rahmat Allah Yang Maha Kuasa …” pada Pembukaan tergambar dalam pasal ….",
+    "opt": [
+      "29 ayat (1)",
+      "27 ayat (1)",
+      "30 ayat (1)",
+      "30 ayat (2)",
+      "31 ayat (2)"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Dalam sidang tahunan MPR yang membahas amandemen UUD 1945 disepakati bahwa Pembukaan UUD 1945 yang menyatakan bentuk negara Indonesia tidak dapat diubah. Hal ini menegaskan kedudukan Pembukaan UUD NRI 1945 sebagai ….",
+    "opt": [
+      "pernyataan terperinci kemerdekaan Indonesia",
+      "pokok kaidah negara yang kuat dan tetap (fundamental)",
+      "pokok-pokok pikiran yang inti sarinya adalah Pancasila",
+      "sumber tertib hukum yang bersifat hirarkis",
+      "pokok-pokok pikiran yang akan dijabarkan dalam pasal-pasal"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Di era globalisasi sekarang ini kita tidak dapat lepas dari pengaruh budaya bangsa lain. Sebagai warga negara yang baik dan mengamalkan nilai-nilai Pancasila sebagai ideologi terbuka, maka perwujudan sikap nilai praksis dalam menerima budaya asing adalah …",
+    "opt": [
+      "Meniru budaya asing",
+      "Menutup diri dari budaya asing",
+      "Menolak dengan tegas budaya asing",
+      "Memilih sesuai dengan keinginan pribadi",
+      "Memilih sesuai dengan kepribadian bangsa"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Kepolisian Republik Indonesia sebagai lembaga penegak hukum berperan dalam memelihara keamanan dan ketertiban masyarakat. Berikut contoh peran Kepolisian dalam menjamin keadilan dan kedamaian dalam masyarakat yaitu ….",
+    "opt": [
+      "memberi usulan atas pengangkatan pejabat kepolisian kepada DPR",
+      "melakukan penindakan terhadap ormas yang mengkritisi pemerintah",
+      "melakukan pengawasan terhadap pelaksanaan putusan para hakim",
+      "memutuskan perselisihan mengenai sengketa hasil pemilihan umum",
+      "melakukan penangkapan, penahanan, penggeledahan, dan penyitaan"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Perlindungan dan penegakan hukum merupakan upaya yang dilakukan dalam rangka pengamanan, pengawasan dan pemenuhan kesejahteraan hidup sesuai dengan hak-hak asasi manusia. Perlindungan dan penegakan hukum tersebut sangat penting agar ....",
+    "opt": [
+      "kepastian dan ketertiban hukum dalam kehidupan di masyarakat",
+      "menjadikan hukum sebagai alat kekuasaan untuk para penguasa negara",
+      "meningkatkan peran dan partisipasi masyarakat dalam penegakan hukum",
+      "terciptanya persamaan di mata hukum antarwarga masyarakat yang homogen",
+      "terwujudnya kerjasama yang baik antara masyarakat dengan aparat penegak hukum"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan beberapa situasi dan kondisi berikut ! <br>1) Timbulnya kesenjangan sosial yang tajam akibat dari adanya persaingan bebas <br>2) Penggunaan pengerahan massa untuk menumbangkan suatu pemerintahan yang sah <br>3) Munculnya gejala westernisasi, yaitu gaya hidup yang berorientasi kepada budaya barat <br>4) Menggalang kekuatan politik untuk melemahkan kekuasaan pemerintah yang berkuasa <br>5) Pola perjuangan tindak bersenjata kelompok separatis yang ditempuh untuk menarik simpati masyarakat internasional. <br>Berdasarkan uraian beberapa kondisi di atas yang merupakan kasus ancaman terhadap negara di bidang politik ditandai oleh nomor ....",
+    "opt": [
+      "(1), (2) dan (3)",
+      "(1), (3) dan (5)",
+      "(2), (3) dan (4)",
+      "(2), (4) dan (5)",
+      "(3), (4) dan (5)"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Komitmen terhadap persatuan dan kesatuan bangsa Indonesia merupakan proses dinamis yang tumbuh dari unsur-unsur sosial budaya masyarakat Indonesia yang beragam yang mencerminkan kebhinnekaan bangsa Indonesia. Contoh perilaku yang mencerminkan komitmen tersebut adalah ....",
+    "opt": [
+      "bersikap mengutamakan kebersihan lingkungan di sekitar lingkungan tempat tinggal",
+      "bekerjasama dalam segala bidang kehidupan dengan sesama suku, agama, dan daerah",
+      "membantu korban bencana alam ketika bencana tersebut terjadi di wilayah asalnya",
+      "bergaul secara santun dan akrab dengan mengesampingkan perbedaan suku bangsa",
+      "meningkatkan solidaritas dalam kegiatan yang berorientasi semangat kedaerahan"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Negara Kesatuan Republik Indonesia memiliki letak yang sangat strategis. Oleh sebab itu berbagai ancaman mengganggu kedaulatan bangsa dan negara. Ancaman tersebut diantaranya adalah ancaman dalam bidang ideologi. Berikut ini yang bukan merupakan strategi untuk mengatasi ancaman di bidang ideologi adalah ….",
+    "opt": [
+      "ideologi harus dijadikan tombak bangsa dalam menghadapi unsur yang masuk dari luar",
+      "ideologi harus diaktualisasikan kepada seluruh bidang kenegaraan",
+      "ideologi Indonesia haruslah mengarah pada arah yang dinamis dan aktual",
+      "ideologi sebagai pemersatu sekaligus perekat bangsa harus ditanamkan dalam pendidikan seluruh warga negara Indonesia",
+      "ideologi harus diterapkan dalam pemerintahan secara absolut"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Salah satu bentuk pengamalan yang terkandung dari pokok pikiran Pembukaan UUD Negara RI Tahun 1945 alinea ke-2 adalah ....",
+    "opt": [
+      "tidak melakukan diskriminasi dengan bersikap merendahkan harkat orang lain",
+      "mendukung terwujudnya sistem pemerintahan negara berdasarkan kedaulatan rakyat",
+      "keteguhan bangsa Indonesia dalam membela kemerdekaan melawan penjajah dalam segala bentuk",
+      "belajar dengan tekun sebagai dukungan untuk terwujudnya tujuan negara, mencerdaskan kehidupan bangsa",
+      "memahami bahwa kemerdekaan bukanlah akhir perjuangan, tetapi harus diisi dengan mewujudkan negara Indonesia yang merdeka, bersatu, berdaulat, adil, dan makmur"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Pembukaan UUD Negara RI Tahun 1945 sebagai tertib hukum tertinggi di dalamnya memuat tujuan nasional yang akan diwujudkan oleh setiap pemegang kekuasaan. Tujuan nasional Indonesia yang terkait dengan upaya penegakkan hukum tanpa pandang bulu bagi siapa saja yang bersalah adalah ….",
+    "opt": [
+      "melindungi segenap bangsa indonesia",
+      "memajukan kesejahteraan umum",
+      "mencerdaskan kehidupan bangsa",
+      "menciptakan ketertiban umum",
+      "ikut melaksanakan ketertiban dunia"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan wewenang di bawah ini! <br>(1) Pendidikan, <br>(2) Moneter/fiskal, <br>(3) Kebudayaan, <br>(4) Hubungan luar negeri, <br>(5) Pertahanan dan keamanan. <br>Pernyataan di atas yang tidak termasuk kewenangan pemerintah daerah ada pada nomor ....",
+    "opt": [
+      "1, 2, dan 3",
+      "2, 3, dan 5",
+      "1, 2, dan 4",
+      "2, 4, dan 5",
+      "3, 4, dan 5"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Presiden hanya berfungsi sebagai kepala Negara dan tidak dapat diganggu gugat sedangkan kepala Pemerintahan berada di tangan perdana menteri merupakan ciri dari bentuk pemerintahan ....",
+    "opt": [
+      "monarki konstitusi",
+      "monarki parlementer",
+      "republik konstitusional",
+      "republik absolut",
+      "republik parlementer"
+    ],
+    "a": 4
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
