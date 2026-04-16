@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
         
@@ -40,7 +50,7 @@
         .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
         .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
 
-        #options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
         .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
         .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
         .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
@@ -61,6 +71,10 @@
             .sidebar-numbers { width: 90%; position: static; order: 2; }
             .quiz-container { width: 90%; order: 1; }
         }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -77,7 +91,7 @@
             <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
                 <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
             </div>
-            <h3 id="question-text" style="color: #2c3e50; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0;">Memuat pertanyaan...</h3>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
             
             <div id="options-container"></div>
             
@@ -104,56 +118,256 @@
 
 <script>
 const quizData = [
-  { q: "Hasil dari operasi hitung penjumlahan 356+232 yaitu...", opt: ["488", "498", "588", "598", "608"], a: 2 },
-  { q: "Jika 325−144=b, maka nilai b yang memenuhi yaitu...", opt: ["281", "221", "181", "121", "141"], a: 2 },
-  { q: "30, 24, 28, 84, 78, ...", opt: ["82", "96", "86", "80"], a: 0 },
-  { q: "A, C, F, J, O, ...", opt: ["U", "L", "Z", "P"], a: 0 },
-  { q: "5, 25, 125, 625, ..., 15625", opt: ["3475", "3555", "4535", "3125"], a: 3 },
-  { q: "101, 112, 134, 145, 167, 178, ...", opt: ["189", "198", "200", "202"], a: 2 },
-  { q: "..., 3 3/100, 4 4/100, 3 3/100, 2 2/100, 1 1/100, 2 2/100, 1 1/100", opt: ["1,01", "2,02", "3,03", "4,04"], a: 3 },
-  { q: "1, 5, 4, 3, 7, 1, 10, -1, 13, -3, ..., ...", opt: ["16 dan -8", "10 dan -5", "15 dan -8", "16 dan -5"], a: 3 },
-  { q: "Hasil dari perkalian 525 × 234 adalah ....", opt: ["115.800", "122.850", "135.720", "158.450"], a: 1 },
-  { q: "KPK dari 20, 36, dan 48 adalah ....", opt: ["1.080", "720", "540", "4"], a: 1 },
-  { q: "104 + (17 × 35) – 19 = ....", opt: ["718", "680", "472", "378"], a: 1 },
-  { q: "Hasil dari 12² + 8² – 625 = ....", opt: ["183", "200", "211", "273"], a: 0 },
-  { q: "Hasil perhitungan dari: 529 × 324 – 112 = ....", opt: ["293", "239", "139", "193"], a: 0 },
-  { q: "27,5% dari 250 adalah ...", opt: ["70", "68,75", "65", "62,50"], a: 1 },
-  { q: "G = 102 + (625 ÷ 5) + (25 × 3) + 576. Nilai G adalah ....", opt: ["122", "182", "222", "282"], a: 1 },
-  { q: "(3.405 + 12.025) – (10.391 – 109) = ....", opt: ["4.930", "5.008", "5.127", "5.148"], a: 0 },
-  { q: "Hasil dari 162 – (49 – (-32)) = ....", opt: ["247", "267", "287", "277"], a: 0 },
-  { q: "Jika B = (√289 + ³√64)² maka nilai B adalah ....", opt: ["121", "261", "441", "961"], a: 2 },
-  { q: "5 + 24 × 18 ÷ 2 ÷ 3 – 9 × 3 = ....", opt: ["20", "30", "40", "50"], a: 0 },
-  { q: "Paman mempunyai dua petak tanah. Luas petak pertama 1,3 hektar sedangkan petak kedua 1½ hektar. Setengah dari jumlah tanah paman ditanami padi dan sisanya ditanami singkong. Luas tanah paman yang ditanami singkong adalah ....", opt: ["1,4 hektar", "2,3 hektar", "2,8 hektar", "5,6 hektar"], a: 2 },
-  { q: "Jumlah dua bilangan rasional adalah 64 dan selisih bilangan tersebut adalah 12. Tentukan hasil kali kedua bilangan tersebut!", opt: ["876", "758", "988", "846"], a: 0 },
-  { q: "Hasil dari -14 – (-37) + (-25) = ....", opt: ["-48", "-2", "2", "48"], a: 2 },
-  { q: "Terdapat 2 buah persegi, persegi 1 dengan panjang sisi sebesar X, sedangkan persegi 2 mempunyai panjang sisi sebesar Y setengah kali lebar sisi persegi 1. Maka...", opt: ["X² = Y", "X = 2Y", "X² < Y", "X > Y"], a: 1 },
-  { q: "Pak Andi dapat menyelesaikan pekerjaanya selama 15 hari, sedangkan pak Asep dalam 20 hari. Jika pak Andi dan pak Asep bekerja bersama-sama selama 4 hari maka pekerjaan yang tersisa ... bagian", opt: ["0,2 bagian", "4/5 bagian", "0,5 bagian", "8/15 bagian"], a: 3 },
-  { q: "Kelereng Andi 3x kelereng Budi. Candra memiliki 6 kelereng lebih banyak dari Budi, dan kelereng Candra 2 lebih banyak dari Andi. Maka perbandingan kelereng Andi, Budi dan Candra sebesar...", opt: ["3 : 6 : 2", "6 : 4 : 3", "3 : 1 : 4", "1 : 3 : 4"], a: 2 },
-  { q: "Tangki minyak Bapak apabila berisi penuh mempunyai berat 80 kg. Bapak telah mengunakan minyak setengah sehingga berat tangki 46kg, berapa berat tangki pada keadaan kosong?", opt: ["6 kg", "12 kg", "18 kg", "22 kg"], a: 0 },
-  { q: "Umur Ibu 5/6 umur Ayah. Perbandingan umur Ayah dan umur kak Ros 3:1. Sekarang umur kak Ros 18 tahun maka umur Ibu...", opt: ["40,5 tahun", "36 tahun", "45 tahun", "50 tahun"], a: 2 },
-  { q: "A adalah hasil dari perhitungan (4+9)² + (4²+9²) maka, nilai A...", opt: ["166", "566", "266", "666"], a: 2 },
-  { q: "Pak Karmin seorang pedagang buah, beliau menjual dengan harga Rp 75.000,00 untuk harga per Kg buahnya. Pak Karmin mendapat keuntungan 30% dari harga jual buah per Kg tersebut, berapa harga beli buah dagangan pak Karmin tersebut...", opt: ["Rp 57.691,00", "Rp 57.692,00", "Rp 57.693,00", "Rp 57.681,00"], a: 1 },
-  { q: "Waktu yang diperlukan penjahit A untuk menyelesaikan jahitannya adalah 3 jam 35 menit 25 detik. Penjahit B 4 jam 45 menit 35 detik. Berapa total waktu dari kedua penjahit tersebut...", opt: ["8 jam 21 menit", "7 jam 21 menit", "8 jam 11 menit", "7 jam 11 menit"], a: 0 },
-  { q: "Fitri mendapatkan nilai pada ujian semester ini secara berturut-turut 82,80,77, dan 65. Jika Fitri menginginkan nilai rata-rata ujiannya sebesar 75, maka nilai yang harus didapatkan pada mata ujian ke 5 adalah?", opt: ["80", "71", "79", "83"], a: 1 },
-  { q: "Jika nilai a,b, dan c berturut-turut 3; 0; dan -3, maka nilai dari {a x (b + c – a)} x (b + c) =....", opt: ["-54", "-45", "45", "54"], a: 3 },
-  { q: "Sekelompok beranggotakan 6 pelajar sedang mengadakan diskusi di taman sekolah. Mereka duduk membentuk lingkaran. Banyaknya cara untuk mengatur posisi anggota kelompok tersebut sebesar...", opt: ["120", "720", "940", "144"], a: 0 },
-  { q: "X merupakan bilangan bulat genap dimana 23 < x < 26, dan nilai y < 27, y > 24. Apabila Y termasuk bilangan bulat genap maka..", opt: ["3x = 3y", "X < Y", "3x > 3y", "Y = 2X"], a: 1 },
-  { q: "A adalah nilai dari 5,71% dari 0,671, sedangkan B adalah nilai dari 0,671% dari 5,71, maka..", opt: ["A = B", "A < B", "A > B", "A = 3B"], a: 0 },
-  { q: "Jika pembilang suatu pecahan ditambah 2 dan penyebut ditambah 5 maka nilainya menjadi setengah. Sedangkan jika pembilang dikurangi 1 dan penyebut ditambah 1, nilainya menjadi sepertiga. Nilai pecahan tersebut adalah ....", opt: ["2/3", "3/5", "4/7", "1/6"], a: 1 },
-  { q: "Jumlah umur Rendy dan Bimo adalah 30. Dua kali umur Rendy ditambah dengan tiga kali umur Bimo adalah 77. Selisih umur Rendy dan Bimo adalah ....", opt: ["2 tahun", "4 tahun", "6 tahun", "8 tahun"], a: 1 },
-  { q: "Bagas memiliki kawat sepanjang 156 cm untuk membuat kerangka kubus. Jika Bagas ingin tidak ada kawat yang tersisa, panjang sisi kubus harus dibuat dengan ukuran ....", opt: ["12 cm", "13 cm", "14 cm", "15 cm"], a: 1 },
-  { q: "Khinsa membeli lukisan seharga Rp4.100.000,00. Jika Khinsa ingin menjual kembali lukisan tersebut dengan keuntungan sebesar 25%, harga jual lukisan tersebut menjadi ....", opt: ["Rp5.125.000,00", "Rp5.375.000,00", "Rp5.775.000,00", "Rp6.125.000,00"], a: 2 },
-  { q: "Pada suatu survei yang dilakukan oleh Dinas Pertanian kota di suatu kelurahan diketahui bahwa terdapat 30 keluarga yang memelihara tanaman di rumah dan 24 keluarga yang memiliki hewan peliharaan. Keluarga yang memelihara keduanya sebanyak 13 sedangkan 18 keluarga tidak memelihara keduanya. Jumlah keluarga yang mengikuti survei sebanyak ....", opt: ["58", "59", "60", "61"], a: 1 },
-  { q: "Di rumah Bu Dini memiliki persediaan air minum untuk 4 orang yang bisa digunakan selama 10 hari. Jika Bu Dini kedatangan 4 orang tamu yang menginap di rumahnya, maka persediaan air minum akan habis selama ....", opt: ["2 hari", "3 hari", "4 hari", "5 hari"], a: 0 },
-  { q: "Reni membeli kaos di pasar sebanyak 1 kodi seharga Rp1.150.000,00. Jika Yoga akan membeli kaos sebanyak lusin, ia harus membayar ....", opt: ["Rp540.000,00", "Rp590.000,00", "Rp630.000,00", "Rp690.000,00"], a: 1 },
-  { q: "Bu Manda membeli 6 kg mangga dan 2 kg jeruk seharga Rp132.000,00 sedangkan Bu Lili membeli 8 kg jeruk dan 5 kg mangga seharga Rp300.000,00. Jika Bu Dewi membeli 4 kg mangga dan 5 kg jeruk, ia harus membayar ....", opt: ["Rp236.000,00", "Rp212.000,00", "Rp198.000,00", "Rp188.000,00"], a: 2 },
-  { q: "Sepuluh tahun yang lalu umur ibu dua kali umur bibi. Lima tahun kemudian umur ibu menjadi 1,5 kali umur bibi. Umur ibu sekarang adalah ....", opt: ["40 tahun", "35 tahun", "30 tahun", "25 tahun"], a: 0 },
-  { q: "Sebuah tangga mempunyai 30 anak tangga. Jika ketinggian anak tangga ke-1, 2, dan 3 dari permukaan tanah berturut-turut adalah 15, 25, dan 35 cm, ketinggian anak tangga terakhir dari permukaan tanah adalah ....", opt: ["2,50 m", "2,65 m", "3,05 m", "3,55 m"], a: 2 },
-  { q: "Gaji rata-rata 8 orang pekerja adalah Rp75.000,00. Jika ada tambahan satu pekerja baru, rata-rata gaji menjadi Rp76.000,00. Gaji pekerja baru tersebut adalah ....", opt: ["Rp76.000,00", "Rp80.000,00", "Rp82.000,00", "Rp84.000,00"], a: 3 },
-  { q: "Pak Amir meminjam uang di koperasi sebesar Rp15.000.000,00 dengan bunga 1,5% per bulan. Jika Pak Amir diharuskan mengangsur selama 10 bulan, besarnya angsuran yang dibayarkan Pak Amir tiap bulannya adalah ....", opt: ["Rp1.500.000,00", "Rp1.250.000,00", "Rp1.725.000,00", "Rp1.925.000,00"], a: 2 },
-  { q: "Kakek memiliki sepotong kayu dengan panjang 84 cm. Jika kakek memotong kayu tersebut menjadi 2/7 bagian, 1/3 bagian dan sisanya, bagian kayu yang terpanjang adalah ....", opt: ["24 cm", "28 cm", "32 cm", "36 cm"], a: 2 },
-  { q: "Harga 10 kg beras dan 2 kg gula adalah Rp235.000,00 sedangkan 7 kg beras dan 4 kg gula seharga Rp210.000,00. Jika ingin membeli 5 kg beras dan 3 kg gula, uang yang harus dibayarkan sebesar ....", opt: ["Rp137.500,00", "Rp146.500,00", "Rp152.500,00", "Rp164.500,00"], a: 2 },
-  { q: "Seorang peserta SNMPTN dapat mengerjakan 112 soal benar, 26 soal salah, dan sisanya kosong. Jika skor untuk jawaban benar adalah 4, jawaban salah -1, dan jawaban kosong 0, total skor yang diperoleh peserta tersebut adalah ....", opt: ["448", "422", "404", "368"], a: 1 }
+  {
+    "q": "Hasil dari operasi hitung penjumlahan 356 + 232 yaitu...",
+    "opt": ["$488$", "$498$", "$588$", "$598$", "$608$"],
+    "a": 2
+  },
+  {
+    "q": "Jika $325 - 144 = b$, maka nilai $b$ yang memenuhi yaitu...",
+    "opt": ["$281$", "$221$", "$181$", "$121$", "$141$"],
+    "a": 2
+  },
+  {
+    "q": "$1, 10, 3, 8, 9, 6, \\dots, \\dots$",
+    "opt": ["$27$ dan $4$", "$29$ dan $6$", "$22$ dan $2$", "$21$ dan $7$"],
+    "a": 0
+  },
+  {
+    "q": "$30, 24, 28, 84, 78, \\dots$",
+    "opt": ["$82$", "$96$", "$86$", "$80$"],
+    "a": 0
+  },
+  {
+    "q": "A, C, F, J, O, $\\dots$",
+    "opt": ["U", "L", "Z", "P"],
+    "a": 0
+  },
+  {
+    "q": "$5, 25, 125, 625, \\dots, 15625$",
+    "opt": ["$3475$", "$3555$", "$4535$", "$3125$"],
+    "a": 3
+  },
+  {
+    "q": "$\\dots, 3\\frac{3}{100}, 4\\frac{4}{100}, 3\\frac{3}{100}, 2\\frac{2}{100}, 1\\frac{1}{100}, 2\\frac{2}{100}, 1\\frac{1}{100}$",
+    "opt": ["$1,01$", "$2,02$", "$3,03$", "$4,04$"],
+    "a": 3
+  },
+  {
+    "q": "$1, 5, 4, 3, 7, 1, 10, -1, 13, -3, \\dots, \\dots$",
+    "opt": ["$16$ dan $-8$", "$10$ dan $-5$", "$15$ dan $-8$", "$16$ dan $-5$"],
+    "a": 3
+  },
+  {
+    "q": "Hasil dari perkalian $525 \\times 234$ adalah...",
+    "opt": ["$115.800$", "$122.850$", "$135.720$", "$158.450$"],
+    "a": 1
+  },
+  {
+    "q": "KPK dari $20, 36,$ dan $48$ adalah...",
+    "opt": ["$1.080$", "$720$", "$540$", "$4$"],
+    "a": 1
+  },
+  {
+    "q": "$104 + (17 \\times 35) - 19 = \\dots$",
+    "opt": ["$718$", "$680$", "$472$", "$378$"],
+    "a": 1
+  },
+  {
+    "q": "Hasil dari $12^2 + 8^2 - 625 = \\dots$",
+    "opt": ["$183$", "$200$", "$211$", "$273$"],
+    "a": 0
+  },
+  {
+    "q": "Hasil perhitungan dari $529 \\times 324 - 112 = \\dots$",
+    "opt": ["$293$", "$239$", "$139$", "$193$"],
+    "a": 0
+  },
+  {
+    "q": "$27,5\\%$ dari $250$ adalah...",
+    "opt": ["$70$", "$68,75$", "$65$", "$62,50$"],
+    "a": 1
+  },
+  {
+    "q": "$G = 102 + (625 \\div 5) + (25 \\times 3) + 576$. Nilai $G$ adalah...",
+    "opt": ["$122$", "$182$", "$222$", "$282$"],
+    "a": 1
+  },
+  {
+    "q": "Hasil dari operasi hitung pecahan $\\frac{2}{3} + \\frac{3}{4} + \\frac{1}{6}$ adalah...",
+    "opt": ["$\\frac{6}{13}$", "$1\\frac{1}{2}$", "$1\\frac{5}{12}$", "$1\\frac{7}{12}$"],
+    "a": 3
+  },
+  {
+    "q": "Hasil dari operasi hitung campuran pecahan berikut adalah: $$\\frac{3}{5} \\times \\left( \\frac{2}{3} + \\frac{1}{6} \\right) \\div \\frac{1}{2} - \\frac{1}{4} = \\dots$$",
+    "opt": ["$\\frac{1}{4}$", "$\\frac{1}{2}$", "$\\frac{3}{4}$", "$\\frac{5}{6}$", "$1$"],
+    "a": 2
+  },
+  {
+    "q": "Jika $B = (\\sqrt{289} + \\sqrt[3]{64})^2$ maka nilai $B$ adalah...",
+    "opt": ["$121$", "$261$", "$441$", "$961$"],
+    "a": 2
+  },
+  {
+    "q": "$5 + 24 \\times 18 \\div 2 \\div 3 - 9 \\times 3 = \\dots$",
+    "opt": ["$20$", "$30$", "$40$", "$50$"],
+    "a": 0
+  },
+  {
+    "q": "Paman mempunyai dua petak tanah. Luas petak pertama 1,3 hektar sedangkan petak kedua 1\\frac{1}{2} hektar. Setengah dari jumlah tanah paman ditanami padi dan sisanya ditanami singkong. Luas tanah paman yang ditanami singkong adalah...",
+    "opt": ["$1,4$ hektar", "$2,3$ hektar", "$2,8$ hektar", "$5,6$ hektar"],
+    "a": 2
+  },
+  {
+    "q": "Jumlah dua bilangan rasional adalah 64 dan selisih bilangan tersebut adalah 12. Tentukan hasil kali kedua bilangan tersebut!",
+    "opt": ["$876$", "$758$", "$988$", "$846$"],
+    "a": 0
+  },
+  {
+    "q": "Hasil dari $-14 - (-37) + (-25) = \\dots$",
+    "opt": ["$-48$", "$-2$", "$2$", "$48$"],
+    "a": 2
+  },
+  {
+    "q": "Terdapat 2 buah persegi. Persegi 1 dengan panjang sisi sebesar $X$, sedangkan persegi 2 mempunyai panjang sisi sebesar $Y$ setengah kali lebar sisi persegi 1. Maka...",
+    "opt": ["$X^2 = Y$", "$X = 2Y$", "$X^2 < Y$", "$X > Y$"],
+    "a": 1
+  },
+  {
+    "q": "Pak Andi dapat menyelesaikan pekerjaannya selama 15 hari, sedangkan Pak Asep dalam 20 hari. Jika Pak Andi dan Pak Asep bekerja bersama-sama selama 4 hari, maka pekerjaan yang tersisa ... bagian.",
+    "opt": ["$0,2$ bagian", "$\\frac{4}{5}$ bagian", "$0,5$ bagian", "$\\frac{8}{15}$ bagian"],
+    "a": 3
+  },
+  {
+    "q": "Kelereng Andi 3 kali kelereng Budi. Candra memiliki 6 kelereng lebih banyak dari Budi, dan kelereng Candra 2 lebih banyak dari Andi. Maka perbandingan kelereng Andi, Budi, dan Candra sebesar...",
+    "opt": ["$3 : 6 : 2$", "$6 : 4 : 3$", "$3 : 1 : 4$", "$1 : 3 : 4$"],
+    "a": 2
+  },
+  {
+    "q": "Tangki minyak Bapak apabila berisi penuh mempunyai berat 80 kg. Bapak telah menggunakan minyak setengah sehingga berat tangki 46 kg, berapa berat tangki pada keadaan kosong?",
+    "opt": ["$6\\text{ kg}$", "$12\\text{ kg}$", "$18\\text{ kg}$", "$22\\text{ kg}$"],
+    "a": 0
+  },
+  {
+    "q": "Umur Ibu $\\frac{5}{6}$ umur Ayah. Perbandingan umur Ayah dan umur Kak Ros 3 : 1. Sekarang umur Kak Ros 18 tahun, maka umur Ibu...",
+    "opt": ["$40,5$ tahun", "$36$ tahun", "$45$ tahun", "$50$ tahun"],
+    "a": 2
+  },
+  {
+    "q": "$A$ adalah hasil dari perhitungan $(4+9)^2 + (4^2+9^2)$ maka, nilai $A$...",
+    "opt": ["$166$", "$566$", "$266$", "$666$"],
+    "a": 2
+  },
+  {
+    "q": "Pak Karmin seorang pedagang buah, beliau menjual dengan harga Rp 75.000,00 untuk harga per kg buahnya. Pak Karmin mendapat keuntungan 30% dari harga jual buah per kg tersebut, berapa harga beli buah dagangan Pak Karmin tersebut...",
+    "opt": ["$\\text{Rp } 57.691,00$", "$\\text{Rp } 57.692,00$", "$\\text{Rp } 57.693,00$", "$\\text{Rp } 57.681,00$"],
+    "a": 1
+  },
+  {
+    "q": "Waktu yang diperlukan penjahit A untuk menyelesaikan jahitannya adalah 3 jam 35 menit 25 detik. Penjahit B 4 jam 45 menit 35 detik. Berapa total waktu dari kedua penjahit tersebut...",
+    "opt": ["$8\\text{ jam } 21\\text{ menit}$", "$7\\text{ jam } 21\\text{ menit}$", "$8\\text{ jam } 11\\text{ menit}$", "$7\\text{ jam } 11\\text{ menit}$"],
+    "a": 0
+  },
+  {
+    "q": "Fitri mendapatkan nilai pada ujian semester ini secara berturut-turut 82, 80, 77, dan 65. Jika Fitri menginginkan nilai rata-rata ujiannya sebesar 75, maka nilai yang harus didapatkan pada mata ujian ke-5 adalah?",
+    "opt": ["$80$", "$71$", "$79$", "$83$"],
+    "a": 1
+  },
+  {
+    "q": "Jika nilai $a, b,$ dan $c$ berturut-turut $3, 0,$ dan $-3$, maka nilai dari $\\{a \\times (b + c - a)\\} \\times (b + c) = \\dots$",
+    "opt": ["$-54$", "$-45$", "$45$", "$54$"],
+    "a": 3
+  },
+  {
+    "q": "Sekelompok beranggotakan 6 pelajar sedang mengadakan diskusi di taman sekolah. Mereka duduk membentuk lingkaran. Banyaknya cara untuk mengatur posisi anggota kelompok tersebut sebesar...",
+    "opt": ["$120$", "$720$", "$940$", "$144$"],
+    "a": 0
+  },
+  {
+    "q": "$x$ merupakan bilangan bulat genap dimana $23 < x < 26$, dan nilai $24 < y < 27$. Apabila $y$ termasuk bilangan bulat genap maka...",
+    "opt": ["$3x = 3y$", "$x < y$", "$3x > 3y$", "$y = 2x$"],
+    "a": 1
+  },
+  {
+    "q": "$A$ adalah nilai dari $5,71\\%$ dari $0,671$, sedangkan $B$ adalah nilai dari $0,671\\%$ dari $5,71$, maka...",
+    "opt": ["$A = B$", "$A < B$", "$A > B$", "$A = 3B$"],
+    "a": 0
+  },
+  {
+    "q": "Jika pembilang suatu pecahan ditambah 2 dan penyebut ditambah 5 maka nilainya menjadi setengah. Sedangkan jika pembilang dikurangi 1 dan penyebut ditambah 1, nilainya menjadi sepertiga. Nilai pecahan tersebut adalah...",
+    "opt": ["$\\frac{2}{3}$", "$\\frac{3}{5}$", "$\\frac{4}{7}$", "$\\frac{1}{6}$"],
+    "a": 1
+  },
+  {
+    "q": "Jumlah umur Rendy dan Bimo adalah 30. Dua kali umur Rendy ditambah dengan tiga kali umur Bimo adalah 77. Selisih umur Rendy dan Bimo adalah...",
+    "opt": ["$2$ tahun", "$4$ tahun", "$6$ tahun", "$8$ tahun"],
+    "a": 1
+  },
+  {
+    "q": "Bagas memiliki kawat sepanjang $156\\text{ cm}$ untuk membuat kerangka kubus. Jika Bagas ingin tidak ada kawat yang tersisa, panjang sisi kubus harus dibuat dengan ukuran...",
+    "opt": ["$12\\text{ cm}$", "$13\\text{ cm}$", "$14\\text{ cm}$", "$15\\text{ cm}$"],
+    "a": 1
+  },
+  {
+    "q": "Khinsa membeli lukisan seharga $\\text{Rp } 4.100.000,00$. Jika Khinsa ingin menjual kembali lukisan tersebut dengan keuntungan sebesar $25\\%$, harga jual lukisan tersebut menjadi...",
+    "opt": ["$\\text{Rp } 5.125.000,00$", "$\\text{Rp } 5.375.000,00$", "$\\text{Rp } 5.775.000,00$", "$\\text{Rp } 6.125.000,00$"],
+    "a": 2
+  },
+  {
+    "q": "Pada suatu survei yang dilakukan oleh Dinas Pertanian kota di suatu kelurahan diketahui bahwa terdapat $30$ keluarga yang memelihara tanaman di rumah dan $24$ keluarga yang memiliki hewan peliharaan. Keluarga yang memelihara keduanya sebanyak $13$ sedangkan $18$ keluarga tidak memelihara keduanya. Jumlah keluarga yang mengikuti survei sebanyak...",
+    "opt": ["$58$", "$59$", "$60$", "$61$"],
+    "a": 1
+  },
+  {
+    "q": "Di rumah, Bu Dini memiliki persediaan air minum untuk $4$ orang yang bisa digunakan selama $10$ hari. Jika Bu Dini kedatangan $4$ orang tamu yang menginap di rumahnya, maka persediaan air minum akan habis selama...",
+    "opt": ["$2$ hari", "$3$ hari", "$4$ hari", "$5$ hari"],
+    "a": 0
+  },
+  {
+    "q": "Reni membeli kaos di pasar sebanyak $1$ kodi seharga $\\text{Rp } 1.150.000,00$. Jika Yoga akan membeli kaos sebanyak $1$ lusin, ia harus membayar...",
+    "opt": ["$\\text{Rp } 540.000,00$", "$\\text{Rp } 590.000,00$", "$\\text{Rp } 630.000,00$", "$\\text{Rp } 690.000,00$"],
+    "a": 1
+  },
+  {
+    "q": "Bu Manda membeli $6\\text{ kg}$ mangga dan $2\\text{ kg}$ jeruk seharga $\\text{Rp } 132.000,00$ sedangkan Bu Lili membeli $8\\text{ kg}$ jeruk dan $5\\text{ kg}$ mangga seharga $\\text{Rp } 300.000,00$. Jika Bu Dewi membeli $4\\text{ kg}$ mangga dan $5\\text{ kg}$ jeruk, ia harus membayar...",
+    "opt": ["$\\text{Rp } 236.000,00$", "$\\text{Rp } 212.000,00$", "$\\text{Rp } 198.000,00$", "$\\text{Rp } 188.000,00$"],
+    "a": 2
+  },
+  {
+    "q": "Sepuluh tahun yang lalu umur ibu dua kali umur bibi. Lima tahun kemudian umur ibu menjadi $1,5$ kali umur bibi. Umur ibu sekarang adalah...",
+    "opt": ["$40$ tahun", "$35$ tahun", "$30$ tahun", "$25$ tahun"],
+    "a": 0
+  },
+  {
+    "q": "Sebuah tangga mempunyai 30 anak tangga. Jika ketinggian anak tangga ke-1, 2, dan 3 dari permukaan tanah berturut-turut adalah 15, 25, dan 35 cm, ketinggian anak tangga terakhir dari permukaan tanah adalah...",
+    "opt": ["$2,50\\text{ m}$", "$2,65\\text{ m}$", "$3,05\\text{ m}$", "$3,55\\text{ m}$"],
+    "a": 2
+  },
+  {
+    "q": "Gaji rata-rata 8 orang pekerja adalah Rp 75.000,00$. Jika ada tambahan satu pekerja baru, rata-rata gaji menjadi Rp  76.000,00. Gaji pekerja baru tersebut adalah...",
+    "opt": ["$\\text{Rp } 76.000,00$", "$\\text{Rp } 80.000,00$", "$\\text{Rp } 82.000,00$", "$\\text{Rp } 84.000,00$"],
+    "a": 3
+  },
+  {
+    "q": "Pak Amir meminjam uang di koperasi sebesar Rp 15.000.000,00 dengan bunga 1,5% per bulan. Jika Pak Amir diharuskan mengangsur selama 10 bulan, besarnya angsuran yang dibayarkan Pak Amir tiap bulannya adalah...",
+    "opt": ["$\\text{Rp } 1.500.000,00$", "$\\text{Rp } 1.250.000,00$", "$\\text{Rp } 1.725.000,00$", "$\\text{Rp } 1.925.000,00$"],
+    "a": 2
+  },
+  {
+    "q": "Kakek memiliki sepotong kayu dengan panjang 84 cm. Jika kakek memotong kayu tersebut menjadi $\\frac{2}{7}$ bagian, $\\frac{1}{3}$ bagian dan sisanya, bagian kayu yang terpanjang adalah...",
+    "opt": ["$24\\text{ cm}$", "$28\\text{ cm}$", "$32\\text{ cm}$", "$36\\text{ cm}$"],
+    "a": 2
+  },
+  {
+    "q": "Harga 10 kg beras dan 2 kg gula adalah Rp 235.000,00 sedangkan 7 kg beras dan 4 kg gula seharga Rp 210.000,00. Jika ingin membeli 5 kg beras dan 3 kg gula, uang yang harus dibayarkan sebesar...",
+    "opt": ["$\\text{Rp } 137.500,00$", "$\\text{Rp } 146.500,00$", "$\\text{Rp } 152.500,00$", "$\\text{Rp } 164.500,00$"],
+    "a": 2
+  },
+  {
+    "q": "Seorang peserta TKA dapat mengerjakan 112 soal benar, 26 soal salah, dan sisanya kosong. Jika skor untuk jawaban benar adalah 4, jawaban salah -1, dan jawaban kosong 0, total skor yang diperoleh peserta tersebut adalah...",
+    "opt": ["$448$", "$422$", "$404$", "$368$"],
+    "a": 1
+  }
 ];
 
     let currentIdx = 0;
@@ -188,7 +402,10 @@ const quizData = [
     function showQuestion() {
         const q = quizData[currentIdx];
         document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
-        document.getElementById('question-text').innerText = q.q;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
         const optContainer = document.getElementById('options-container');
         optContainer.innerHTML = "";
 
@@ -200,11 +417,9 @@ const quizData = [
             
             if (isReviewMode) {
                 btn.disabled = true;
-                // Jika ini adalah jawaban yang BENAR
                 if (i === q.a) {
                     btn.classList.add('correct-ans');
                 } 
-                // Jika user memilih ini dan jawabannya SALAH
                 if (userAnswers[currentIdx] === i && i !== q.a) {
                     btn.classList.add('wrong-selected');
                 }
@@ -216,14 +431,16 @@ const quizData = [
             optContainer.appendChild(btn);
         });
 
-        // Navigasi
         document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
         document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
-        
-        // Atur tampilan tombol review
         document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
         
         renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
     }
 
     function selectAnswer(i) {
@@ -231,7 +448,6 @@ const quizData = [
         userAnswers[currentIdx] = i;
         showQuestion();
 
-        // Otomatis pindah ke nomor selanjutnya
         setTimeout(() => {
             if (currentIdx < quizData.length - 1) {
                 currentIdx++;
@@ -274,12 +490,12 @@ const quizData = [
         document.getElementById('final-score').innerText = finalScoreValue;
         document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
         
-        isReviewMode = true; // Mode review aktif setelah skor muncul
+        isReviewMode = true; 
         renderStatus();
     }
 
     function startReview() {
-        currentIdx = 0; // Mulai dari nomor 1
+        currentIdx = 0; 
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('quiz-screen').style.display = 'block';
         showQuestion();
