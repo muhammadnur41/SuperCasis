@@ -4,73 +4,382 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Daftar - Super Casis</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }</style>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: rgba(255,255,255,0.04);
+            --glass-border: rgba(255,255,255,0.08);
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139,92,246,0.35);
+            --secondary: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(255,255,255,0.05);
+            --input-border: rgba(255,255,255,0.1);
+            --input-focus: rgba(139,92,246,0.5);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Background effects */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 500px 500px at 20% 30%, rgba(139,92,246,0.12), transparent),
+                radial-gradient(ellipse 400px 400px at 80% 70%, rgba(59,130,246,0.1), transparent);
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+            filter: blur(80px); opacity: 0.4;
+        }
+        .orb-1 {
+            width: 300px; height: 300px; top: -100px; left: -100px;
+            background: var(--primary); animation: orbFloat 8s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 250px; height: 250px; bottom: -80px; right: -80px;
+            background: var(--secondary); animation: orbFloat 10s ease-in-out 2s infinite;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -20px) scale(1.1); }
+        }
+
+        /* Container */
+        .register-wrapper {
+            position: relative; z-index: 10;
+            width: 100%; max-width: 480px; margin: 20px 0;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 24px; transition: all 0.3s;
+            padding: 8px 16px; border-radius: 12px;
+            background: var(--bg-card); border: 1px solid var(--glass-border);
+        }
+        .back-link:hover { color: white; border-color: rgba(255,255,255,0.2); transform: translateX(-4px); }
+
+        /* Card */
+        .register-card {
+            background: linear-gradient(145deg, rgba(20,25,39,0.95), rgba(26,32,53,0.95));
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4), 0 0 40px rgba(139,92,246,0.05);
+        }
+
+        /* Card header */
+        .card-header {
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15));
+            padding: 36px 32px 28px;
+            text-align: center;
+            position: relative;
+        }
+        .card-header::before {
+            content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%);
+        }
+        .card-header .logo-icon {
+            width: 56px; height: 56px; border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px; font-size: 1.5rem;
+            box-shadow: 0 8px 25px var(--primary-glow);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 8px 25px var(--primary-glow); }
+            50% { box-shadow: 0 8px 40px var(--primary-glow); }
+        }
+        .card-header h1 {
+            font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;
+        }
+        .card-header h1 span { color: var(--secondary); }
+        .card-header p {
+            color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;
+        }
+
+        /* Form body */
+        .card-body {
+            padding: 32px;
+        }
+
+        /* Form group */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin-bottom: 8px;
+        }
+        .form-label i { font-size: 0.7rem; color: var(--primary); opacity: 0.7; }
+
+        .form-input {
+            width: 100%; padding: 14px 18px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px; color: white;
+            font-family: inherit; font-size: 1rem;
+            transition: all 0.3s; outline: none;
+        }
+        .form-input::placeholder { color: #4a5568; }
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--input-focus);
+            background: rgba(255,255,255,0.07);
+        }
+
+        /* Password wrapper */
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper .form-input { padding-right: 50px; }
+        .toggle-pass {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; padding: 4px; transition: color 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .toggle-pass:hover { color: var(--primary); }
+
+        /* File upload */
+        .file-upload-wrapper {
+            position: relative;
+        }
+        .file-upload-label {
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px 18px; border-radius: 14px;
+            background: var(--input-bg); border: 1.5px dashed var(--input-border);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .file-upload-label:hover {
+            border-color: var(--primary); background: rgba(139,92,246,0.05);
+        }
+        .file-upload-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(139,92,246,0.12);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: #c4b5fd; flex-shrink: 0;
+        }
+        .file-upload-text h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .file-upload-text p { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .file-upload-text .file-name { color: var(--accent-emerald); font-weight: 600; }
+        .file-input-hidden {
+            position: absolute; opacity: 0; width: 0; height: 0;
+        }
+
+        /* Submit button */
+        .btn-register {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; border: none; border-radius: 16px;
+            font-family: inherit; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.35s;
+            box-shadow: 0 8px 30px var(--primary-glow);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-top: 8px;
+        }
+        .btn-register:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 12px 40px var(--primary-glow);
+        }
+        .btn-register:active:not(:disabled) { transform: scale(0.98); }
+        .btn-register:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Payment info */
+        .payment-card {
+            margin-top: 20px; padding: 18px 20px;
+            background: rgba(139,92,246,0.06);
+            border: 1px solid rgba(139,92,246,0.15);
+            border-radius: 16px;
+        }
+        .payment-card .pay-header {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: #c4b5fd; margin-bottom: 10px;
+        }
+        .payment-card .pay-body {
+            font-size: 0.88rem; color: var(--text-muted); line-height: 1.8;
+        }
+        .payment-card .pay-body strong { color: var(--text-main); }
+        .payment-card .pay-amount {
+            display: inline-block;
+            background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25);
+            padding: 4px 14px; border-radius: 50px;
+            font-weight: 700; font-size: 0.85rem; color: #c4b5fd;
+        }
+
+        /* Footer links */
+        .card-footer {
+            padding: 24px 32px 32px;
+            text-align: center;
+        }
+        .card-footer p {
+            font-size: 0.88rem; color: var(--text-muted);
+        }
+        .card-footer a {
+            color: var(--primary); font-weight: 700;
+            text-decoration: none; transition: color 0.3s;
+        }
+        .card-footer a:hover { color: #a78bfa; }
+        .card-footer .divider {
+            height: 1px; background: var(--glass-border);
+            margin: 16px 0;
+        }
+        .card-footer .home-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+            text-decoration: none; transition: all 0.3s;
+            padding: 8px 18px; border-radius: 50px;
+            background: var(--bg-card); border: 1px solid var(--glass-border);
+        }
+        .card-footer .home-link:hover {
+            color: white; border-color: rgba(255,255,255,0.2);
+            transform: translateX(-4px);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .register-wrapper { animation: fadeInUp 0.6s ease; }
+        .form-group { animation: fadeInUp 0.5s ease both; }
+        .form-group:nth-child(1) { animation-delay: 0.05s; }
+        .form-group:nth-child(2) { animation-delay: 0.1s; }
+        .form-group:nth-child(3) { animation-delay: 0.15s; }
+        .form-group:nth-child(4) { animation-delay: 0.2s; }
+        .form-group:nth-child(5) { animation-delay: 0.25s; }
+        .form-group:nth-child(6) { animation-delay: 0.3s; }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            body { padding: 16px; }
+            .card-header { padding: 28px 20px 22px; }
+            .card-body { padding: 24px 20px; }
+            .card-footer { padding: 20px; }
+            .card-header h1 { font-size: 1.5rem; }
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-900 min-h-screen flex items-center justify-center p-4">
+<body>
+    <div class="bg-glow"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
-    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md my-10">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-blue-900 italic">SUPER <span class="text-yellow-500">CASIS</span></h1>
-            <p class="text-gray-500 text-sm mt-2">Buat akun untuk mulai berlatih</p>
-        </div>
+    <div class="register-wrapper">
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
 
-        <form id="registerForm" class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nama Lengkap</label>
-                <input type="text" name="nama" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Nama Lengkap">
+        <div class="register-card">
+            <!-- Header -->
+            <div class="card-header">
+                <div class="logo-icon"><i class="fas fa-user-plus"></i></div>
+                <h1>Super<span>Casis</span></h1>
+                <p>Buat akun untuk mulai berlatih</p>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nomor WhatsApp</label>
-                <input type="number" name="nomor" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="0812xxxxxxxx">
-            </div>
+            <!-- Form -->
+            <div class="card-body">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-user"></i> Nama Lengkap</label>
+                        <input type="text" name="nama" required class="form-input" placeholder="Nama Lengkap">
+                    </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Email</label>
-                <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="email@anda.com">
-            </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
+                        <input type="number" name="nomor" required class="form-input" placeholder="0812xxxxxxxx">
+                    </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Password</label>
-                <div class="relative">
-                    <input type="password" name="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Minimal 6 karakter">
-                    <button type="button" onclick="togglePassword('password')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" name="email" required class="form-input" placeholder="email@anda.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-lock"></i> Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" name="password" id="password" required class="form-input" placeholder="Minimal 6 karakter">
+                            <button type="button" onclick="togglePassword('password')" class="toggle-pass">
+                                <i class="fas fa-eye" id="eyeIcon1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-shield-halved"></i> Ulangi Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="confirm_password" required class="form-input" placeholder="Ketik ulang password">
+                            <button type="button" onclick="togglePassword('confirm_password')" class="toggle-pass">
+                                <i class="fas fa-eye" id="eyeIcon2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-receipt"></i> Bukti Transfer (JPG/PNG)</label>
+                        <div class="file-upload-wrapper">
+                            <label class="file-upload-label" for="bukti_bayar" id="fileLabel">
+                                <div class="file-upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                                <div class="file-upload-text">
+                                    <h4 id="fileDisplayName">Pilih file bukti transfer</h4>
+                                    <p>Format: JPG, PNG (max 5MB)</p>
+                                </div>
+                            </label>
+                            <input type="file" id="bukti_bayar" accept="image/*" required class="file-input-hidden">
+                            <input type="hidden" name="fileData" id="fileData">
+                            <input type="hidden" name="fileName" id="fileName">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnRegister" class="btn-register">
+                        <i class="fas fa-rocket"></i> DAFTAR SEKARANG
                     </button>
-                </div>
+
+                    <div class="payment-card">
+                        <div class="pay-header"><i class="fas fa-credit-card"></i> Info Pembayaran</div>
+                        <div class="pay-body">
+                            Berlangganan 1 Bulan: <span class="pay-amount">Rp 50.000</span><br>
+                            <strong>BRI:</strong> 2259 0100 5257 536<br>
+                            a/n <strong>MUHAMMAD IRWAN NUR</strong>
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ulangi Password</label>
-                <input type="password" id="confirm_password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-[16px]" placeholder="Ketik ulang password">
+            <!-- Footer -->
+            <div class="card-footer">
+                <p>Sudah punya akun? <a href="login.html">Login di sini</a></p>
+                <div class="divider"></div>
+                <a href="index.html" class="home-link"><i class="fas fa-home"></i> Kembali ke Beranda</a>
             </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Bukti Transfer (JPG/PNG)</label>
-                <input type="file" id="bukti_bayar" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
-                <input type="hidden" name="fileData" id="fileData">
-                <input type="hidden" name="fileName" id="fileName">
-            </div>
-
-            <button type="submit" id="btnRegister" class="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-black py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-yellow-200 mt-2">
-                DAFTAR SEKARANG
-            </button>
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <p class="text-xs font-bold text-blue-800 mb-1 underline">PEMBAYARAN:</p>
-                <p class="text-[13px] text-blue-700 leading-relaxed">
-                    Berlangganan 1 Bulan: <b>Rp 50.000</b><br>
-                    BRI: 2259 0100 5257 536 a/n MUHAMMAD IRWAN NUR
-                </p>
-            </div>
-        </form>
-
-        <div class="text-center mt-8 space-y-4">
-            <p class="text-sm text-gray-600">Sudah punya akun? <a href="login.html" class="text-blue-600 font-bold hover:underline">Login di sini</a></p>
-            <hr class="border-gray-100">
-            <a href="index.html" class="inline-block text-xs text-gray-400">← Kembali ke Beranda</a>
         </div>
     </div>
 
@@ -83,6 +392,21 @@
             const el = document.getElementById(id);
             el.type = el.type === "password" ? "text" : "password";
         }
+
+        // File upload display
+        document.getElementById('bukti_bayar').addEventListener('change', function() {
+            const name = this.files[0] ? this.files[0].name : 'Pilih file bukti transfer';
+            const display = document.getElementById('fileDisplayName');
+            if (this.files[0]) {
+                display.innerHTML = '<span class="file-name"><i class="fas fa-check-circle"></i> ' + name + '</span>';
+                document.getElementById('fileLabel').style.borderColor = 'rgba(16,185,129,0.4)';
+                document.getElementById('fileLabel').style.background = 'rgba(16,185,129,0.05)';
+            } else {
+                display.textContent = 'Pilih file bukti transfer';
+                document.getElementById('fileLabel').style.borderColor = '';
+                document.getElementById('fileLabel').style.background = '';
+            }
+        });
 
         form.addEventListener('submit', e => {
             e.preventDefault();
@@ -97,7 +421,7 @@
 
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = "Memproses...";
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
 
             const fileInput = document.getElementById('bukti_bayar');
             if (fileInput.files.length === 0) {

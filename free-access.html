@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akses Gratis - Super Casis</title>
+    <meta name="description" content="Coba gratis soal psikotes dan akademik tanpa perlu login. Platform persiapan seleksi Polri & TNI.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: rgba(255,255,255,0.04);
+            --glass-border: rgba(255,255,255,0.08);
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139,92,246,0.35);
+            --secondary: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ===== BACKGROUND ===== */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 600px 600px at 15% 20%, rgba(16,185,129,0.12), transparent),
+                radial-gradient(ellipse 500px 500px at 85% 70%, rgba(59,130,246,0.1), transparent),
+                radial-gradient(ellipse 400px 400px at 50% 50%, rgba(139,92,246,0.08), transparent);
+        }
+        #particles-js { position: fixed; inset: 0; z-index: 0; opacity: 0.3; }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 14px 28px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10,14,26,0.8);
+            backdrop-filter: blur(20px) saturate(1.8);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: white;
+        }
+        .nav-brand .logo-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+        }
+        .nav-brand h1 { font-size: 1.3rem; font-weight: 800; }
+        .nav-brand h1 span { color: var(--secondary); }
+        .free-nav-badge {
+            background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3);
+            color: #6ee7b7; padding: 4px 12px; border-radius: 50px;
+            font-size: 0.7rem; font-weight: 700; margin-left: 8px;
+        }
+        .nav-actions { display: flex; align-items: center; gap: 10px; }
+        .nav-actions a {
+            text-decoration: none; font-size: 0.82rem; font-weight: 600;
+            padding: 9px 20px; border-radius: 12px; transition: all 0.3s;
+        }
+        .btn-back {
+            color: white;
+            background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.15));
+            border: 1px solid rgba(16,185,129,0.3);
+            display: inline-flex; align-items: center; gap: 8px;
+            position: relative; overflow: hidden;
+        }
+        .btn-back::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .btn-back:hover::before { opacity: 1; }
+        .btn-back:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.3); border-color: transparent; }
+        .btn-back i, .btn-back span { position: relative; z-index: 1; }
+        .btn-upgrade {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; border: none;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .btn-upgrade:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 1100px; margin: 0 auto;
+            padding: 90px 24px 40px;
+            position: relative; z-index: 10;
+        }
+
+        /* ===== HEADER ===== */
+        .page-header {
+            text-align: center; margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease;
+        }
+        .page-header .header-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);
+            padding: 8px 20px; border-radius: 50px;
+            font-size: 0.8rem; font-weight: 600; color: #6ee7b7;
+            margin-bottom: 10px;
+        }
+        .page-header h2 {
+            font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800;
+            letter-spacing: -1px; margin-bottom: 5px;
+        }
+        .page-header h2 .grad {
+            background: linear-gradient(135deg, #6ee7b7, #67e8f9);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .page-header p {
+            color: var(--text-muted); font-size: 1rem; max-width: 550px;
+            margin: 0 auto; line-height: 1.1;
+        }
+
+        /* ===== UPGRADE BANNER ===== */
+        .upgrade-banner {
+            background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.1));
+            border: 1px solid rgba(139,92,246,0.2);
+            border-radius: 20px; padding: 20px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 20px; margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease 0.1s both;
+        }
+        .upgrade-banner-text { display: flex; align-items: center; gap: 14px; }
+        .upgrade-banner-text i {
+            font-size: 1.6rem; color: var(--accent-amber);
+            animation: pulse 2s infinite;
+        }
+        .upgrade-banner-text div h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+        .upgrade-banner-text div p { font-size: 0.82rem; color: var(--text-muted); }
+        .btn-upgrade-sm {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; font-weight: 700; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.3s; white-space: nowrap;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .btn-upgrade-sm:hover { transform: translateY(-2px); }
+
+        /* ===== VIEW STATES ===== */
+        .view-container { animation: fadeInUp 0.4s ease; }
+        .hidden { display: none !important; }
+
+        /* ===== MAIN MENU ===== */
+        .main-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 24px; margin-bottom: 40px;
+        }
+        .main-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px; padding: 40px 30px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
+            position: relative; overflow: hidden;
+        }
+        .main-card::before {
+            content: ''; position: absolute; inset: 0;
+            border-radius: 28px; padding: 2px;
+            background: linear-gradient(135deg, transparent, transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            transition: background 0.4s;
+        }
+        .main-card:hover::before {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .main-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 20px 50px rgba(139,92,246,0.15);
+        }
+        .main-card .card-icon {
+            width: 70px; height: 70px; border-radius: 22px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; margin-bottom: 24px;
+        }
+        .main-card h3 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .main-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.6; }
+        .card-arrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 0.9rem; font-weight: 600; color: var(--secondary);
+            transition: gap 0.3s;
+        }
+        .main-card:hover .card-arrow { gap: 14px; }
+
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 10px 25px rgba(109,40,217,0.3); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 10px 25px rgba(29,78,216,0.3); }
+        .icon-emerald { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 10px 25px rgba(5,150,105,0.3); }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 10px 25px rgba(8,145,178,0.3); }
+        .icon-amber { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 10px 25px rgba(217,119,6,0.3); }
+        .icon-rose { background: linear-gradient(135deg, #f43f5e, #e11d48); box-shadow: 0 10px 25px rgba(225,29,72,0.3); }
+
+        /* ===== SUB MENU ===== */
+        .sub-header {
+            display: flex; align-items: center; gap: 16px;
+            margin-bottom: 30px;
+        }
+        .btn-back-round {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--bg-card); border: 1px solid var(--glass-border);
+            color: white; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.1rem; transition: all 0.3s;
+        }
+        .btn-back-round:hover { background: var(--primary); border-color: var(--primary); }
+        .sub-header h3 {
+            font-size: 1.5rem; font-weight: 700;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== CATEGORY GRID ===== */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 18px;
+        }
+        .cat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 28px 22px;
+            text-align: center; cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .cat-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(139,92,246,0.3);
+            box-shadow: 0 15px 35px rgba(139,92,246,0.12);
+        }
+        .cat-card .cat-icon {
+            width: 65px; height: 65px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; margin: 0 auto 18px;
+        }
+        .cat-card h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+        .cat-card p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; }
+        .cat-badge {
+            display: inline-block;
+            padding: 5px 14px; border-radius: 50px;
+            font-size: 0.72rem; font-weight: 700;
+            background: rgba(16,185,129,0.12); color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,0.2);
+        }
+
+        /* ===== SOAL GRID ===== */
+        .soal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 14px;
+        }
+        .soal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px; padding: 22px 14px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s; position: relative;
+        }
+        .soal-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background: rgba(139,92,246,0.1);
+        }
+        .soal-card .soal-num {
+            font-size: 1.5rem; font-weight: 800; display: block; margin-bottom: 4px;
+        }
+        .soal-card .soal-label {
+            font-size: 0.78rem; color: var(--text-muted);
+        }
+        .soal-card.locked {
+            opacity: 0.55;
+        }
+        .soal-card.locked:hover {
+            border-color: var(--accent-amber);
+            background: rgba(245,158,11,0.06);
+        }
+        .soal-card.locked::after {
+            content: '\f023';
+            font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; top: 8px; right: 10px;
+            font-size: 0.7rem; color: var(--accent-amber);
+        }
+        .soal-card.free-item {
+            border-color: rgba(16,185,129,0.3);
+        }
+        .soal-card.free-item::after {
+            content: 'GRATIS';
+            position: absolute; top: 6px; right: 8px;
+            font-size: 0.55rem; font-weight: 800;
+            background: rgba(16,185,129,0.2); color: #6ee7b7;
+            padding: 2px 8px; border-radius: 50px;
+        }
+
+        /* ===== MODERN UPGRADE MODAL ===== */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 3000;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            animation: modalFadeIn 0.3s ease;
+        }
+        .modal-card {
+            background: linear-gradient(145deg, #141927, #1a2035);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 28px; padding: 0; max-width: 420px; width: 100%;
+            overflow: hidden;
+            animation: modalSlideUp 0.4s cubic-bezier(0.23,1,0.32,1);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 40px rgba(139,92,246,0.1);
+        }
+        .modal-top {
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2));
+            padding: 36px 32px 28px; text-align: center;
+            position: relative;
+        }
+        .modal-top::before {
+            content: ''; position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,92,246,0.2), transparent 70%);
+        }
+        .modal-emoji {
+            font-size: 3rem; margin-bottom: 16px;
+            animation: modalBounce 0.6s ease 0.2s both;
+            display: block;
+        }
+        .modal-top h3 {
+            font-size: 1.4rem; font-weight: 800; margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .modal-top p {
+            font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;
+        }
+        .modal-body {
+            padding: 28px 32px 32px;
+        }
+        .modal-features {
+            list-style: none; margin-bottom: 24px;
+        }
+        .modal-features li {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 0; font-size: 0.88rem; color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .modal-features li:last-child { border: none; }
+        .modal-features li i {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; flex-shrink: 0;
+            background: rgba(16,185,129,0.12); color: #6ee7b7;
+        }
+        .modal-price-tag {
+            text-align: center; margin-bottom: 20px;
+            padding: 14px; border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-price-tag .price {
+            font-size: 1.8rem; font-weight: 800;
+        }
+        .modal-price-tag .price small {
+            font-size: 0.85rem; color: var(--text-muted); font-weight: 500;
+        }
+        .modal-actions {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn-modal-primary {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 16px; border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; font-weight: 700; font-size: 0.95rem;
+            border: none; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 8px 25px var(--primary-glow);
+            text-decoration: none;
+        }
+        .btn-modal-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 35px var(--primary-glow); }
+        .btn-modal-secondary {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 14px; border-radius: 14px;
+            background: transparent; border: 1px solid var(--glass-border);
+            color: var(--text-muted); font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.3s;
+            text-decoration: none;
+        }
+        .btn-modal-secondary:hover { color: white; border-color: rgba(255,255,255,0.2); }
+
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalSlideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes modalBounce { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+        /* ===== TEST OVERLAY ===== */
+        .test-overlay {
+            position: fixed; inset: 0;
+            background: var(--bg-dark); z-index: 2000;
+            display: flex; flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        .test-nav {
+            padding: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: space-between;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .test-info {
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .test-info span:first-child { font-weight: 600; font-size: 1.2rem; }
+        .test-cat-badge {
+            font-size: 0.75rem; background: rgba(139,92,246,0.3);
+            padding: 3px 10px; border-radius: 50px; margin-top: 4px;
+        }
+        .test-controls { display: flex; align-items: center; gap: 10px; }
+        .close-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            color: white; padding: 8px 20px; border-radius: 40px;
+            cursor: pointer; font-size: 0.95rem;
+            display: flex; align-items: center; gap: 8px; transition: all 0.3s;
+        }
+        .close-btn:hover { background: #ef4444; border-color: #ef4444; }
+        .timer-tag {
+            background: #1e293b; padding: 8px 16px;
+            border-radius: 40px; font-size: 0.9rem;
+        }
+        .fullscreen-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            color: white; width: 40px; height: 40px; border-radius: 40px;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .fullscreen-btn:hover { background: var(--primary); border-color: var(--primary); }
+        .test-overlay iframe {
+            flex: 1; border: none; background: white;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.5; transform:scale(1.5); } }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .upgrade-banner { flex-direction: column; text-align: center; }
+            .navbar { padding: 10px 14px; }
+            .nav-brand h1 { font-size: 1.1rem; }
+            .free-nav-badge { display: none; }
+            .nav-actions a { padding: 7px 14px; font-size: 0.75rem; }
+            .test-nav { flex-direction: column; gap: 10px; padding: 14px; }
+            .category-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 400px) {
+            .category-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div id="particles-js"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">
+            <div class="logo-icon"><i class="fas fa-gift"></i></div>
+            <h1>Super<span>Casis</span></h1>
+            <span class="free-nav-badge">AKSES GRATIS</span>
+        </a>
+        <div class="nav-actions">
+            <a href="index.html" class="btn-back"><i class="fas fa-home" style="position:relative;z-index:1"></i> <span>Beranda</span></a>
+            <a href="register.html" class="btn-upgrade"><i class="fas fa-crown"></i> Upgrade</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- HEADER -->
+        <div class="page-header">
+            <div class="header-badge"><i class="fas fa-gift"></i> TANPA LOGIN · TANPA DAFTAR</div>
+            <h2>Coba <span class="grad">Akses Gratis</span></h2>
+            <p>Eksplorasi beberapa paket soal pilihan secara gratis. Rasakan pengalaman belajar premium tanpa batasan waktu.</p>
+        </div>
+
+        <!-- UPGRADE BANNER -->
+        <div class="upgrade-banner">
+            <div class="upgrade-banner-text">
+                <i class="fas fa-crown"></i>
+                <div>
+                    <h4>Ingin akses semua 5.000+ soal?</h4>
+                    <p>Upgrade ke Premium dan buka semua materi lengkap hanya Rp 50.000/bulan</p>
+                </div>
+            </div>
+            <a href="register.html" class="btn-upgrade-sm"><i class="fas fa-rocket"></i> Daftar Sekarang</a>
+        </div>
+
+        <!-- ===== MAIN MENU VIEW ===== -->
+        <div id="viewMain" class="view-container">
+            <div class="main-grid">
+                <div class="main-card" onclick="showPsikotes()">
+                    <div class="card-icon icon-purple"><i class="fas fa-puzzle-piece"></i></div>
+                    <h3>PSIKOTES</h3>
+                    <p>Latihan Tes Kecerdasan, Kecermatan & Kepribadian. Akses paket soal gratis untuk setiap sub tes.</p>
+                    <div class="card-arrow">Buka Modul <i class="fas fa-chevron-right"></i></div>
+                </div>
+                <div class="main-card" onclick="showAkademik()">
+                    <div class="card-icon icon-blue"><i class="fas fa-graduation-cap"></i></div>
+                    <h3>AKADEMIK</h3>
+                    <p>Latihan Matematika, Bahasa Inggris, Pengetahuan Umum & Wawasan Kebangsaan secara gratis.</p>
+                    <div class="card-arrow">Buka Modul <i class="fas fa-chevron-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PSIKOTES MENU VIEW ===== -->
+        <div id="viewPsikotes" class="view-container hidden">
+            <div class="sub-header">
+                <button class="btn-back-round" onclick="backToMain()"><i class="fas fa-arrow-left"></i></button>
+                <h3>Modul Psikotes — Akses Gratis</h3>
+            </div>
+            <div class="category-grid" id="psikotesCatGrid"></div>
+        </div>
+
+        <!-- ===== PSIKOTES SUB VIEW ===== -->
+        <div id="viewPsikotesSub" class="view-container hidden">
+            <div class="sub-header">
+                <button class="btn-back-round" onclick="backToPsikotes()"><i class="fas fa-arrow-left"></i></button>
+                <h3 id="psiSubTitle">Tes Kecerdasan</h3>
+            </div>
+            <div class="category-grid" id="psiSubGrid"></div>
+        </div>
+
+        <!-- ===== PSIKOTES DETAIL VIEW ===== -->
+        <div id="viewPsikotesDetail" class="view-container hidden">
+            <div class="sub-header">
+                <button class="btn-back-round" onclick="backToPsiSub()"><i class="fas fa-arrow-left"></i></button>
+                <h3 id="psiDetailTitle">Tes Kemampuan Verbal</h3>
+            </div>
+            <div class="soal-grid" id="psiDetailGrid"></div>
+        </div>
+
+        <!-- ===== AKADEMIK MENU VIEW ===== -->
+        <div id="viewAkademik" class="view-container hidden">
+            <div class="sub-header">
+                <button class="btn-back-round" onclick="backToMain()"><i class="fas fa-arrow-left"></i></button>
+                <h3>Modul Akademik — Akses Gratis</h3>
+            </div>
+            <div class="category-grid" id="akademikCatGrid"></div>
+        </div>
+
+        <!-- ===== AKADEMIK DETAIL VIEW ===== -->
+        <div id="viewAkademikDetail" class="view-container hidden">
+            <div class="sub-header">
+                <button class="btn-back-round" onclick="backToAkademik()"><i class="fas fa-arrow-left"></i></button>
+                <h3 id="akdDetailTitle">Matematika</h3>
+            </div>
+            <div class="soal-grid" id="akdDetailGrid"></div>
+        </div>
+
+    </div>
+
+    <!-- ===== TEST OVERLAY ===== -->
+    <div id="testOverlay" class="test-overlay" style="display:none;">
+        <div class="test-nav">
+            <button onclick="closeTest()" class="close-btn"><i class="fas fa-times"></i> Tutup</button>
+            <div class="test-info">
+                <span id="testTitle">Loading...</span>
+                <span class="test-cat-badge" id="testCat">Gratis</span>
+            </div>
+            <div class="test-controls">
+                <div class="timer-tag"><i class="far fa-clock"></i> <span id="timer">00:00</span></div>
+                <button class="fullscreen-btn" onclick="goFullscreen()"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
+        <iframe id="testIframe" src="about:blank"></iframe>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+    // ===== DATA =====
+    const psikotesGroups = [
+        {
+            group: "Tes Kecerdasan", icon: "fa-brain", folder: "kecerdasan",
+            color: "icon-purple",
+            sub: [
+                { name: "Tes Kemampuan Verbal", icon: "fa-message", total: 20 },
+                { name: "Tes Kemampuan Numerik", icon: "fa-calculator", total: 20 },
+                { name: "Tes Kemampuan Figural", icon: "fa-shapes", total: 20 }
+            ]
+        },
+        {
+            group: "Tes Kecermatan", icon: "fa-eye", folder: "kecermatan",
+            color: "icon-blue",
+            sub: [
+                { name: "Tes Angka Hilang", icon: "fa-table", total: 20 },
+                { name: "Tes Huruf Hilang", icon: "fa-font", total: 20 },
+                { name: "Tes Simbol Hilang", icon: "fa-font", total: 20 },
+                { name: "Tes Koran Pauli dan Kreapelin", icon: "fa-newspaper", total: 20 }
+            ]
+        },
+        {
+            group: "Tes Kepribadian", icon: "fa-user-check", folder: "kepribadian",
+            color: "icon-emerald",
+            sub: [
+                { name: "Tes Kuesioner 5 Pilihan", icon: "fa-clipboard-list", total: 20 },
+                { name: "Tes Papi Kostick", icon: "fa-chart-pie", total: 20 }
+            ]
+        }
+    ];
+
+    const akademikCategories = {
+        matematika: { title: 'Matematika', prefix: 'matematika', folder: 'matematika', icon: 'fa-calculator', color: 'icon-purple' },
+        inggris: { title: 'Bahasa Inggris', prefix: 'inggris', folder: 'bahasa-inggris', icon: 'fa-language', color: 'icon-blue' },
+        umum: { title: 'Pengetahuan Umum', prefix: 'umum', folder: 'pengetahuan-umum', icon: 'fa-globe', color: 'icon-emerald' },
+        wawasan: { title: 'Wawasan Kebangsaan', prefix: 'wawasan', folder: 'wawasan-kebangsaan', icon: 'fa-flag', color: 'icon-amber' }
+    };
+
+    const FREE_LIMIT = 3; // First 3 packs are free
+    let currentPsiGroup = null;
+    let currentPsiSub = null;
+    let timerInterval = null;
+
+    // ===== VIEW MANAGEMENT =====
+    function hideAll() {
+        ['viewMain','viewPsikotes','viewPsikotesSub','viewPsikotesDetail','viewAkademik','viewAkademikDetail'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+    }
+    function showView(id) {
+        hideAll();
+        const el = document.getElementById(id);
+        el.classList.remove('hidden');
+        el.style.animation = 'none';
+        el.offsetHeight;
+        el.style.animation = 'fadeInUp 0.4s ease';
+    }
+    function backToMain() { showView('viewMain'); }
+
+    // ===== PSIKOTES =====
+    function showPsikotes() {
+        showView('viewPsikotes');
+        const grid = document.getElementById('psikotesCatGrid');
+        grid.innerHTML = '';
+        psikotesGroups.forEach((g, i) => {
+            const colors = ['icon-purple','icon-blue','icon-emerald'];
+            grid.innerHTML += `
+                <div class="cat-card" onclick="showPsiSub(${i})">
+                    <div class="cat-icon ${colors[i % colors.length]}"><i class="fas ${g.icon}"></i></div>
+                    <h4>${g.group}</h4>
+                    <p>${g.sub.length} Sub Tes</p>
+                    <span class="cat-badge"><i class="fas fa-gift"></i> 3 Paket Gratis</span>
+                </div>
+            `;
+        });
+    }
+
+    function showPsiSub(groupIdx) {
+        currentPsiGroup = groupIdx;
+        const g = psikotesGroups[groupIdx];
+        showView('viewPsikotesSub');
+        document.getElementById('psiSubTitle').textContent = g.group + ' — Akses Gratis';
+        const grid = document.getElementById('psiSubGrid');
+        grid.innerHTML = '';
+        const colors = ['icon-purple','icon-blue','icon-emerald','icon-cyan','icon-amber','icon-rose'];
+        g.sub.forEach((s, i) => {
+            grid.innerHTML += `
+                <div class="cat-card" onclick="showPsiDetail('${g.folder}', '${s.name}', ${s.total})">
+                    <div class="cat-icon ${colors[i % colors.length]}"><i class="fas ${s.icon}"></i></div>
+                    <h4>${s.name}</h4>
+                    <p>${s.total} Paket Soal</p>
+                    <span class="cat-badge"><i class="fas fa-lock-open"></i> 3 Gratis</span>
+                </div>
+            `;
+        });
+    }
+
+    function backToPsikotes() { showView('viewPsikotes'); }
+
+    function showPsiDetail(folder, subName, total) {
+        currentPsiSub = { folder, subName };
+        showView('viewPsikotesDetail');
+        document.getElementById('psiDetailTitle').textContent = subName;
+        const grid = document.getElementById('psiDetailGrid');
+        grid.innerHTML = '';
+
+        for (let i = 1; i <= total; i++) {
+            const isFree = i <= FREE_LIMIT;
+            const slug = subName.toLowerCase().replace(/\s+/g, '-');
+            const folderName = `${slug}${i}`;
+            const fileName = `${slug}${i}.html`;
+            const filePath = `app/psikotes/${folder}/${folderName}/${fileName}`;
+
+            if (isFree) {
+                grid.innerHTML += `
+                    <div class="soal-card free-item" onclick="openTest('${subName} ${i}', '${filePath}', '${subName}')">
+                        <span class="soal-num">${i}</span>
+                        <span class="soal-label">Paket Soal</span>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML += `
+                    <div class="soal-card locked" onclick="showUpgradeModal('${subName} Paket ${i}')">
+                        <span class="soal-num">${i}</span>
+                        <span class="soal-label">Paket Soal</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    function backToPsiSub() { showPsiSub(currentPsiGroup); }
+
+    // ===== AKADEMIK =====
+    function showAkademik() {
+        showView('viewAkademik');
+        const grid = document.getElementById('akademikCatGrid');
+        grid.innerHTML = '';
+        const keys = Object.keys(akademikCategories);
+        const colors = ['icon-purple','icon-blue','icon-emerald','icon-amber'];
+        keys.forEach((key, i) => {
+            const cat = akademikCategories[key];
+            grid.innerHTML += `
+                <div class="cat-card" onclick="showAkdDetail('${key}')">
+                    <div class="cat-icon ${colors[i % colors.length]}"><i class="fas ${cat.icon}"></i></div>
+                    <h4>${cat.title}</h4>
+                    <p>20 Paket Soal</p>
+                    <span class="cat-badge"><i class="fas fa-gift"></i> 3 Paket Gratis</span>
+                </div>
+            `;
+        });
+    }
+
+    function showAkdDetail(key) {
+        showView('viewAkademikDetail');
+        const cat = akademikCategories[key];
+        document.getElementById('akdDetailTitle').textContent = cat.title;
+        const grid = document.getElementById('akdDetailGrid');
+        grid.innerHTML = '';
+
+        for (let i = 1; i <= 20; i++) {
+            const isFree = i <= FREE_LIMIT;
+            const folderName = `${cat.prefix}${i}`;
+            const fileName = `${cat.prefix}${i}.html`;
+            const filePath = `app/akademik/${cat.folder}/${folderName}/${fileName}`;
+
+            if (isFree) {
+                grid.innerHTML += `
+                    <div class="soal-card free-item" onclick="openTest('${cat.title} ${i}', '${filePath}', '${cat.title}')">
+                        <span class="soal-num">${i}</span>
+                        <span class="soal-label">Paket ${i}</span>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML += `
+                    <div class="soal-card locked" onclick="showUpgradeModal('${cat.title} Paket ${i}')">
+                        <span class="soal-num">${i}</span>
+                        <span class="soal-label">Paket ${i}</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    function backToAkademik() { showView('viewAkademik'); }
+
+    // ===== MODERN UPGRADE MODAL =====
+    function showUpgradeModal(paketName) {
+        // Remove existing modal if any
+        const existing = document.getElementById('upgradeModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'upgradeModal';
+        modal.className = 'modal-overlay';
+        modal.onclick = function(e) { if (e.target === modal) closeUpgradeModal(); };
+        modal.innerHTML = `
+            <div class="modal-card">
+                <div class="modal-top">
+                    <span class="modal-emoji">🔒</span>
+                    <h3>Konten Premium</h3>
+                    <p><strong>${paketName}</strong> hanya tersedia untuk pengguna terdaftar.</p>
+                </div>
+                <div class="modal-body">
+                    <ul class="modal-features">
+                        <li><i class="fas fa-check"></i> Akses 5.000+ soal lengkap</li>
+                        <li><i class="fas fa-check"></i> 260+ paket dari semua kategori</li>
+                        <li><i class="fas fa-check"></i> Simulasi Try Out resmi</li>
+                        <li><i class="fas fa-check"></i> Penilaian real-time & pembahasan</li>
+                    </ul>
+                    <div class="modal-price-tag">
+                        <span class="price">Rp 50.000 <small>/ bulan</small></span>
+                    </div>
+                    <div class="modal-actions">
+                        <a href="register.html" class="btn-modal-primary">
+                            <i class="fas fa-rocket"></i> Daftar & Upgrade Sekarang
+                        </a>
+                        <button class="btn-modal-secondary" onclick="closeUpgradeModal()">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Soal Gratis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            modal.style.animation = 'modalFadeIn 0.2s ease reverse';
+            setTimeout(() => {
+                modal.remove();
+                document.body.style.overflow = '';
+            }, 200);
+        }
+    }
+
+    // ===== TEST OVERLAY =====
+    function openTest(title, path, category) {
+        document.getElementById('testTitle').textContent = title;
+        document.getElementById('testCat').textContent = category + ' · Gratis';
+        document.getElementById('testIframe').src = path;
+        document.getElementById('testOverlay').style.display = 'flex';
+        startTimer();
+    }
+
+    function closeTest() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        document.getElementById('testOverlay').style.display = 'none';
+        document.getElementById('testIframe').src = 'about:blank';
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        let seconds = 0;
+        const el = document.getElementById('timer');
+        timerInterval = setInterval(() => {
+            seconds++;
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            el.textContent = `${m}:${s}`;
+        }, 1000);
+    }
+
+    function goFullscreen() {
+        const iframe = document.getElementById('testIframe');
+        if (iframe.requestFullscreen) iframe.requestFullscreen();
+        else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+    }
+
+    // ===== PARTICLES =====
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 40, density: { enable: true, value_area: 900 } },
+                    color: { value: "#10b981" },
+                    shape: { type: "circle" },
+                    opacity: { value: 0.12, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: { enable: true, distance: 150, color: "#10b981", opacity: 0.06, width: 1 },
+                    move: { enable: true, speed: 1, direction: "none", random: true, straight: false, out_mode: "out" }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: { onhover: { enable: true, mode: "grab" }, resize: true },
+                    modes: { grab: { distance: 140, line_linked: { opacity: 0.2 } } }
+                },
+                retina_detect: true
+            });
+        }
+    });
+    </script>
+</body>
+</html>
