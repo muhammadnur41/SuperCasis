@@ -32,7 +32,7 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex; align-items: center; justify-content: center;
-            padding: 24px;
+            padding: 14px;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -66,16 +66,16 @@
         /* Container */
         .register-wrapper {
             position: relative; z-index: 10;
-            width: 100%; max-width: 480px; margin: 20px 0;
+            width: 100%; max-width: 700px; margin: 0;
         }
 
         /* Back link */
         .back-link {
             display: inline-flex; align-items: center; gap: 8px;
             color: var(--text-muted); text-decoration: none;
-            font-size: 0.85rem; font-weight: 500;
-            margin-bottom: 24px; transition: all 0.3s;
-            padding: 8px 16px; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 500;
+            margin-bottom: 10px; transition: all 0.3s;
+            padding: 6px 14px; border-radius: 10px;
             background: var(--bg-card); border: 1px solid var(--glass-border);
         }
         .back-link:hover { color: white; border-color: rgba(255,255,255,0.2); transform: translateX(-4px); }
@@ -90,61 +90,62 @@
             box-shadow: 0 25px 80px rgba(0,0,0,0.4), 0 0 40px rgba(139,92,246,0.05);
         }
 
-        /* Card header */
+        /* Card header - compact inline */
         .card-header {
             background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15));
-            padding: 36px 32px 28px;
-            text-align: center;
+            padding: 16px 28px;
+            display: flex; align-items: center; gap: 14px;
             position: relative;
         }
-        .card-header::before {
-            content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
-            width: 200px; height: 200px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%);
-        }
+        .card-header::before { display: none; }
         .card-header .logo-icon {
-            width: 56px; height: 56px; border-radius: 18px;
+            width: 42px; height: 42px; border-radius: 14px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 16px; font-size: 1.5rem;
-            box-shadow: 0 8px 25px var(--primary-glow);
-            animation: logoPulse 3s ease-in-out infinite;
-        }
-        @keyframes logoPulse {
-            0%, 100% { box-shadow: 0 8px 25px var(--primary-glow); }
-            50% { box-shadow: 0 8px 40px var(--primary-glow); }
+            font-size: 1.2rem; flex-shrink: 0;
+            box-shadow: 0 6px 18px var(--primary-glow);
         }
         .card-header h1 {
-            font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;
+            font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px;
         }
         .card-header h1 span { color: var(--secondary); }
         .card-header p {
-            color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;
+            color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;
         }
 
         /* Form body */
         .card-body {
-            padding: 32px;
+            padding: 20px 28px 16px;
+        }
+
+        /* 2-column grid for form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 18px;
+        }
+        .form-grid .form-group-full {
+            grid-column: 1 / -1;
         }
 
         /* Form group */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
         .form-label {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1px;
-            color: var(--text-muted); margin-bottom: 8px;
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-muted); margin-bottom: 5px;
         }
-        .form-label i { font-size: 0.7rem; color: var(--primary); opacity: 0.7; }
+        .form-label i { font-size: 0.65rem; color: var(--primary); opacity: 0.7; }
 
         .form-input {
-            width: 100%; padding: 14px 18px;
+            width: 100%; padding: 10px 14px;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
-            border-radius: 14px; color: white;
-            font-family: inherit; font-size: 1rem;
+            border-radius: 12px; color: white;
+            font-family: inherit; font-size: 0.9rem;
             transition: all 0.3s; outline: none;
         }
         .form-input::placeholder { color: #4a5568; }
@@ -158,12 +159,13 @@
         .password-wrapper {
             position: relative;
         }
-        .password-wrapper .form-input { padding-right: 50px; }
+        .password-wrapper .form-input { padding-right: 42px; }
         .toggle-pass {
-            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
             background: none; border: none; color: var(--text-muted);
             cursor: pointer; padding: 4px; transition: color 0.3s;
             display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
         }
         .toggle-pass:hover { color: var(--primary); }
 
@@ -172,8 +174,8 @@
             position: relative;
         }
         .file-upload-label {
-            display: flex; align-items: center; gap: 14px;
-            padding: 16px 18px; border-radius: 14px;
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border-radius: 12px;
             background: var(--input-bg); border: 1.5px dashed var(--input-border);
             cursor: pointer; transition: all 0.3s;
         }
@@ -181,13 +183,13 @@
             border-color: var(--primary); background: rgba(139,92,246,0.05);
         }
         .file-upload-icon {
-            width: 44px; height: 44px; border-radius: 12px;
+            width: 34px; height: 34px; border-radius: 10px;
             background: rgba(139,92,246,0.12);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; color: #c4b5fd; flex-shrink: 0;
+            font-size: 0.9rem; color: #c4b5fd; flex-shrink: 0;
         }
-        .file-upload-text h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
-        .file-upload-text p { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .file-upload-text h4 { font-size: 0.82rem; font-weight: 600; color: var(--text-main); }
+        .file-upload-text p { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
         .file-upload-text .file-name { color: var(--accent-emerald); font-weight: 600; }
         .file-input-hidden {
             position: absolute; opacity: 0; width: 0; height: 0;
@@ -195,53 +197,65 @@
 
         /* Submit button */
         .btn-register {
-            width: 100%; padding: 16px;
+            width: 100%; padding: 12px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 16px;
-            font-family: inherit; font-size: 1rem; font-weight: 700;
+            color: white; border: none; border-radius: 14px;
+            font-family: inherit; font-size: 1.2rem; font-weight: 700;
             cursor: pointer; transition: all 0.35s;
-            box-shadow: 0 8px 30px var(--primary-glow);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            margin-top: 8px;
+            box-shadow: 0 6px 20px var(--primary-glow);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .btn-register:hover:not(:disabled) {
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 12px 40px var(--primary-glow);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 10px 30px var(--primary-glow);
         }
         .btn-register:active:not(:disabled) { transform: scale(0.98); }
         .btn-register:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Payment info */
+        /* Bottom area: button + payment side by side */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .bottom-row .btn-register {
+            align-self: stretch;
+        }
+
+        /* Payment info - compact */
         .payment-card {
-            margin-top: 20px; padding: 18px 20px;
+            padding: 12px 14px;
             background: rgba(139,92,246,0.06);
             border: 1px solid rgba(139,92,246,0.15);
-            border-radius: 16px;
+            border-radius: 14px;
+            display: flex; flex-direction: column; justify-content: center;
         }
         .payment-card .pay-header {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 0.78rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1px;
-            color: #c4b5fd; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            color: #c4b5fd; margin-bottom: 6px;
         }
         .payment-card .pay-body {
-            font-size: 0.88rem; color: var(--text-muted); line-height: 1.8;
+            font-size: 0.78rem; color: var(--text-muted); line-height: 1.6;
         }
         .payment-card .pay-body strong { color: var(--text-main); }
         .payment-card .pay-amount {
             display: inline-block;
             background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25);
-            padding: 4px 14px; border-radius: 50px;
-            font-weight: 700; font-size: 0.85rem; color: #c4b5fd;
+            padding: 2px 10px; border-radius: 50px;
+            font-weight: 700; font-size: 0.75rem; color: #c4b5fd;
         }
 
-        /* Footer links */
+        /* Footer links - inline compact */
         .card-footer {
-            padding: 24px 32px 32px;
+            padding: 12px 28px 16px;
             text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 20px;
         }
         .card-footer p {
-            font-size: 0.88rem; color: var(--text-muted);
+            font-size: 0.82rem; color: var(--text-muted); margin: 0;
         }
         .card-footer a {
             color: var(--primary); font-weight: 700;
@@ -249,14 +263,13 @@
         }
         .card-footer a:hover { color: #a78bfa; }
         .card-footer .divider {
-            height: 1px; background: var(--glass-border);
-            margin: 16px 0;
+            width: 1px; height: 20px; background: var(--glass-border);
         }
         .card-footer .home-link {
             display: inline-flex; align-items: center; gap: 6px;
-            color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+            color: var(--text-muted); font-size: 0.78rem; font-weight: 500;
             text-decoration: none; transition: all 0.3s;
-            padding: 8px 18px; border-radius: 50px;
+            padding: 6px 14px; border-radius: 50px;
             background: var(--bg-card); border: 1px solid var(--glass-border);
         }
         .card-footer .home-link:hover {
@@ -266,26 +279,24 @@
 
         /* Animations */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .register-wrapper { animation: fadeInUp 0.6s ease; }
-        .form-group { animation: fadeInUp 0.5s ease both; }
-        .form-group:nth-child(1) { animation-delay: 0.05s; }
-        .form-group:nth-child(2) { animation-delay: 0.1s; }
-        .form-group:nth-child(3) { animation-delay: 0.15s; }
-        .form-group:nth-child(4) { animation-delay: 0.2s; }
-        .form-group:nth-child(5) { animation-delay: 0.25s; }
-        .form-group:nth-child(6) { animation-delay: 0.3s; }
+        .register-wrapper { animation: fadeInUp 0.5s ease; }
 
         /* Responsive */
-        @media (max-width: 500px) {
-            body { padding: 16px; }
-            .card-header { padding: 28px 20px 22px; }
-            .card-body { padding: 24px 20px; }
-            .card-footer { padding: 20px; }
-            .card-header h1 { font-size: 1.5rem; }
+        @media (max-width: 700px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .register-wrapper { max-width: 480px; }
+            .bottom-row { grid-template-columns: 1fr; }
+            .card-header { padding: 14px 20px; }
+            .card-body { padding: 16px 18px 12px; }
+            .card-footer { flex-direction: column; gap: 10px; padding: 12px 20px 16px; }
+            .card-footer .divider { width: 60px; height: 1px; }
+            .card-header h1 { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -301,74 +312,80 @@
             <!-- Header -->
             <div class="card-header">
                 <div class="logo-icon"><i class="fas fa-user-plus"></i></div>
-                <h1>Super<span>Casis</span></h1>
-                <p>Buat akun untuk mulai berlatih</p>
+                <div>
+                    <h1>Super<span>Casis</span></h1>
+                    <p>Buat akun untuk mulai berlatih</p>
+                </div>
             </div>
 
             <!-- Form -->
             <div class="card-body">
                 <form id="registerForm">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-user"></i> Nama Lengkap</label>
-                        <input type="text" name="nama" required class="form-input" placeholder="Nama Lengkap">
-                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user"></i> Nama Lengkap</label>
+                            <input type="text" name="nama" required class="form-input" placeholder="Nama Lengkap">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label"><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
-                        <input type="number" name="nomor" required class="form-input" placeholder="0812xxxxxxxx">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-lock"></i> Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" name="password" id="password" required class="form-input" placeholder="Minimal 6 karakter">
+                                <button type="button" onclick="togglePassword('password')" class="toggle-pass">
+                                    <i class="fas fa-eye" id="eyeIcon1"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
-                        <input type="email" name="email" required class="form-input" placeholder="email@anda.com">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+                            <input type="email" name="email" required class="form-input" placeholder="email@anda.com">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-lock"></i> Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" name="password" id="password" required class="form-input" placeholder="Minimal 6 karakter">
-                            <button type="button" onclick="togglePassword('password')" class="toggle-pass">
-                                <i class="fas fa-eye" id="eyeIcon1"></i>
-                            </button>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-shield-halved"></i> Ulangi Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="confirm_password" required class="form-input" placeholder="Ketik ulang password">
+                                <button type="button" onclick="togglePassword('confirm_password')" class="toggle-pass">
+                                    <i class="fas fa-eye" id="eyeIcon2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label"><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
+                            <input type="number" name="nomor" required class="form-input" placeholder="0812xxxxxxxx">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-receipt"></i> Bukti Transfer</label>
+                            <div class="file-upload-wrapper">
+                                <label class="file-upload-label" for="bukti_bayar" id="fileLabel">
+                                    <div class="file-upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                                    <div class="file-upload-text">
+                                        <h4 id="fileDisplayName">Pilih file (JPG/PNG)</h4>
+                                        <p>Max 5MB</p>
+                                    </div>
+                                </label>
+                                <input type="file" id="bukti_bayar" accept="image/*" required class="file-input-hidden">
+                                <input type="hidden" name="fileData" id="fileData">
+                                <input type="hidden" name="fileName" id="fileName">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-shield-halved"></i> Ulangi Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" id="confirm_password" required class="form-input" placeholder="Ketik ulang password">
-                            <button type="button" onclick="togglePassword('confirm_password')" class="toggle-pass">
-                                <i class="fas fa-eye" id="eyeIcon2"></i>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="bottom-row">
+                        <button type="submit" id="btnRegister" class="btn-register">
+                            <i class="fas fa-rocket"></i> DAFTAR SEKARANG
+                        </button>
 
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-receipt"></i> Bukti Transfer (JPG/PNG)</label>
-                        <div class="file-upload-wrapper">
-                            <label class="file-upload-label" for="bukti_bayar" id="fileLabel">
-                                <div class="file-upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
-                                <div class="file-upload-text">
-                                    <h4 id="fileDisplayName">Pilih file bukti transfer</h4>
-                                    <p>Format: JPG, PNG (max 5MB)</p>
-                                </div>
-                            </label>
-                            <input type="file" id="bukti_bayar" accept="image/*" required class="file-input-hidden">
-                            <input type="hidden" name="fileData" id="fileData">
-                            <input type="hidden" name="fileName" id="fileName">
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btnRegister" class="btn-register">
-                        <i class="fas fa-rocket"></i> DAFTAR SEKARANG
-                    </button>
-
-                    <div class="payment-card">
-                        <div class="pay-header"><i class="fas fa-credit-card"></i> Info Pembayaran</div>
-                        <div class="pay-body">
-                            Berlangganan 1 Bulan: <span class="pay-amount">Rp 50.000</span><br>
-                            <strong>BRI:</strong> 2259 0100 5257 536<br>
-                            a/n <strong>MUHAMMAD IRWAN NUR</strong>
+                        <div class="payment-card">
+                            <div class="pay-header"><i class="fas fa-credit-card"></i> Info Pembayaran</div>
+                            <div class="pay-body">
+                                1 Bulan: <span class="pay-amount">Rp 50.000</span><br>
+                                <strong>BRI:</strong> 2259 0100 5257 536<br>
+                                a/n <strong>MUHAMMAD IRWAN NUR</strong>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -378,7 +395,7 @@
             <div class="card-footer">
                 <p>Sudah punya akun? <a href="login.html">Login di sini</a></p>
                 <div class="divider"></div>
-                <a href="index.html" class="home-link"><i class="fas fa-home"></i> Kembali ke Beranda</a>
+                <a href="index.html" class="home-link"><i class="fas fa-home"></i> Beranda</a>
             </div>
         </div>
     </div>
