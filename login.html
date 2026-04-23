@@ -104,6 +104,9 @@
         }
 
         // --- PROSES LOGIN ---
+        const ADMIN_EMAIL = 'irwanwakuru@gmail.com';
+        const ADMIN_PASS = '112233';
+
         loginForm.addEventListener('submit', e => {
             e.preventDefault();
             
@@ -112,6 +115,17 @@
 
             const usernameVal = document.getElementById('username').value.trim();
             const passwordVal = document.getElementById('password').value;
+
+            // Check admin credentials first
+            if (usernameVal === ADMIN_EMAIL && passwordVal === ADMIN_PASS) {
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                localStorage.setItem('adminEmail', usernameVal);
+                showToast('success', 'Berhasil', 'Selamat datang, Admin!');
+                setTimeout(() => {
+                    window.location.href = "admin-dashboard.html";
+                }, 1200);
+                return;
+            }
 
             const formData = new FormData();
             formData.append('action', 'login');
@@ -125,6 +139,16 @@
                         localStorage.setItem('isLoggedIn', 'true');
                         localStorage.setItem('userUsername', usernameVal);
                         localStorage.setItem('userNama', result.nama);
+
+                        // Track login history for admin dashboard
+                        let loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+                        loginHistory.push({
+                            username: usernameVal,
+                            nama: result.nama,
+                            action: 'login',
+                            timestamp: new Date().toISOString()
+                        });
+                        localStorage.setItem('loginHistory', JSON.stringify(loginHistory));
 
                         showToast('success', 'Berhasil', 'Selamat datang, ' + result.nama);
                         

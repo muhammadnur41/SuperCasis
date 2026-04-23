@@ -310,6 +310,18 @@
         userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
         const finalScoreValue = Math.round((correct / quizData.length) * 100);
         
+        // Kirim skor ke parent window (dashboard) untuk disimpan di riwayat
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'testScore',
+                testName: document.title || 'Tes',
+                category: 'Psikotes',
+                score: finalScoreValue,
+                correct: correct,
+                total: quizData.length
+            }, '*');
+        }
+        
         document.getElementById('quiz-screen').style.display = 'none';
         document.getElementById('finish-quiz-btn').style.display = 'none';
         document.getElementById('result-screen').style.display = 'block';

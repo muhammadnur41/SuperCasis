@@ -1,0 +1,114 @@
+// Konfigurasi
+const SPREADSHEET_NAME = "Users";
+const FOLDER_ID = "1s-Uv2TOH5vNXus-UMvoj5GwN5HQhpZv-"; // GANTI DENGAN ID FOLDER DRIVE ANDA
+
+function doPost(e) {
+  const action = e.parameter.action;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SPREADSHEET_NAME);
+  
+  if (!sheet) {
+    return createResponse("error", "Sheet 'Users' tidak ditemukan!");
+  }
+  
+  const data = sheet.getDataRange().getValues();
+
+  // --- LOGIKA REGISTRASI ---
+  if (action === 'register') {
+    try {
+      const nama = e.parameter.nama;
+      const nomor = e.parameter.nomor;
+      const email = e.parameter.email;
+      const password = e.parameter.password;
+      const fileData = e.parameter.fileData;
+      const fileName = e.parameter.fileName;
+
+      // Cek apakah EMAIL sudah terdaftar
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][2].toString().toLowerCase() === email.toString().toLowerCase()) {
+          return createResponse("error", "Email ini sudah terdaftar!");
+        }
+      }
+
+      // Upload file ke Drive
+      const folder = DriveApp.getFolderById(FOLDER_ID);
+      const decodedFile = Utilities.base64Decode(fileData);
+      const blob = Utilities.newBlob(decodedFile, "image/jpeg", fileName);
+      const fileUrl = folder.createFile(blob).getUrl();
+
+      // SIMPAN DATA (Ditambah Tanggal Registrasi di Kolom G)
+      sheet.appendRow([
+        nama, 
+        "'" + nomor, 
+        email, 
+        password, 
+        fileUrl, 
+        "Pending", 
+        new Date(), // Kolom G: Tanggal Registrasi
+        "-"         // Kolom H: Terakhir Login (Awalnya kosong)
+      ]);
+
+      return createResponse("success", "Pendaftaran berhasil!");
+    } catch (err) {
+      return createResponse("error", "Gagal mendaftar: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA LOGIN ---
+  if (action === 'login') {
+    const usernameInput = e.parameter.username;
+    const passwordInput = e.parameter.password;
+
+    for (let i = 1; i < data.length; i++) {
+      const dbEmail = data[i][2].toString().toLowerCase();
+      const dbPassword = data[i][3].toString();
+      const dbNama = data[i][0];
+
+      if (dbEmail === usernameInput.toLowerCase() && dbPassword === passwordInput) {
+        
+        // --- UPDATE RIWAYAT LOGIN TERAKHIR (Kolom H / Baris i+1, Kolom 8) ---
+        sheet.getRange(i + 1, 8).setValue(new Date()); 
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          nama: dbNama,
+          email: dbEmail
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return createResponse("error", "Email atau Password salah!");
+  }
+
+  // --- LOGIKA GANTI PASSWORD ---
+  if (action === 'change_password') {
+    const email = e.parameter.username;
+    const oldPass = e.parameter.oldPassword;
+    const newPass = e.parameter.newPassword;
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][2].toString().toLowerCase() === email.toLowerCase() && data[i][3].toString() === oldPass) {
+        sheet.getRange(i + 1, 4).setValue(newPass);
+        return createResponse("success", "Password berhasil diperbarui.");
+      }
+    }
+    return createResponse("error", "Email atau Password lama tidak cocok.");
+  }
+
+  // --- LOGIKA LUPA PASSWORD ---
+  if (action === 'forgot_password') {
+    const email = e.parameter.username;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][2].toString().toLowerCase() === email.toLowerCase()) {
+        sheet.getRange(i + 1, 6).setValue("Minta Reset Password"); 
+        return createResponse("success", "Permintaan reset password telah dikirim ke admin.");
+      }
+    }
+    return createResponse("error", "Email tidak ditemukan.");
+  }
+}
+
+function createResponse(status, message) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: status,
+    message: message
+  })).setMimeType(ContentService.MimeType.JSON);
+}

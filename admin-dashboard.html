@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Super Casis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: rgba(255,255,255,0.04);
+            --glass-border: rgba(255,255,255,0.08);
+            --primary: #f59e0b;
+            --primary-glow: rgba(245,158,11,0.35);
+            --secondary: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 600px 600px at 15% 20%, rgba(245,158,11,0.08), transparent),
+                radial-gradient(ellipse 500px 500px at 85% 70%, rgba(239,68,68,0.06), transparent),
+                radial-gradient(ellipse 400px 400px at 50% 50%, rgba(139,92,246,0.05), transparent);
+        }
+
+        /* Navbar */
+        .admin-navbar {
+            position: sticky; top: 0; z-index: 100;
+            padding: 14px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10,14,26,0.85);
+            backdrop-filter: blur(20px) saturate(1.8);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .admin-nav-brand {
+            display: flex; align-items: center; gap: 12px;
+            text-decoration: none; color: white;
+        }
+        .admin-nav-brand .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .admin-nav-brand h1 { font-size: 1.3rem; font-weight: 800; }
+        .admin-nav-brand h1 span { color: var(--primary); }
+        .admin-nav-badge {
+            background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+            color: #fcd34d; padding: 4px 12px; border-radius: 50px;
+            font-size: 0.68rem; font-weight: 700; margin-left: 10px;
+        }
+        .admin-nav-right {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .admin-info {
+            text-align: right;
+        }
+        .admin-info .name { font-size: 0.85rem; font-weight: 600; }
+        .admin-info .role { font-size: 0.72rem; color: var(--text-muted); }
+        .btn-admin-logout {
+            background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);
+            color: #fca5a5; padding: 8px 18px; border-radius: 12px;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s;
+        }
+        .btn-admin-logout:hover {
+            background: #ef4444; color: white; border-color: #ef4444;
+            transform: translateY(-2px);
+        }
+
+        /* Container */
+        .dashboard-container {
+            max-width: 1200px; margin: 0 auto;
+            padding: 30px 24px; position: relative; z-index: 10;
+        }
+
+        /* Stats overview */
+        .stats-overview {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 18px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .stat-card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .stat-card-header .stat-icon {
+            width: 46px; height: 46px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .stat-card-header .stat-change {
+            font-size: 0.72rem; font-weight: 600;
+            padding: 3px 10px; border-radius: 50px;
+        }
+        .stat-change.up { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+        .stat-change.info { background: rgba(59,130,246,0.12); color: #93c5fd; }
+        .stat-value {
+            font-size: 2rem; font-weight: 800;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+        .icon-amber { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 6px 15px rgba(217,119,6,0.3); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 6px 15px rgba(29,78,216,0.3); }
+        .icon-emerald { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 15px rgba(5,150,105,0.3); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 6px 15px rgba(109,40,217,0.3); }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex; gap: 6px;
+            background: rgba(255,255,255,0.03);
+            padding: 6px; border-radius: 18px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 12px 24px; border: none; border-radius: 14px;
+            background: transparent; color: var(--text-muted);
+            font-family: inherit; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        /* Tab Content */
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        /* Table Styles */
+        .data-table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .table-header {
+            padding: 20px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .table-header h3 {
+            font-size: 1.1rem; font-weight: 700;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .table-header h3 i {
+            color: var(--primary);
+        }
+        .search-input-sm {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 8px 16px 8px 38px;
+            color: white; font-family: inherit; font-size: 0.85rem;
+            outline: none; transition: border-color 0.3s;
+            width: 220px; position: relative;
+        }
+        .search-input-sm:focus { border-color: var(--primary); }
+        .search-wrapper-sm {
+            position: relative;
+        }
+        .search-wrapper-sm i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: #64748b; font-size: 0.8rem;
+        }
+
+        .data-table {
+            width: 100%; border-collapse: collapse;
+        }
+        .data-table thead th {
+            padding: 14px 20px; text-align: left;
+            font-size: 0.72rem; font-weight: 700;
+            color: #64748b; text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.2);
+        }
+        .data-table tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.2s;
+        }
+        .data-table tbody tr:hover {
+            background: rgba(139,92,246,0.05);
+        }
+        .data-table tbody td {
+            padding: 14px 20px; font-size: 0.85rem;
+        }
+        .user-cell {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700; color: white;
+            flex-shrink: 0;
+        }
+        .user-cell-info .user-name { font-weight: 600; font-size: 0.88rem; }
+        .user-cell-info .user-email { font-size: 0.75rem; color: #64748b; }
+        .badge-sm {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 50px; font-size: 0.7rem; font-weight: 700;
+        }
+        .badge-active { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+        .badge-pending { background: rgba(245,158,11,0.12); color: #fcd34d; }
+
+        /* Chart placeholder */
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 28px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 24px;
+        }
+        .chart-title {
+            font-size: 1rem; font-weight: 700;
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .chart-title i { color: var(--primary); }
+        .bar-chart {
+            display: flex; align-items: flex-end; gap: 12px;
+            height: 200px; padding-top: 20px;
+        }
+        .bar-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; gap: 8px;
+        }
+        .bar {
+            width: 100%; max-width: 60px; border-radius: 10px 10px 4px 4px;
+            transition: height 0.6s cubic-bezier(0.23,1,0.32,1);
+            position: relative;
+        }
+        .bar:hover { filter: brightness(1.2); }
+        .bar-value {
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+        }
+        .bar-label {
+            font-size: 0.7rem; color: var(--text-muted);
+            text-align: center; white-space: nowrap;
+        }
+
+        /* Visit Log */
+        .visit-log-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .visit-log-item:last-child { border: none; }
+        .visit-log-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; flex-shrink: 0;
+        }
+        .visit-log-info { flex: 1; }
+        .visit-log-info .title { font-size: 0.88rem; font-weight: 600; }
+        .visit-log-info .sub { font-size: 0.75rem; color: #64748b; }
+        .visit-log-count {
+            font-size: 1.3rem; font-weight: 800;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state i {
+            font-size: 3rem; margin-bottom: 16px; opacity: 0.3;
+            display: block;
+        }
+        .empty-state h4 { font-size: 1.1rem; margin-bottom: 6px; color: #64748b; }
+        .empty-state p { font-size: 0.85rem; }
+
+        /* Free test history items */
+        .free-history-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px; margin-top: 16px;
+        }
+        .free-history-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 18px;
+            transition: all 0.3s;
+        }
+        .free-history-card:hover {
+            border-color: rgba(139,92,246,0.3);
+            background: rgba(139,92,246,0.05);
+        }
+        .fh-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .fh-title { font-size: 0.88rem; font-weight: 600; }
+        .fh-time { font-size: 0.72rem; color: #64748b; }
+        .fh-cat { font-size: 0.72rem; color: #c4b5fd; background: rgba(139,92,246,0.12); padding: 2px 8px; border-radius: 50px; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .stats-overview { grid-template-columns: repeat(2, 1fr); }
+            .admin-navbar { padding: 12px 16px; }
+            .admin-info { display: none; }
+        }
+        @media (max-width: 600px) {
+            .stats-overview { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .stat-card { padding: 18px; }
+            .stat-value { font-size: 1.5rem; }
+            .dashboard-container { padding: 20px 14px; }
+            .tab-btn { padding: 10px 16px; font-size: 0.8rem; }
+            .free-history-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <!-- Navbar -->
+    <nav class="admin-navbar">
+        <a href="#" class="admin-nav-brand">
+            <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+            <h1>Admin <span>Panel</span></h1>
+            <span class="admin-nav-badge">ADMINISTRATOR</span>
+        </a>
+        <div class="admin-nav-right">
+            <div class="admin-info">
+                <div class="name" id="adminDisplayEmail">Admin</div>
+                <div class="role">Super Administrator</div>
+            </div>
+            <button class="btn-admin-logout" onclick="adminLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Stats Overview -->
+        <div class="stats-overview" id="statsOverview">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon icon-amber"><i class="fas fa-users"></i></div>
+                    <span class="stat-change info"><i class="fas fa-info-circle"></i> Total</span>
+                </div>
+                <div class="stat-value" id="statTotalUsers">0</div>
+                <div class="stat-label">Akun Terdaftar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon icon-blue"><i class="fas fa-eye"></i></div>
+                    <span class="stat-change up"><i class="fas fa-arrow-up"></i> Live</span>
+                </div>
+                <div class="stat-value" id="statLandingVisits">0</div>
+                <div class="stat-label">Kunjungan Landing Page</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon icon-emerald"><i class="fas fa-gift"></i></div>
+                    <span class="stat-change up"><i class="fas fa-arrow-up"></i> Live</span>
+                </div>
+                <div class="stat-value" id="statFreeVisits">0</div>
+                <div class="stat-label">Kunjungan Free Access</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon icon-purple"><i class="fas fa-clipboard-check"></i></div>
+                    <span class="stat-change info"><i class="fas fa-info-circle"></i> Total</span>
+                </div>
+                <div class="stat-value" id="statFreeTests">0</div>
+                <div class="stat-label">Tes Gratis Dikerjakan</div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('users', this)">
+                <i class="fas fa-users"></i> Akun Terdaftar
+            </button>
+            <button class="tab-btn" onclick="switchTab('access', this)">
+                <i class="fas fa-clock-rotate-left"></i> Riwayat Akses
+            </button>
+            <button class="tab-btn" onclick="switchTab('visits', this)">
+                <i class="fas fa-chart-bar"></i> Statistik Kunjungan
+            </button>
+            <button class="tab-btn" onclick="switchTab('freeTests', this)">
+                <i class="fas fa-gift"></i> Tes Gratis
+            </button>
+        </div>
+
+        <!-- Tab: Akun Terdaftar -->
+        <div id="tab-users" class="tab-content active">
+            <div class="data-table-wrapper">
+                <div class="table-header">
+                    <h3><i class="fas fa-users"></i> Daftar Akun Terdaftar</h3>
+                    <div class="search-wrapper-sm">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input-sm" placeholder="Cari user..." id="searchUsers" oninput="filterUsersTable()">
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="data-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nama</th>
+                                <th>Username/Email</th>
+                                <th>No. WhatsApp</th>
+                                <th>Status</th>
+                                <th>Login Terakhir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Riwayat Akses -->
+        <div id="tab-access" class="tab-content">
+            <div class="data-table-wrapper">
+                <div class="table-header">
+                    <h3><i class="fas fa-clock-rotate-left"></i> Riwayat Login/Akses</h3>
+                    <div class="search-wrapper-sm">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input-sm" placeholder="Cari..." id="searchAccess" oninput="filterAccessTable()">
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="data-table" id="accessTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Username</th>
+                                <th>Nama</th>
+                                <th>Aktivitas</th>
+                                <th>Tanggal & Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accessTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Statistik Kunjungan -->
+        <div id="tab-visits" class="tab-content">
+            <!-- Visit Summary Cards -->
+            <div class="chart-container">
+                <div class="chart-title"><i class="fas fa-chart-line"></i> Ringkasan Kunjungan</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+                    <div class="visit-log-item" style="border:1px solid var(--glass-border);border-radius:16px;padding:18px;">
+                        <div class="visit-log-icon icon-blue"><i class="fas fa-home"></i></div>
+                        <div class="visit-log-info">
+                            <div class="title">Landing Page</div>
+                            <div class="sub">Halaman utama website</div>
+                        </div>
+                        <div class="visit-log-count" id="visitLanding2">0</div>
+                    </div>
+                    <div class="visit-log-item" style="border:1px solid var(--glass-border);border-radius:16px;padding:18px;">
+                        <div class="visit-log-icon icon-emerald"><i class="fas fa-gift"></i></div>
+                        <div class="visit-log-info">
+                            <div class="title">Free Access</div>
+                            <div class="sub">Halaman akses gratis</div>
+                        </div>
+                        <div class="visit-log-count" id="visitFree2">0</div>
+                    </div>
+                    <div class="visit-log-item" style="border:1px solid var(--glass-border);border-radius:16px;padding:18px;">
+                        <div class="visit-log-icon icon-purple"><i class="fas fa-clipboard-check"></i></div>
+                        <div class="visit-log-info">
+                            <div class="title">Tes Gratis</div>
+                            <div class="sub">Total tes gratis dikerjakan</div>
+                        </div>
+                        <div class="visit-log-count" id="visitTests2">0</div>
+                    </div>
+                    <div class="visit-log-item" style="border:1px solid var(--glass-border);border-radius:16px;padding:18px;">
+                        <div class="visit-log-icon icon-amber"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="visit-log-info">
+                            <div class="title">Total Login</div>
+                            <div class="sub">Total sesi login berhasil</div>
+                        </div>
+                        <div class="visit-log-count" id="visitLogins2">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="chart-container">
+                <div class="chart-title"><i class="fas fa-chart-bar"></i> Visualisasi Kunjungan</div>
+                <div class="bar-chart" id="barChart">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Tes Gratis -->
+        <div id="tab-freeTests" class="tab-content">
+            <div class="chart-container">
+                <div class="chart-title"><i class="fas fa-gift"></i> Riwayat Tes Gratis yang Dikerjakan Pengunjung</div>
+                <div id="freeTestsContainer">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIG =====
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+
+        // ===== AUTH CHECK =====
+        if (localStorage.getItem('isAdminLoggedIn') !== 'true') {
+            window.location.href = 'admin.html';
+        }
+
+        // Display admin email
+        const adminEmailDisplay = localStorage.getItem('adminEmail') || 'Admin';
+        document.getElementById('adminDisplayEmail').textContent = adminEmailDisplay;
+
+        // ===== TAB SWITCHING =====
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // ===== ADMIN LOGOUT =====
+        function adminLogout() {
+            if (confirm('Yakin ingin keluar dari panel admin?')) {
+                localStorage.removeItem('isAdminLoggedIn');
+                localStorage.removeItem('adminEmail');
+                window.location.href = 'admin.html';
+            }
+        }
+
+        // ===== LOAD STATS =====
+        function loadStats() {
+            const landingVisits = parseInt(localStorage.getItem('visitCount_landing') || '0');
+            const freeVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
+            const freeTestHistory = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+            const loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+
+            document.getElementById('statLandingVisits').textContent = landingVisits.toLocaleString();
+            document.getElementById('statFreeVisits').textContent = freeVisits.toLocaleString();
+            document.getElementById('statFreeTests').textContent = freeTestHistory.length.toLocaleString();
+
+            // Visit tab duplicates
+            document.getElementById('visitLanding2').textContent = landingVisits.toLocaleString();
+            document.getElementById('visitFree2').textContent = freeVisits.toLocaleString();
+            document.getElementById('visitTests2').textContent = freeTestHistory.length.toLocaleString();
+            document.getElementById('visitLogins2').textContent = loginHistory.length.toLocaleString();
+
+            // Bar chart
+            renderBarChart(landingVisits, freeVisits, freeTestHistory.length, loginHistory.length);
+        }
+
+        // ===== BAR CHART =====
+        function renderBarChart(landing, free, tests, logins) {
+            const chart = document.getElementById('barChart');
+            const maxVal = Math.max(landing, free, tests, logins, 1);
+            const data = [
+                { label: 'Landing Page', value: landing, color: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' },
+                { label: 'Free Access', value: free, color: 'linear-gradient(135deg, #10b981, #059669)' },
+                { label: 'Tes Gratis', value: tests, color: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' },
+                { label: 'Total Login', value: logins, color: 'linear-gradient(135deg, #f59e0b, #d97706)' }
+            ];
+
+            chart.innerHTML = data.map(d => {
+                const height = Math.max((d.value / maxVal) * 160, 8);
+                return `
+                    <div class="bar-item">
+                        <div class="bar" style="height:${height}px;background:${d.color};position:relative;">
+                            <span class="bar-value">${d.value}</span>
+                        </div>
+                        <span class="bar-label">${d.label}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== LOAD USERS FROM GOOGLE APPS SCRIPT =====
+        let allUsersData = [];
+
+        function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            // Show loading state
+            tbody.innerHTML = `<tr><td colspan="6">
+                <div class="empty-state" style="padding:40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:0.5;color:var(--primary);"></i>
+                    <h4 style="margin-top:12px;">Memuat data dari server...</h4>
+                    <p>Mengambil daftar akun terdaftar dari database</p>
+                </div>
+            </td></tr>`;
+
+            // Fetch from Apps Script
+            const formData = new FormData();
+            formData.append('action', 'get_users');
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success' && result.data && Array.isArray(result.data)) {
+                        allUsersData = result.data.map(user => ({
+                            nama: user.nama || user.Nama || '-',
+                            username: user.username || user.Username || user.email || user.Email || '-',
+                            nomor: user.nomor || user.Nomor || user.nomor_wa || user.whatsapp || '-',
+                            email: user.email || user.Email || user.username || '-',
+                            status: user.status || user.Status || 'Aktif',
+                            tanggal: user.tanggal || user.Tanggal || user.timestamp || '-'
+                        }));
+                        document.getElementById('statTotalUsers').textContent = allUsersData.length.toLocaleString();
+                        renderUsersTable(allUsersData);
+                    } else {
+                        // Fallback: try to use localStorage login history
+                        loadUsersFromLocalStorage();
+                    }
+                })
+                .catch(error => {
+                    console.warn('Failed to fetch from Apps Script, using localStorage fallback:', error);
+                    loadUsersFromLocalStorage();
+                });
+        }
+
+        // Fallback: load from localStorage
+        function loadUsersFromLocalStorage() {
+            const loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+            const userMap = {};
+            loginHistory.forEach(entry => {
+                const key = entry.username || entry.email || 'unknown';
+                if (!userMap[key]) {
+                    userMap[key] = {
+                        nama: entry.nama || key,
+                        username: key,
+                        nomor: entry.nomor || '-',
+                        email: key,
+                        status: 'Aktif',
+                        tanggal: entry.timestamp || '-'
+                    };
+                }
+                if (entry.timestamp > (userMap[key].tanggal || '')) {
+                    userMap[key].tanggal = entry.timestamp;
+                }
+            });
+            allUsersData = Object.values(userMap);
+            document.getElementById('statTotalUsers').textContent = allUsersData.length.toLocaleString();
+            renderUsersTable(allUsersData);
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6">
+                    <div class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <h4>Belum ada data user</h4>
+                        <p>Data user akan muncul setelah ada yang terdaftar.</p>
+                    </div>
+                </td></tr>`;
+                return;
+            }
+
+            const avatarColors = ['icon-amber', 'icon-blue', 'icon-emerald', 'icon-purple'];
+            tbody.innerHTML = users.map((u, i) => {
+                const lastLogin = u.tanggal && u.tanggal !== '-' ? (() => {
+                    try {
+                        const d = new Date(u.tanggal);
+                        return isNaN(d.getTime()) ? u.tanggal : d.toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    } catch(e) { return u.tanggal; }
+                })() : '-';
+                const initials = (u.nama || '?').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+                const statusBadge = (u.status || '').toLowerCase().includes('pending') || (u.status || '').toLowerCase().includes('belum')
+                    ? '<span class="badge-sm badge-pending"><i class="fas fa-clock" style="font-size:0.4rem;"></i> Pending</span>'
+                    : '<span class="badge-sm badge-active"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Aktif</span>';
+                return `
+                    <tr>
+                        <td style="font-weight:600;color:#64748b;">${i + 1}</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar ${avatarColors[i % 4]}">${initials}</div>
+                                <div class="user-cell-info">
+                                    <div class="user-name">${u.nama}</div>
+                                    <div class="user-email">${u.email || ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:#94a3b8;">${u.username}</td>
+                        <td>${u.nomor}</td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size:0.82rem;color:#94a3b8;">${lastLogin}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterUsersTable() {
+            const q = document.getElementById('searchUsers').value.toLowerCase();
+            const filtered = allUsersData.filter(u => 
+                (u.nama || '').toLowerCase().includes(q) || 
+                (u.username || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q)
+            );
+            renderUsersTable(filtered);
+        }
+
+        // ===== LOAD ACCESS HISTORY =====
+        let allAccessData = [];
+
+        function loadAccessHistory() {
+            const tbody = document.getElementById('accessTableBody');
+            // Show loading state
+            tbody.innerHTML = `<tr><td colspan="5">
+                <div class="empty-state" style="padding:40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:0.5;color:var(--primary);"></i>
+                    <h4 style="margin-top:12px;">Memuat riwayat akses...</h4>
+                </div>
+            </td></tr>`;
+
+            // Fetch from Apps Script
+            const formData = new FormData();
+            formData.append('action', 'get_access_log');
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success' && result.data && Array.isArray(result.data)) {
+                        allAccessData = result.data.map(entry => ({
+                            username: entry.username || entry.Username || entry.email || '-',
+                            nama: entry.nama || entry.Nama || '-',
+                            action: entry.action || entry.Action || entry.aktivitas || 'login',
+                            timestamp: entry.timestamp || entry.Timestamp || entry.tanggal || '-'
+                        })).sort((a, b) => {
+                            try { return new Date(b.timestamp) - new Date(a.timestamp); } 
+                            catch(e) { return 0; }
+                        });
+                        renderAccessTable(allAccessData);
+                    } else {
+                        // Fallback: use localStorage
+                        loadAccessFromLocalStorage();
+                    }
+                })
+                .catch(error => {
+                    console.warn('Failed to fetch access log, using localStorage:', error);
+                    loadAccessFromLocalStorage();
+                });
+        }
+
+        function loadAccessFromLocalStorage() {
+            const loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+            allAccessData = loginHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            renderAccessTable(allAccessData);
+        }
+
+        function renderAccessTable(data) {
+            const tbody = document.getElementById('accessTableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5">
+                    <div class="empty-state">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <h4>Belum ada riwayat akses</h4>
+                        <p>Riwayat login user akan tampil di sini.</p>
+                    </div>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map((entry, i) => {
+                let dateStr = '-';
+                try {
+                    const date = new Date(entry.timestamp);
+                    if (!isNaN(date.getTime())) {
+                        dateStr = date.toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        });
+                    } else {
+                        dateStr = entry.timestamp;
+                    }
+                } catch(e) { dateStr = entry.timestamp || '-'; }
+
+                const activityIcon = entry.action === 'login' ? 'fa-right-to-bracket' : 
+                                     entry.action === 'register' ? 'fa-user-plus' : 'fa-door-open';
+                const activityColor = entry.action === 'login' ? 'badge-active' : 
+                                      entry.action === 'register' ? 'badge-pending' : 'badge-active';
+                const activityText = entry.action === 'login' ? 'Login' : 
+                                     entry.action === 'register' ? 'Register' : entry.action || 'Login';
+                return `
+                    <tr>
+                        <td style="font-weight:600;color:#64748b;">${i + 1}</td>
+                        <td style="font-weight:600;">${entry.username || '-'}</td>
+                        <td style="color:#94a3b8;">${entry.nama || '-'}</td>
+                        <td><span class="badge-sm ${activityColor}"><i class="fas ${activityIcon}" style="font-size:0.6rem;"></i> ${activityText}</span></td>
+                        <td style="font-size:0.82rem;color:#94a3b8;">${dateStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterAccessTable() {
+            const q = document.getElementById('searchAccess').value.toLowerCase();
+            const filtered = allAccessData.filter(e =>
+                (e.username || '').toLowerCase().includes(q) ||
+                (e.nama || '').toLowerCase().includes(q)
+            );
+            renderAccessTable(filtered);
+        }
+
+        // ===== FREE TEST HISTORY =====
+        function loadFreeTestHistory() {
+            const history = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+            const container = document.getElementById('freeTestsContainer');
+
+            if (history.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h4>Belum ada tes gratis dikerjakan</h4>
+                        <p>Data akan muncul ketika pengunjung mengerjakan tes gratis.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort newest first
+            const sorted = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            container.innerHTML = `
+                <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:16px;"><strong style="color:white;">${sorted.length}</strong> tes gratis telah dikerjakan pengunjung</p>
+                <div class="free-history-grid">
+                    ${sorted.map(item => {
+                        const date = new Date(item.timestamp);
+                        const dateStr = date.toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                        return `
+                            <div class="free-history-card">
+                                <div class="fh-top">
+                                    <span class="fh-title"><i class="fas fa-file-alt" style="color:var(--primary);margin-right:6px;"></i> ${item.testName || 'Tes Gratis'}</span>
+                                    <span class="fh-cat">${item.category || 'Umum'}</span>
+                                </div>
+                                <div class="fh-time"><i class="far fa-clock" style="margin-right:4px;"></i> ${dateStr}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // ===== INITIALIZE =====
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadUsers();
+            loadAccessHistory();
+            loadFreeTestHistory();
+        });
+    </script>
+</body>
+</html>

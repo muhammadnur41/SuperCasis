@@ -853,3 +853,95 @@ body {
         padding: 15px;
     }
 }
+
+/* ========== AUTO-NEXT INDICATOR ========== */
+.auto-next-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(6,182,212,0.15));
+    border: 1px solid rgba(59,130,246,0.25);
+    padding: 8px 16px;
+    border-radius: 40px;
+    animation: fadeIn 0.3s ease;
+}
+
+.auto-next-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #60a5fa;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.auto-next-bar-wrap {
+    width: 80px;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.auto-next-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    border-radius: 10px;
+    transition: width 1s linear;
+    box-shadow: 0 0 8px rgba(59,130,246,0.4);
+}
+
+.auto-next-countdown {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #60a5fa;
+    min-width: 24px;
+    text-align: center;
+}
+
+/* ========== TIMER WARNING STATE ========== */
+.timer-warning {
+    background: rgba(239,68,68,0.15) !important;
+    border-color: rgba(239,68,68,0.3) !important;
+    animation: timerPulse 1s ease-in-out infinite;
+}
+
+.timer-warning span {
+    color: #f87171 !important;
+}
+
+.timer-warning i {
+    color: #f87171 !important;
+}
+
+@keyframes timerPulse {
+    0%, 100% { 
+        box-shadow: 0 0 0px rgba(239,68,68,0); 
+    }
+    50% { 
+        box-shadow: 0 0 15px rgba(239,68,68,0.3); 
+    }
+}
+
+/* ========== RESPONSIVE: Auto-Next & Timer ========== */
+@media (max-width: 700px) {
+    .auto-next-indicator {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+    
+    .auto-next-bar-wrap {
+        width: 50px;
+    }
+    
+    .auto-next-label {
+        font-size: 0.65rem;
+    }
+    
+    .auto-next-countdown {
+        font-size: 0.75rem;
+    }
+}

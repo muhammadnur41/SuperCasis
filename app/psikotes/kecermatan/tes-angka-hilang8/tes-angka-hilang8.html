@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -114,6 +114,16 @@
             .sidebar-numbers { width: 90%; position: static; order: 2; }
             .quiz-container { width: 90%; order: 1; }
         }
+    
+        /* === KECERMATAN MODE: Sembunyikan navigasi === */
+        .sidebar-numbers, #sidebar-nav { display: none !important; }
+        .nav-buttons { display: none !important; }
+        #finish-quiz-btn { display: none !important; }
+        #back-to-result-btn { display: none !important; }
+        .main-wrapper { justify-content: center; }
+        .quiz-container { max-width: 900px; margin: 0 auto; }
+        #package-timer-display { text-align:center; padding:20px 15px 10px; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #f0f0f0; margin-bottom:15px; }
+        #pkg-countdown { font-size:36px; font-weight:800; color:#1a1a1a; margin-left:8px; }
     </style>
 </head>
 <body>
@@ -127,6 +137,10 @@
 
     <div class="quiz-container">
         <div id="quiz-screen">
+            <div id="package-timer-display">
+                <span style="font-size:14px;color:#666;font-weight:600;">Durasi:</span>
+                <span id="pkg-countdown" style="font-size:36px;font-weight:800;color:#1a1a1a;margin-left:8px;">00:01:00</span>
+            </div>
             <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
                 <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
             </div>
@@ -339,6 +353,98 @@
         document.getElementById('quiz-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'block';
     }
+
+    // === PACKAGE TIMER & PARENT COMMUNICATION ===
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var packageTimeSec = parseInt(params.get('packageTime')) || 0;
+        var questionAutoSec = parseInt(params.get('questionSpeed')) || 0;
+        var inIframe = (window.parent !== window);
+
+        if (packageTimeSec > 0 && inIframe) {
+            var countdownTimer = null;
+            var questionTimer = null;
+            var remainingTime = packageTimeSec;
+            var packageDone = false;
+
+            function updateTimerDisplay() {
+                var el = document.getElementById('pkg-countdown');
+                if (!el) return;
+                var m = Math.floor(remainingTime / 60);
+                var s = remainingTime % 60;
+                el.textContent = '00:' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+                if (remainingTime <= 10) {
+                    el.style.color = '#e74c3c';
+                }
+            }
+
+            function sendPackageDone() {
+                if (packageDone) return;
+                packageDone = true;
+                if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+                if (questionTimer) { clearTimeout(questionTimer); questionTimer = null; }
+                var correct = 0;
+                for (var j = 0; j < quizData.length; j++) {
+                    if (userAnswers[j] === quizData[j].a) correct++;
+                }
+                window.parent.postMessage({
+                    type: 'packageDone',
+                    correct: correct,
+                    total: quizData.length
+                }, '*');
+            }
+
+            function resetQuestionTimer() {
+                if (questionTimer) { clearTimeout(questionTimer); questionTimer = null; }
+                if (questionAutoSec > 0 && !packageDone) {
+                    questionTimer = setTimeout(function() {
+                        if (packageDone) return;
+                        if (currentIdx < quizData.length - 1) {
+                            currentIdx++;
+                            showQuestion();
+                            resetQuestionTimer();
+                        }
+                    }, questionAutoSec * 1000);
+                }
+            }
+
+            selectAnswer = function(i) {
+                if (isReviewMode || packageDone) return;
+                userAnswers[currentIdx] = i;
+                if (currentIdx < quizData.length - 1) {
+                    currentIdx++;
+                    showQuestion();
+                    resetQuestionTimer();
+                } else {
+                    sendPackageDone();
+                }
+            };
+
+            showResult = function() {};
+            renderStatus = function() {};
+
+            function startPackageTimer() {
+                remainingTime = packageTimeSec;
+                updateTimerDisplay();
+                countdownTimer = setInterval(function() {
+                    remainingTime--;
+                    updateTimerDisplay();
+                    if (remainingTime <= 0) {
+                        sendPackageDone();
+                    }
+                }, 1000);
+                resetQuestionTimer();
+            }
+
+            if (document.readyState === 'complete') {
+                startPackageTimer();
+            } else {
+                window.addEventListener('load', function() {
+                    startPackageTimer();
+                });
+            }
+        }
+    })();
 </script>
 
 </body>

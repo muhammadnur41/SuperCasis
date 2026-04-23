@@ -6,6 +6,7 @@
     <title>SuperCasis | Next-Gen Test Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Gaya Tambahan untuk Elemen User di Pojok Kanan */
         .user-navigation {
@@ -52,6 +53,30 @@
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4);
+        }
+
+        .btn-history-modern {
+            background: rgba(139, 92, 246, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+            padding: 8px 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-history-modern:hover {
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
         }
 
         /* Responsif mobile */
@@ -253,6 +278,13 @@
                         <span class="test-category-badge" id="testCategory">Matematika</span>
                     </div>
                     <div class="test-controls">
+                        <div class="auto-next-indicator" id="autoNextIndicator" style="display:none;">
+                            <div class="auto-next-label"><i class="fas fa-forward"></i> Auto</div>
+                            <div class="auto-next-bar-wrap">
+                                <div class="auto-next-fill" id="autoNextFill"></div>
+                            </div>
+                            <span class="auto-next-countdown" id="autoNextCountdown">0s</span>
+                        </div>
                         <div class="timer-tag"><i class="far fa-clock"></i> <span id="timer">00:00</span></div>
                         <button class="fullscreen-btn" onclick="toggleFullscreen()"><i class="fas fa-expand"></i></button>
                     </div>
@@ -264,6 +296,7 @@
 
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="script.js"></script>
+    <script src="history-module.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -282,6 +315,10 @@
                 <div class="user-greeting">
                     Halo, <span>${userNama}</span>
                 </div>
+                <button onclick="showScoreHistory()" class="btn-history-modern">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Riwayat Nilai</span>
+                </button>
                 <button onclick="logout()" class="btn-logout-modern">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -290,14 +327,12 @@
         });
 
         function logout() {
-            if(confirm('Apakah Anda yakin ingin keluar?')) {
-                // Hapus SEMUA data login peserta
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userNama');
-                localStorage.removeItem('userUsername');
-                // Kembali ke halaman login
-                window.location.href = '../login.html'; 
-            }
+            // Hapus SEMUA data login peserta
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userNama');
+            localStorage.removeItem('userUsername');
+            // Langsung ke halaman beranda tanpa konfirmasi
+            window.location.href = '../index.html'; 
         }
     </script>
 </body>

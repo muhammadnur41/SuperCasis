@@ -6,6 +6,7 @@
     <title>Akses Gratis - Super Casis</title>
     <meta name="description" content="Coba gratis soal psikotes dan akademik tanpa perlu login. Platform persiapan seleksi Polri & TNI.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -452,7 +453,20 @@
         /* ===== ANIMATIONS ===== */
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
         @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.5; transform:scale(1.5); } }
+
+        /* ===== AUTO-NEXT INDICATOR ===== */
+        .auto-next-indicator {
+            display:flex; align-items:center; gap:10px;
+            background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(6,182,212,0.15));
+            border:1px solid rgba(59,130,246,0.25);
+            padding:8px 16px; border-radius:40px;
+        }
+        .auto-next-label { font-size:0.75rem; font-weight:700; color:#60a5fa; white-space:nowrap; display:flex; align-items:center; gap:5px; }
+        .auto-next-bar-wrap { width:80px; height:6px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; }
+        .auto-next-fill { height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#06b6d4); border-radius:10px; box-shadow:0 0 8px rgba(59,130,246,0.4); }
+        .auto-next-countdown { font-size:0.85rem; font-weight:800; color:#60a5fa; min-width:24px; text-align:center; }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 700px) {
@@ -464,6 +478,10 @@
             .nav-actions a { padding: 7px 14px; font-size: 0.75rem; }
             .test-nav { flex-direction: column; gap: 10px; padding: 14px; }
             .category-grid { grid-template-columns: 1fr 1fr; }
+            .auto-next-indicator { padding:6px 10px; gap:6px; }
+            .auto-next-bar-wrap { width:50px; }
+            .auto-next-label { font-size:0.65rem; }
+            .auto-next-countdown { font-size:0.75rem; }
         }
         @media (max-width: 400px) {
             .category-grid { grid-template-columns: 1fr; }
@@ -581,7 +599,12 @@
                 <span class="test-cat-badge" id="testCat">Gratis</span>
             </div>
             <div class="test-controls">
-                <div class="timer-tag"><i class="far fa-clock"></i> <span id="timer">00:00</span></div>
+                <div class="auto-next-indicator" id="freeAutoNextIndicator" style="display:none;">
+                    <div class="auto-next-label"><i class="fas fa-forward"></i> Auto</div>
+                    <div class="auto-next-bar-wrap"><div class="auto-next-fill" id="freeAutoNextFill"></div></div>
+                    <span class="auto-next-countdown" id="freeAutoNextCountdown">0s</span>
+                </div>
+                <div class="timer-tag" id="freeTimerTag"><i class="far fa-clock"></i> <span id="timer">00:00</span></div>
                 <button class="fullscreen-btn" onclick="goFullscreen()"><i class="fas fa-expand"></i></button>
             </div>
         </div>
@@ -590,6 +613,7 @@
 
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="free-kecermatan.js"></script>
     <script>
     // ===== DATA =====
     const psikotesGroups = [
@@ -677,12 +701,26 @@
         grid.innerHTML = '';
         const colors = ['icon-purple','icon-blue','icon-emerald','icon-cyan','icon-amber','icon-rose'];
         g.sub.forEach((s, i) => {
+            const subLower = s.name.toLowerCase();
+            const isKecermatanLocked = g.folder === 'kecermatan' && 
+                (subLower.includes('huruf') || subLower.includes('simbol') || subLower.includes('koran'));
+            const isAngkaHilang = g.folder === 'kecermatan' && subLower.includes('angka');
+            
+            let badgeHtml;
+            if (isKecermatanLocked) {
+                badgeHtml = `<span class="cat-badge" style="background:rgba(245,158,11,0.12);color:#fcd34d;border-color:rgba(245,158,11,0.2);"><i class="fas fa-lock"></i> Premium</span>`;
+            } else if (isAngkaHilang) {
+                badgeHtml = `<span class="cat-badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;border-color:rgba(59,130,246,0.2);"><i class="fas fa-play-circle"></i> Gratis · 10 Paket Acak</span>`;
+            } else {
+                badgeHtml = `<span class="cat-badge"><i class="fas fa-lock-open"></i> 3 Gratis</span>`;
+            }
+            
             grid.innerHTML += `
                 <div class="cat-card" onclick="showPsiDetail('${g.folder}', '${s.name}', ${s.total})">
                     <div class="cat-icon ${colors[i % colors.length]}"><i class="fas ${s.icon}"></i></div>
                     <h4>${s.name}</h4>
                     <p>${s.total} Paket Soal</p>
-                    <span class="cat-badge"><i class="fas fa-lock-open"></i> 3 Gratis</span>
+                    ${badgeHtml}
                 </div>
             `;
         });
@@ -692,32 +730,64 @@
 
     function showPsiDetail(folder, subName, total) {
         currentPsiSub = { folder, subName };
+        const subLower = subName.toLowerCase();
+
+        // === TES ANGKA HILANG: Launch sequential mode (same as premium) ===
+        if (folder === 'kecermatan' && subLower.includes('angka')) {
+            launchFreeKecermatanSequential(subName, folder, total);
+            return;
+        }
+
         showView('viewPsikotesDetail');
         document.getElementById('psiDetailTitle').textContent = subName;
         const grid = document.getElementById('psiDetailGrid');
         grid.innerHTML = '';
 
-        for (let i = 1; i <= total; i++) {
-            const isFree = i <= FREE_LIMIT;
-            const slug = subName.toLowerCase().replace(/\s+/g, '-');
-            const folderName = `${slug}${i}`;
-            const fileName = `${slug}${i}.html`;
-            const filePath = `app/psikotes/${folder}/${folderName}/${fileName}`;
+        // Kecermatan locked sub-tests
+        const isKecermatanLocked = folder === 'kecermatan' && 
+            (subLower.includes('huruf') || subLower.includes('simbol') || subLower.includes('koran'));
 
-            if (isFree) {
-                grid.innerHTML += `
-                    <div class="soal-card free-item" onclick="openTest('${subName} ${i}', '${filePath}', '${subName}')">
-                        <span class="soal-num">${i}</span>
-                        <span class="soal-label">Paket Soal</span>
-                    </div>
-                `;
-            } else {
+        if (isKecermatanLocked) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);
+                    border-radius:18px;padding:24px;text-align:center;margin-bottom:8px;">
+                    <i class="fas fa-lock" style="font-size:2rem;color:#f59e0b;display:block;margin-bottom:12px;"></i>
+                    <h4 style="font-size:1rem;font-weight:700;color:#fcd34d;margin-bottom:6px;">Konten Premium</h4>
+                    <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:16px;">
+                        <strong>${subName}</strong> hanya tersedia untuk akun yang sudah diregistrasi (Upgrade).
+                    </p>
+                    <a href="register.html" style="display:inline-flex;align-items:center;gap:8px;
+                        padding:12px 24px;border-radius:14px;
+                        background:linear-gradient(135deg,var(--primary),var(--secondary));
+                        color:white;font-weight:700;font-size:0.88rem;
+                        text-decoration:none;transition:all 0.3s;
+                        box-shadow:0 4px 15px var(--primary-glow);">
+                        <i class="fas fa-crown"></i> Daftar & Upgrade
+                    </a>
+                </div>
+            `;
+            for (let i = 1; i <= total; i++) {
                 grid.innerHTML += `
                     <div class="soal-card locked" onclick="showUpgradeModal('${subName} Paket ${i}')">
                         <span class="soal-num">${i}</span>
                         <span class="soal-label">Paket Soal</span>
                     </div>
                 `;
+            }
+            return;
+        }
+
+        // Normal flow: first FREE_LIMIT pakets are free
+        for (let i = 1; i <= total; i++) {
+            const isFree = i <= FREE_LIMIT;
+            const slug = subName.toLowerCase().replace(/\s+/g, '-');
+            const folderName = `${slug}${i}`;
+            const fileName = `${slug}${i}.html`;
+            const filePath = `app/psikotes/${folder}/${folderName}/${fileName}`;
+            if (isFree) {
+                grid.innerHTML += `<div class="soal-card free-item" onclick="openTest('${subName} ${i}', '${filePath}', '${subName}')"><span class="soal-num">${i}</span><span class="soal-label">Paket Soal</span></div>`;
+            } else {
+                grid.innerHTML += `<div class="soal-card locked" onclick="showUpgradeModal('${subName} Paket ${i}')"><span class="soal-num">${i}</span><span class="soal-label">Paket Soal</span></div>`;
             }
         }
     }
@@ -837,12 +907,23 @@
         document.getElementById('testIframe').src = path;
         document.getElementById('testOverlay').style.display = 'flex';
         startTimer();
+
+        // Track free test access
+        let freeTestHistory = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+        freeTestHistory.push({
+            testName: title,
+            category: category,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('freeTestHistory', JSON.stringify(freeTestHistory));
     }
 
     function closeTest() {
+        if (fkIsSeq) { fkCloseTest(); return; }
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         document.getElementById('testOverlay').style.display = 'none';
         document.getElementById('testIframe').src = 'about:blank';
+        const tmr = document.getElementById('freeTimerTag'); if (tmr) tmr.style.display = 'flex';
     }
 
     function startTimer() {
@@ -863,8 +944,12 @@
         else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
     }
 
-    // ===== PARTICLES =====
+    // ===== PARTICLES & TRACKING =====
     document.addEventListener('DOMContentLoaded', function() {
+        // Track free access page visit
+        const currentVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
+        localStorage.setItem('visitCount_freeAccess', currentVisits + 1);
+
         if (typeof particlesJS !== 'undefined') {
             particlesJS('particles-js', {
                 particles: {

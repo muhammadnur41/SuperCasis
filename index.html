@@ -664,6 +664,7 @@
                 <h4>Akun</h4>
                 <a href="login.html">Login</a>
                 <a href="register.html">Registrasi</a>
+                <a href="admin.html" style="margin-top:8px;opacity:0.4;font-size:0.75rem;"><i class="fas fa-shield-halved" style="margin-right:4px;"></i>Admin</a>
             </div>
             <div class="footer-links">
                 <h4>Kontak Admin</h4>
@@ -691,6 +692,10 @@
 
         // ===== AUTH STATE =====
         document.addEventListener('DOMContentLoaded', function() {
+            // Track landing page visit
+            const currentVisits = parseInt(localStorage.getItem('visitCount_landing') || '0');
+            localStorage.setItem('visitCount_landing', currentVisits + 1);
+
             const authSection = document.getElementById('authSection');
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             const userName = localStorage.getItem('userNama');
@@ -705,12 +710,10 @@
         });
 
         function logout() {
-            if(confirm('Keluar dari akun?')) {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userNama');
-                localStorage.removeItem('userUsername');
-                window.location.reload();
-            }
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userNama');
+            localStorage.removeItem('userUsername');
+            window.location.href = 'index.html';
         }
 
         // ===== COUNT UP ANIMATION =====
