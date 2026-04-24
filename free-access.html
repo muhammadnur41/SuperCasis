@@ -657,6 +657,235 @@
     let currentPsiGroup = null;
     let currentPsiSub = null;
     let timerInterval = null;
+    let _freeTimerElapsed = 0;       // Track elapsed seconds for reload restore
+    let _freeCurrentView = 'viewMain'; // Track active view for closeTest return
+    // Context detail agar bisa re-render grid soal setelah reload
+    let _freePsiFolder = null, _freePsiSubName = null, _freePsiTotal = 0;
+    let _freePsiGroupIdx = null;
+    let _freeAkademikKey = null;
+
+    // ===== FREE TEST STATE PERSISTENCE =====
+    const FREE_TEST_KEY = 'freeTestState';
+
+    function saveFreeTestState() {
+        const overlay = document.getElementById('testOverlay');
+        if (!overlay || overlay.style.display === 'none') {
+            sessionStorage.removeItem(FREE_TEST_KEY); return;
+        }
+        let userAnswers = null, currentIdx = null;
+        try {
+            const win = document.getElementById('testIframe').contentWindow;
+            if (win && win.userAnswers !== undefined) {
+                userAnswers = Array.from(win.userAnswers);
+                currentIdx = win.currentIdx;
+            }
+        } catch(e) {}
+        sessionStorage.setItem(FREE_TEST_KEY, JSON.stringify({
+            active: true,
+            title: document.getElementById('testTitle').textContent,
+            path: document.getElementById('testIframe').src,
+            cat: document.getElementById('testCat').textContent,
+            timerElapsed: _freeTimerElapsed,
+            returnView: _freeCurrentView,
+            currentPsiGroup: currentPsiGroup,
+            currentPsiSub: currentPsiSub,
+            psiFolder: _freePsiFolder,
+            psiSubName: _freePsiSubName,
+            psiTotal: _freePsiTotal,
+            psiGroupIdx: _freePsiGroupIdx,
+            akademikKey: _freeAkademikKey,
+            userAnswers: userAnswers,
+            currentIdx: currentIdx,
+        }));
+    }
+
+    function clearFreeTestState() { sessionStorage.removeItem(FREE_TEST_KEY); }
+
+    /**
+     * Restore the return view after reload + closeTest.
+     * Re-renders the correct package list grid.
+     */
+    function _restoreReturnView(state) {
+        var rv = state.returnView || 'viewMain';
+        var navForHistory = {};
+        _suppressNavHistory = true;
+        try {
+            if (rv === 'viewPsikotesDetail' || rv === 'viewPsikotesSub') {
+                if (state.psiGroupIdx !== null && state.psiGroupIdx !== undefined) {
+                    currentPsiGroup = state.psiGroupIdx;
+                    navForHistory = { view: 'viewPsikotesSub', psiGroupIdx: state.psiGroupIdx };
+                    showPsiSub(state.psiGroupIdx);
+                } else {
+                    navForHistory = { view: 'viewPsikotes' };
+                    showPsikotes();
+                }
+            } else if (rv === 'viewAkademikDetail' || rv === 'viewAkademik') {
+                if (state.akademikKey) {
+                    navForHistory = { view: 'viewAkademikDetail', akademikKey: state.akademikKey };
+                    showAkdDetail(state.akademikKey);
+                } else {
+                    navForHistory = { view: 'viewAkademik' };
+                    showAkademik();
+                }
+            } else if (rv === 'viewPsikotes') {
+                navForHistory = { view: 'viewPsikotes' };
+                showPsikotes();
+            } else {
+                navForHistory = { view: rv };
+                showView(rv);
+            }
+        } finally {
+            _suppressNavHistory = false;
+        }
+        // Rebuild history stack so back button still works after closing test
+        _buildFreeNavHistoryStack(navForHistory);
+    }
+
+    function restoreFreeTestState(state) {
+        if (!state || !state.active || !state.path || state.path === 'about:blank') return;
+        // Restore context vars
+        _freeCurrentView  = state.returnView   || 'viewMain';
+        currentPsiGroup   = state.currentPsiGroup   !== undefined ? state.currentPsiGroup   : null;
+        currentPsiSub     = state.currentPsiSub     || null;
+        _freePsiFolder    = state.psiFolder    || null;
+        _freePsiSubName   = state.psiSubName   || null;
+        _freePsiTotal     = state.psiTotal     || 0;
+        _freePsiGroupIdx  = state.psiGroupIdx  !== undefined ? state.psiGroupIdx  : null;
+        _freeAkademikKey  = state.akademikKey  || null;
+        // Show overlay
+        document.getElementById('testTitle').textContent = state.title || '';
+        document.getElementById('testCat').textContent   = state.cat   || '';
+        document.getElementById('testIframe').src        = state.path;
+        document.getElementById('testOverlay').style.display = 'flex';
+        startTimer(state.timerElapsed || 0);
+        // Inject saved answers after iframe loads
+        var iframe = document.getElementById('testIframe');
+        iframe.onload = function() {
+            setTimeout(function() {
+                if (!state.userAnswers) return;
+                try {
+                    var win = iframe.contentWindow;
+                    if (!win || !win.userAnswers) return;
+                    state.userAnswers.forEach(function(ans, i) {
+                        if (ans !== null && ans !== undefined) win.userAnswers[i] = ans;
+                    });
+                    if (state.currentIdx !== undefined) win.currentIdx = state.currentIdx;
+                    if (win.showQuestion) win.showQuestion();
+                    if (win.renderStatus) win.renderStatus();
+                } catch(e) {}
+            }, 300);
+        };
+    }
+
+    window.addEventListener('beforeunload', saveFreeTestState);
+
+    // ===== POPSTATE: Tombol Back Browser & Mobile =====
+    window.addEventListener('popstate', function(e) {
+        // Jika test overlay aktif → tutup test dulu, jangan navigate
+        var overlay = document.getElementById('testOverlay');
+        if (overlay && overlay.style.display !== 'none') {
+            closeTest();
+            return;
+        }
+        // Restore view dari state history
+        if (e.state && e.state.view) {
+            _suppressNavHistory = true;
+            try { restoreFreeNavState(e.state, false); } finally { _suppressNavHistory = false; }
+        } else {
+            // Tidak ada state → tampilkan halaman utama
+            _suppressNavHistory = true;
+            try { showView('viewMain'); } finally { _suppressNavHistory = false; }
+        }
+    });
+
+    // ===== NAV STATE PERSISTENCE + HISTORY API =====
+    var FREE_NAV_KEY = 'freeNavState';
+    var _suppressNavHistory = false; // Flag untuk mencegah double pushState saat restore
+
+    function saveFreeNavState(viewId, extra) {
+        try {
+            var s = { view: viewId };
+            if (extra) Object.keys(extra).forEach(function(k){ s[k] = extra[k]; });
+            sessionStorage.setItem(FREE_NAV_KEY, JSON.stringify(s));
+            if (!_suppressNavHistory) {
+                history.pushState(s, '');
+            }
+        } catch(e) {}
+    }
+
+    /**
+     * Bangun history stack browser agar back button bisa berfungsi dari manapun.
+     * Dipanggil saat restore dari reload, tanpa memicu pushState berulang.
+     */
+    function _buildFreeNavHistoryStack(navState) {
+        _suppressNavHistory = true;
+        var v = navState ? navState.view : 'viewMain';
+        // Selalu mulai dari Main sebagai base
+        history.replaceState({ view: 'viewMain' }, '');
+        try {
+            if (v === 'viewPsikotes') {
+                history.pushState({ view: 'viewPsikotes' }, '');
+            } else if (v === 'viewPsikotesSub') {
+                history.pushState({ view: 'viewPsikotes' }, '');
+                history.pushState(navState, '');
+            } else if (v === 'viewPsikotesDetail') {
+                history.pushState({ view: 'viewPsikotes' }, '');
+                history.pushState({ view: 'viewPsikotesSub', psiGroupIdx: navState.psiGroupIdx }, '');
+                history.pushState(navState, '');
+            } else if (v === 'viewAkademik') {
+                history.pushState({ view: 'viewAkademik' }, '');
+            } else if (v === 'viewAkademikDetail') {
+                history.pushState({ view: 'viewAkademik' }, '');
+                history.pushState(navState, '');
+            }
+        } finally {
+            _suppressNavHistory = false;
+        }
+    }
+
+    function restoreFreeNavState(navState, fromReload) {
+        if (!navState || !navState.view) {
+            history.replaceState({ view: 'viewMain' }, '');
+            showView('viewMain');
+            return;
+        }
+        // Rebuild history stack saat dari reload agar back button berfungsi
+        if (fromReload) _buildFreeNavHistoryStack(navState);
+        // Render view yang sesuai (suppressNavHistory=true agar tidak double push)
+        _suppressNavHistory = true;
+        try {
+            switch(navState.view) {
+                case 'viewPsikotes':
+                    showPsikotes(); break;
+                case 'viewPsikotesSub':
+                    if (navState.psiGroupIdx !== undefined && navState.psiGroupIdx !== null) {
+                        showPsiSub(navState.psiGroupIdx);
+                    } else { showPsikotes(); }
+                    break;
+                case 'viewPsikotesDetail':
+                    if (navState.psiFolder && navState.psiSubName) {
+                        if (navState.psiGroupIdx !== undefined && navState.psiGroupIdx !== null) {
+                            currentPsiGroup = navState.psiGroupIdx;
+                            _freePsiGroupIdx = navState.psiGroupIdx;
+                        }
+                        showPsiDetail(navState.psiFolder, navState.psiSubName, navState.psiTotal || 20);
+                    } else if (navState.psiGroupIdx !== undefined) {
+                        showPsiSub(navState.psiGroupIdx);
+                    } else { showPsikotes(); }
+                    break;
+                case 'viewAkademik':
+                    showAkademik(); break;
+                case 'viewAkademikDetail':
+                    if (navState.akademikKey) { showAkdDetail(navState.akademikKey); }
+                    else { showAkademik(); }
+                    break;
+                default:
+                    showView('viewMain');
+            }
+        } finally {
+            _suppressNavHistory = false;
+        }
+    }
 
     // ===== VIEW MANAGEMENT =====
     function hideAll() {
@@ -672,10 +901,14 @@
         el.offsetHeight;
         el.style.animation = 'fadeInUp 0.4s ease';
     }
-    function backToMain() { showView('viewMain'); }
+    function backToMain() {
+        history.back();
+    }
 
     // ===== PSIKOTES =====
     function showPsikotes() {
+        _freeCurrentView = 'viewPsikotes';
+        saveFreeNavState('viewPsikotes');
         showView('viewPsikotes');
         const grid = document.getElementById('psikotesCatGrid');
         grid.innerHTML = '';
@@ -694,6 +927,8 @@
 
     function showPsiSub(groupIdx) {
         currentPsiGroup = groupIdx;
+        _freePsiGroupIdx = groupIdx;
+        saveFreeNavState('viewPsikotesSub', { psiGroupIdx: groupIdx });
         const g = psikotesGroups[groupIdx];
         showView('viewPsikotesSub');
         document.getElementById('psiSubTitle').textContent = g.group + ' — Akses Gratis';
@@ -726,10 +961,23 @@
         });
     }
 
-    function backToPsikotes() { showView('viewPsikotes'); }
+    function backToPsikotes() {
+        history.back();
+    }
 
     function showPsiDetail(folder, subName, total) {
         currentPsiSub = { folder, subName };
+        // Simpan context detail untuk restore setelah reload
+        _freePsiFolder   = folder;
+        _freePsiSubName  = subName;
+        _freePsiTotal    = total;
+        _freeCurrentView = 'viewPsikotesSub'; // kembali ke sub-list saat tutup
+        saveFreeNavState('viewPsikotesDetail', {
+            psiGroupIdx: _freePsiGroupIdx,
+            psiFolder:   folder,
+            psiSubName:  subName,
+            psiTotal:    total,
+        });
         const subLower = subName.toLowerCase();
 
         // === TES ANGKA HILANG: Launch sequential mode (same as premium) ===
@@ -792,10 +1040,14 @@
         }
     }
 
-    function backToPsiSub() { showPsiSub(currentPsiGroup); }
+    function backToPsiSub() {
+        history.back();
+    }
 
     // ===== AKADEMIK =====
     function showAkademik() {
+        _freeCurrentView = 'viewAkademik';
+        saveFreeNavState('viewAkademik');
         showView('viewAkademik');
         const grid = document.getElementById('akademikCatGrid');
         grid.innerHTML = '';
@@ -815,6 +1067,9 @@
     }
 
     function showAkdDetail(key) {
+        _freeCurrentView = 'viewAkademik'; // kembali ke list akademik saat tutup
+        _freeAkademikKey = key;            // simpan key untuk restore re-render
+        saveFreeNavState('viewAkademikDetail', { akademikKey: key });
         showView('viewAkademikDetail');
         const cat = akademikCategories[key];
         document.getElementById('akdDetailTitle').textContent = cat.title;
@@ -845,7 +1100,9 @@
         }
     }
 
-    function backToAkademik() { showView('viewAkademik'); }
+    function backToAkademik() {
+        history.back();
+    }
 
     // ===== MODERN UPGRADE MODAL =====
     function showUpgradeModal(paketName) {
@@ -906,35 +1163,54 @@
         document.getElementById('testCat').textContent = category + ' · Gratis';
         document.getElementById('testIframe').src = path;
         document.getElementById('testOverlay').style.display = 'flex';
-        startTimer();
+        startTimer(0);
+        // _freeCurrentView sudah di-set oleh fungsi navigasi sebelumnya
 
         // Track free test access
         let freeTestHistory = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
-        freeTestHistory.push({
-            testName: title,
-            category: category,
-            timestamp: new Date().toISOString()
-        });
+        freeTestHistory.push({ testName: title, category: category, timestamp: new Date().toISOString() });
         localStorage.setItem('freeTestHistory', JSON.stringify(freeTestHistory));
     }
 
     function closeTest() {
-        if (fkIsSeq) { fkCloseTest(); return; }
+        if (typeof fkIsSeq !== 'undefined' && fkIsSeq) { fkCloseTest(); return; }
+        // Ambil state sebelum di-clear untuk kebutuhan restore view
+        var savedState = null;
+        try { savedState = JSON.parse(sessionStorage.getItem(FREE_TEST_KEY)); } catch(e) {}
+        clearFreeTestState();
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        _freeTimerElapsed = 0;
         document.getElementById('testOverlay').style.display = 'none';
         document.getElementById('testIframe').src = 'about:blank';
-        const tmr = document.getElementById('freeTimerTag'); if (tmr) tmr.style.display = 'flex';
+        var tmr = document.getElementById('freeTimerTag'); if (tmr) tmr.style.display = 'flex';
+        // Kembali ke daftar paket soal yang benar (re-render grid jika dari reload)
+        _restoreReturnView(savedState || {
+            returnView: _freeCurrentView,
+            psiFolder:   _freePsiFolder,
+            psiSubName:  _freePsiSubName,
+            psiTotal:    _freePsiTotal,
+            psiGroupIdx: _freePsiGroupIdx,
+            akademikKey: _freeAkademikKey,
+        });
     }
 
-    function startTimer() {
+    function startTimer(startFrom) {
         if (timerInterval) clearInterval(timerInterval);
-        let seconds = 0;
+        let seconds = startFrom || 0;
+        _freeTimerElapsed = seconds;
         const el = document.getElementById('timer');
-        timerInterval = setInterval(() => {
-            seconds++;
+        if (el) {
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
             const s = (seconds % 60).toString().padStart(2, '0');
-            el.textContent = `${m}:${s}`;
+            el.textContent = m + ':' + s;
+        }
+        timerInterval = setInterval(function() {
+            seconds++;
+            _freeTimerElapsed = seconds;
+            if (!el) return;
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            el.textContent = m + ':' + s;
         }, 1000);
     }
 
@@ -945,11 +1221,7 @@
     }
 
     // ===== PARTICLES & TRACKING =====
-    document.addEventListener('DOMContentLoaded', function() {
-        // Track free access page visit
-        const currentVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
-        localStorage.setItem('visitCount_freeAccess', currentVisits + 1);
-
+    function _initParticles() {
         if (typeof particlesJS !== 'undefined') {
             particlesJS('particles-js', {
                 particles: {
@@ -969,6 +1241,43 @@
                 retina_detect: true
             });
         }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. PRIORITAS UTAMA: restore tes yang sedang berlangsung
+        var savedFreeTest = sessionStorage.getItem(FREE_TEST_KEY);
+        if (savedFreeTest) {
+            try {
+                var st = JSON.parse(savedFreeTest);
+                if (st && st.active && st.path && st.path !== 'about:blank') {
+                    hideAll();
+                    // Set history base agar back button dari dalam tes ke menu berfungsi
+                    history.replaceState({ view: 'viewMain' }, '');
+                    restoreFreeTestState(st);
+                    _initParticles();
+                    return;
+                }
+            } catch(e) {}
+        }
+
+        // 2. Restore halaman navigasi terakhir (tanpa tes aktif)
+        var savedFreeNav = sessionStorage.getItem(FREE_NAV_KEY);
+        if (savedFreeNav) {
+            try {
+                var navSt = JSON.parse(savedFreeNav);
+                if (navSt && navSt.view && navSt.view !== 'viewMain') {
+                    restoreFreeNavState(navSt, true); // true = rebuild history stack
+                    _initParticles();
+                    return;
+                }
+            } catch(e) {}
+        }
+
+        // 3. DEFAULT: halaman utama
+        history.replaceState({ view: 'viewMain' }, '');
+        var currentVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
+        localStorage.setItem('visitCount_freeAccess', currentVisits + 1);
+        _initParticles();
     });
     </script>
 </body>

@@ -324,14 +324,51 @@
                     <span>Logout</span>
                 </button>
             `;
+
+            // ===== TEST STATE: Restore active test on reload (prioritas utama) =====
+            const savedTestRaw = sessionStorage.getItem('appTestState');
+            if (savedTestRaw) {
+                try {
+                    const savedTest = JSON.parse(savedTestRaw);
+                    if (savedTest && savedTest.active && savedTest.testPath) {
+                        // Ada tes yang sedang berlangsung — restore langsung
+                        history.replaceState({ menu: 'main' }, '');
+                        // Sembunyikan semua menu, biarkan restoreTestState yang tampilkan test overlay
+                        restoreTestState(savedTest);
+                        // Jangan lanjutkan ke nav restore
+                        return;
+                    }
+                } catch(e) {}
+            }
+
+            // ===== NAVIGATION STATE: Restore last menu on reload =====
+            const savedNavRaw = sessionStorage.getItem('appNavState');
+            if (savedNavRaw) {
+                try {
+                    const savedNav = JSON.parse(savedNavRaw);
+                    history.replaceState({ menu: 'main' }, '');
+                    if (savedNav.menu && savedNav.menu !== 'main') {
+                        restoreNavState(savedNav);
+                        history.pushState(savedNav, '');
+                    } else {
+                        history.replaceState({ menu: 'main' }, '');
+                        sessionStorage.setItem('appNavState', JSON.stringify({ menu: 'main' }));
+                    }
+                } catch(e) {
+                    history.replaceState({ menu: 'main' }, '');
+                }
+            } else {
+                history.replaceState({ menu: 'main' }, '');
+                sessionStorage.setItem('appNavState', JSON.stringify({ menu: 'main' }));
+            }
         });
 
         function logout() {
-            // Hapus SEMUA data login peserta
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('userNama');
             localStorage.removeItem('userUsername');
-            // Langsung ke halaman beranda tanpa konfirmasi
+            sessionStorage.removeItem('appNavState');
+            sessionStorage.removeItem('appTestState'); // Hapus test state saat logout
             window.location.href = '../index.html'; 
         }
     </script>

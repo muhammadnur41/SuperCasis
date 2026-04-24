@@ -1,4 +1,4 @@
-﻿// ==================== DATA PSIKOTES ====================
+// ==================== DATA PSIKOTES ====================
 const psikotesGroups = [
     { 
         group: "Tes Kecerdasan", 
@@ -109,6 +109,337 @@ let kecermatanSeqIsQuizType = true;  // true for angka/huruf/simbol, false for k
 let kecermatanQuestionSpeed = 0;     // Per-question auto-next speed (1-5 seconds)
 let kecermatanSeqPackageResults = []; // Per-package results [{correct, total}, ...]
 
+// ==================== TEST STATE PERSISTENCE (Reload Restore) ====================
+const TEST_STATE_KEY = 'appTestState';
+let _timerCurrentValue = 0;    // Tracks current timer value every second
+let _timerIsCountdown = false; // true = countdown, false = count-up
+
+/** Hapus saved test state (dipanggil saat tes selesai normal) */
+function clearTestState() {
+    sessionStorage.removeItem(TEST_STATE_KEY);
+}
+
+/** Simpan full state tes ke sessionStorage (dipanggil saat beforeunload) */
+function saveFullTestState() {
+    const testFrame = document.getElementById('testFrame');
+    if (!testFrame || testFrame.style.display === 'none') {
+        sessionStorage.removeItem(TEST_STATE_KEY);
+        return;
+    }
+    const state = {
+        active: true,
+        testTitle: currentTestTitle,
+        testPath: currentTestPath,
+        testCategory: currentTestCategory,
+        parentCategory: currentParentCategory,
+        paketNumber: currentPaketNumber,
+        isKecermatanTest: isKecermatanTest,
+        isKecermatanSequentialMode: isKecermatanSequentialMode,
+        autoNextDuration: autoNextDuration,
+        timerCurrentValue: _timerCurrentValue,
+        timerIsCountdown: _timerIsCountdown,
+        currentKecermatanSession: currentKecermatanSession,
+        kecermatanSeqCurrentIdx: kecermatanSeqCurrentIdx,
+        kecermatanSeqAccCorrect: kecermatanSeqAccCorrect,
+        kecermatanSeqAccTotal: kecermatanSeqAccTotal,
+        kecermatanSeqPackages: kecermatanSeqPackages,
+        kecermatanSeqSubTestName: kecermatanSeqSubTestName,
+        kecermatanSeqIsQuizType: kecermatanSeqIsQuizType,
+        kecermatanSeqPackageResults: kecermatanSeqPackageResults,
+        kecermatanQuestionSpeed: kecermatanQuestionSpeed,
+    };
+    // Simpan state quiz dari iframe (jawaban + posisi soal)
+    try {
+        const iframe = document.getElementById('testIframe');
+        const win = iframe.contentWindow;
+        if (win && win.userAnswers !== undefined && win.currentIdx !== undefined) {
+            state.userAnswers = Array.from(win.userAnswers);
+            state.currentIdx = win.currentIdx;
+        }
+    } catch(e) {}
+    sessionStorage.setItem(TEST_STATE_KEY, JSON.stringify(state));
+}
+
+/** Restore state tes setelah reload halaman */
+function restoreTestState(savedState) {
+    if (!savedState || !savedState.active) return;
+
+    // Restore variabel global
+    currentTestTitle = savedState.testTitle || '';
+    currentTestPath = savedState.testPath || '';
+    currentTestCategory = savedState.testCategory || '';
+    currentParentCategory = savedState.parentCategory || '';
+    currentPaketNumber = savedState.paketNumber || 0;
+    isKecermatanTest = !!savedState.isKecermatanTest;
+    isKecermatanSequentialMode = !!savedState.isKecermatanSequentialMode;
+    autoNextDuration = savedState.autoNextDuration || 0;
+    currentKecermatanSession = savedState.currentKecermatanSession || null;
+    _timerCurrentValue = savedState.timerCurrentValue || 0;
+    _timerIsCountdown = !!savedState.timerIsCountdown;
+    kecermatanSeqCurrentIdx = savedState.kecermatanSeqCurrentIdx || 0;
+    kecermatanSeqAccCorrect = savedState.kecermatanSeqAccCorrect || 0;
+    kecermatanSeqAccTotal = savedState.kecermatanSeqAccTotal || 0;
+    kecermatanSeqPackages = savedState.kecermatanSeqPackages || [];
+    kecermatanSeqSubTestName = savedState.kecermatanSeqSubTestName || '';
+    kecermatanSeqIsQuizType = savedState.kecermatanSeqIsQuizType !== undefined ? savedState.kecermatanSeqIsQuizType : true;
+    kecermatanSeqPackageResults = savedState.kecermatanSeqPackageResults || [];
+    kecermatanQuestionSpeed = savedState.kecermatanQuestionSpeed || 0;
+
+    // Tampilkan test overlay
+    document.getElementById('testFrame').style.display = 'flex';
+    document.getElementById('testTitle').textContent = currentTestTitle;
+    document.getElementById('testCategory').textContent = currentTestCategory;
+    const authBtns = document.querySelectorAll('.btn-history-modern, .btn-logout-modern');
+    authBtns.forEach(btn => btn.style.display = 'none');
+
+    const autoNextIndicator = document.getElementById('autoNextIndicator');
+    const timerTag = document.getElementById('timer').parentElement;
+
+    if (isKecermatanSequentialMode) {
+        // --- Restore Kecermatan Sequential ---
+        if (autoNextIndicator) autoNextIndicator.style.display = 'flex';
+        timerTag.style.display = 'none';
+        const testNav = document.querySelector('.test-nav');
+        if (testNav) testNav.style.display = 'none';
+        window.removeEventListener('message', handleIframeMessage);
+        window.addEventListener('message', handleIframeMessage);
+        addPackageProgressBar();
+        updatePackageProgress(kecermatanSeqCurrentIdx);
+
+        const pkg = kecermatanSeqPackages[kecermatanSeqCurrentIdx];
+        if (pkg) {
+            const iframe = document.getElementById('testIframe');
+            const sep = pkg.file.includes('?') ? '&' : '?';
+            iframe.src = pkg.file + sep + 'packageTime=60&questionSpeed=' + kecermatanQuestionSpeed;
+            iframe.onload = function() {
+                setTimeout(() => {
+                    injectIframeOverrides(iframe);
+                    _restoreIframeAnswers(iframe, savedState);
+                }, 300);
+            };
+        }
+    } else {
+        // --- Restore Tes Normal ---
+        if (autoNextIndicator) autoNextIndicator.style.display = 'none';
+        timerTag.style.display = 'flex';
+        const iframe = document.getElementById('testIframe');
+        iframe.src = currentTestPath;
+        iframe.onload = function() {
+            setTimeout(() => {
+                injectIframeOverrides(iframe);
+                _restoreIframeAnswers(iframe, savedState);
+                // Resume timer dari nilai tersimpan
+                startTimer(
+                    _timerIsCountdown ? _timerCurrentValue : 0,
+                    _timerCurrentValue
+                );
+            }, 300);
+        };
+    }
+}
+
+/** Helper: inject jawaban & posisi soal yang tersimpan ke dalam iframe */
+function _restoreIframeAnswers(iframe, savedState) {
+    if (!savedState.userAnswers) return;
+    try {
+        const win = iframe.contentWindow;
+        if (!win || !win.userAnswers) return;
+        savedState.userAnswers.forEach((ans, i) => {
+            if (ans !== null && ans !== undefined) win.userAnswers[i] = ans;
+        });
+        if (savedState.currentIdx !== undefined) win.currentIdx = savedState.currentIdx;
+        if (win.showQuestion) win.showQuestion();
+        if (win.renderStatus) win.renderStatus();
+    } catch(e) {}
+}
+
+// Simpan state sebelum halaman ditutup/reload
+window.addEventListener('beforeunload', saveFullTestState);
+
+// ==================== NAVIGATION HISTORY (Back Button + Reload Restore) ====================
+const NAV_SESSION_KEY = 'appNavState';
+
+/**
+ * Push a new navigation state into browser History API and save to sessionStorage.
+ * Call this every time a new menu is opened.
+ */
+function pushNavState(stateObj) {
+    saveNavToSession(stateObj);
+    history.pushState(stateObj, '');
+}
+
+/**
+ * Replace current history entry without adding a new one.
+ * Used for the initial page load state.
+ */
+function replaceNavState(stateObj) {
+    saveNavToSession(stateObj);
+    history.replaceState(stateObj, '');
+}
+
+/**
+ * Persist nav state to sessionStorage so it survives page reload.
+ */
+function saveNavToSession(stateObj) {
+    try {
+        sessionStorage.setItem(NAV_SESSION_KEY, JSON.stringify(stateObj));
+    } catch(e) {}
+}
+
+/**
+ * Restore the UI to match a saved nav state object.
+ * Handles all menu levels without triggering additional pushState calls.
+ */
+function restoreNavState(state) {
+    if (!state || !state.menu) { _showMain(); return; }
+
+    switch (state.menu) {
+        case 'main':
+            _showMain();
+            break;
+        case 'psikotesMain':
+            _showMain();
+            _openPsikotesMain();
+            break;
+        case 'psikotesSub':
+            _showMain();
+            _openPsikotesMain();
+            if (state.psikotesCategory) _openPsikotesSub(state.psikotesCategory);
+            break;
+        case 'psikotesDetail':
+            _showMain();
+            _openPsikotesMain();
+            if (state.psikotesCategory) _openPsikotesSub(state.psikotesCategory);
+            if (state.subCategory) _openPsikotesDetail(state.psikotesCategory, state.subCategory);
+            break;
+        case 'akademik':
+            _showMain();
+            _openAkademik();
+            break;
+        case 'kategoriDetail':
+            _showMain();
+            _openAkademik();
+            if (state.akademikCategory) _openKategori(state.akademikCategory);
+            break;
+        default:
+            _showMain();
+    }
+}
+
+// ---- Private "silent" navigation helpers (no pushState) ----
+function _showMain() {
+    hideAllMenus();
+    currentPsikotesCategory = null;
+    currentSubCategory = null;
+    currentAkademikCategory = null;
+    currentFilter = 'semua';
+    document.querySelector('.main-menu-grid').style.display = 'grid';
+    document.querySelector('.modern-header').style.display = 'block';
+}
+
+function _openPsikotesMain() {
+    currentAkademikCategory = null;
+    document.querySelector('.main-menu-grid').style.display = 'none';
+    document.querySelector('.modern-header').style.display = 'none';
+    document.getElementById('psikotesMainMenu').style.display = 'block';
+}
+
+function _openPsikotesSub(category) {
+    currentPsikotesCategory = category;
+    document.getElementById('psikotesMainMenu').style.display = 'none';
+    let title = '', subItems = [], desc = '';
+    switch(category) {
+        case 'kecerdasan': title = 'Tes Kecerdasan'; subItems = psikotesGroups[0].sub; desc = '3 jenis tes tersedia'; break;
+        case 'kecermatan': title = 'Tes Kecermatan'; subItems = psikotesGroups[1].sub; desc = '4 jenis tes tersedia'; break;
+        case 'kepribadian': title = 'Tes Kepribadian'; subItems = psikotesGroups[2].sub; desc = '2 jenis tes tersedia'; break;
+        case 'tryout':     title = 'Try Out';         subItems = psikotesGroups[3].sub; desc = '1 jenis tes tersedia'; break;
+    }
+    document.getElementById('psikotesSubTitle').textContent = title;
+    document.getElementById('psikotesSubDesc').textContent = desc;
+    renderSubCategoryGrid(subItems, category);
+    document.getElementById('psikotesSubMenu').style.display = 'block';
+}
+
+function _openPsikotesDetail(category, subCategory) {
+    currentSubCategory = subCategory;
+    document.getElementById('psikotesSubMenu').style.display = 'none';
+    document.getElementById('psikotesDetailTitle').textContent = subCategory;
+    const totalPackages = 20;
+    const subCategorySlug = subCategory.toLowerCase().replace(/\s+/g, '-');
+    const items = [];
+    for (let i = 1; i <= totalPackages; i++) {
+        const folderName = `${subCategorySlug}${i}`;
+        const fileName = `${subCategorySlug}${i}.html`;
+        items.push({
+            name: `${subCategory} ${i}`,
+            number: i,
+            paketNumber: 0,
+            file: `psikotes/${category}/${folderName}/${fileName}`
+        });
+    }
+    const detailMenu = document.getElementById('psikotesDetailMenu');
+    detailMenu.dataset.items = JSON.stringify(items);
+    renderPsikotesDetailGrid(items);
+    document.getElementById('psikotesDetailMenu').style.display = 'block';
+}
+
+function _openAkademik() {
+    currentPsikotesCategory = null;
+    currentSubCategory = null;
+    document.querySelector('.main-menu-grid').style.display = 'none';
+    document.querySelector('.modern-header').style.display = 'none';
+    document.getElementById('akademikMenu').style.display = 'block';
+}
+
+function _openKategori(key) {
+    currentAkademikCategory = key;
+    document.getElementById('akademikMenu').style.display = 'none';
+    const cat = akademikCategories[key];
+    if (!cat) return;
+    document.getElementById('categoryTitle').textContent = cat.title;
+    document.getElementById('categorySubtitle').textContent = '20 Paket Soal Tersedia';
+    renderAkademikGrid(key);
+    document.getElementById('categoryDetailMenu').style.display = 'block';
+}
+
+// ---- popstate handler: fired when user presses Back / Forward ----
+window.addEventListener('popstate', function(e) {
+    // 1. Jika test overlay sedang aktif, tutup dulu
+    const testFrame = document.getElementById('testFrame');
+    if (testFrame && testFrame.style.display !== 'none') {
+        closeTest();
+        // Push kembali state saat ini agar history tidak maju ke depan
+        const currentSaved = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (currentSaved) history.pushState(JSON.parse(currentSaved), '');
+        return;
+    }
+
+    // 2. Jika ada modal yang terbuka, tutup modal
+    const modals = ['kecermatanFinalResult', 'autoNextModal', 'scoreHistoryModal'];
+    for (const id of modals) {
+        const m = document.getElementById(id);
+        if (m) {
+            m.remove();
+            const currentSaved = sessionStorage.getItem(NAV_SESSION_KEY);
+            if (currentSaved) history.pushState(JSON.parse(currentSaved), '');
+            return;
+        }
+    }
+
+    // 3. Restore menu dari state history
+    const state = e.state;
+    if (state) {
+        saveNavToSession(state);
+        restoreNavState(state);
+    } else {
+        saveNavToSession({ menu: 'main' });
+        _showMain();
+    }
+});
+
+// ---- Initialize history state on first load (replaceState, no push) ----
+// This is called after DOMContentLoaded in index.html
+
 // ========== FUNGSI NAVIGASI UTAMA ==========
 function showPsikotesMainMenu() {
     hideAllMenus();
@@ -117,6 +448,7 @@ function showPsikotesMainMenu() {
     document.getElementById('psikotesMainMenu').style.display = 'block';
     document.querySelector('.main-menu-grid').style.display = 'none';
     document.querySelector('.modern-header').style.display = 'none';
+    pushNavState({ menu: 'psikotesMain' });
 }
 
 function showAkademikMenu() {
@@ -127,6 +459,7 @@ function showAkademikMenu() {
     document.getElementById('akademikMenu').style.display = 'block';
     document.querySelector('.main-menu-grid').style.display = 'none';
     document.querySelector('.modern-header').style.display = 'none';
+    pushNavState({ menu: 'akademik' });
 }
 
 function backToMain() {
@@ -138,6 +471,7 @@ function backToMain() {
     currentFilter = 'semua';
     document.querySelector('.main-menu-grid').style.display = 'grid';
     document.querySelector('.modern-header').style.display = 'block';
+    replaceNavState({ menu: 'main' });
 }
 
 function hideAllMenus() {
@@ -185,6 +519,7 @@ function showPsikotesSubMenu(category) {
     
     renderSubCategoryGrid(subItems, category);
     document.getElementById('psikotesSubMenu').style.display = 'block';
+    pushNavState({ menu: 'psikotesSub', psikotesCategory: category });
 }
 
 function renderSubCategoryGrid(subItems, category) {
@@ -288,6 +623,7 @@ function showPsikotesDetail(category, subCategory) {
     
     renderPsikotesDetailGrid(items);
     document.getElementById('psikotesDetailMenu').style.display = 'block';
+    pushNavState({ menu: 'psikotesDetail', psikotesCategory: category, subCategory: subCategory });
 }
 
 function renderPsikotesDetailGrid(items, filter = "") {
@@ -341,12 +677,14 @@ function backToPsikotesMain() {
     document.getElementById('psikotesDetailMenu').style.display = 'none';
     document.getElementById('psikotesMainMenu').style.display = 'block';
     document.getElementById('psikotesDetailSearch').value = '';
+    replaceNavState({ menu: 'psikotesMain' });
 }
 
 function backToPsikotesSub() {
     document.getElementById('psikotesDetailMenu').style.display = 'none';
     document.getElementById('psikotesSubMenu').style.display = 'block';
     document.getElementById('psikotesDetailSearch').value = '';
+    replaceNavState({ menu: 'psikotesSub', psikotesCategory: currentPsikotesCategory });
 }
 
 // ========== FUNGSI AKADEMIK ==========
@@ -360,6 +698,7 @@ function showCategory(key) {
     
     renderAkademikGrid(key);
     document.getElementById('categoryDetailMenu').style.display = 'block';
+    pushNavState({ menu: 'kategoriDetail', akademikCategory: key });
 }
 
 function renderAkademikGrid(key, filter = "") {
@@ -430,6 +769,7 @@ function backToAkademik() {
     currentAkademikCategory = null;
     currentFilter = 'semua';
     document.getElementById('akademikSearch').value = '';
+    replaceNavState({ menu: 'akademik' });
 }
 
 // ========== FUNGSI TEST OVERLAY (MODIFIED) ==========
@@ -491,7 +831,89 @@ function launchTest() {
     };
 }
 
+/**
+ * Otomatis simpan skor ke riwayat sebelum tes ditutup.
+ * Dipanggil sebelum iframe dihancurkan agar jawaban masih bisa diakses.
+ * Mencegah skor hilang saat user menutup tes di tengah jalan.
+ */
+function _autoSaveScoreBeforeClose() {
+    try {
+        const iframe = document.getElementById('testIframe');
+        if (!iframe || !iframe.contentWindow) return;
+        const win = iframe.contentWindow;
+
+        if (isKecermatanSequentialMode) {
+            // Kecermatan Sequential: simpan skor parsial dari paket yang sudah selesai
+            // Juga hitung jawaban paket yang sedang dikerjakan
+            let extraCorrect = 0, extraTotal = 0;
+            if (win.quizData && win.userAnswers) {
+                win.userAnswers.forEach(function(ans, i) {
+                    if (ans !== null && ans !== undefined) {
+                        extraTotal++;
+                        if (ans === win.quizData[i].a) extraCorrect++;
+                    }
+                });
+            }
+            const totalCorrect = kecermatanSeqAccCorrect + extraCorrect;
+            const totalAnswered = kecermatanSeqAccTotal + extraTotal;
+            if (totalAnswered > 0) {
+                const finalScore = Math.round((totalCorrect / totalAnswered) * 100);
+                // Gabungkan hasil paket yang sudah selesai + paket parsial saat ini
+                var allResults = (kecermatanSeqPackageResults || []).slice();
+                if (extraTotal > 0) {
+                    allResults.push({ correct: extraCorrect, total: extraTotal });
+                }
+                saveScore(
+                    (kecermatanSeqSubTestName || currentTestTitle) + ' (Parsial ' + allResults.length + ' Paket)',
+                    kecermatanSeqSubTestName || currentTestCategory,
+                    finalScore,
+                    totalCorrect,
+                    totalAnswered,
+                    0,
+                    'kecermatan',
+                    currentKecermatanSession,
+                    allResults
+                );
+            }
+        } else {
+            // Tes Normal (non-kecermatan): hitung skor dari jawaban di iframe
+            if (!win.quizData || !win.userAnswers) return;
+            // Cek apakah skor sudah tersimpan (user sudah klik Akhiri / timer habis)
+            if (win.isReviewMode) return; // Sudah showResult(), skor sudah tersimpan via override
+
+            let correct = 0, answered = 0;
+            win.userAnswers.forEach(function(ans, i) {
+                if (ans !== null && ans !== undefined) {
+                    answered++;
+                    if (ans === win.quizData[i].a) correct++;
+                }
+            });
+            if (answered > 0) {
+                const score = Math.round((correct / win.quizData.length) * 100);
+                saveScore(
+                    currentTestTitle,
+                    currentTestCategory,
+                    score,
+                    correct,
+                    win.quizData.length,
+                    currentPaketNumber,
+                    currentParentCategory,
+                    currentKecermatanSession
+                );
+            }
+        }
+    } catch(e) {
+        // Silently fail — iframe mungkin sudah cross-origin atau destroyed
+    }
+}
+
 function closeTest() {
+    // Simpan skor otomatis sebelum menutup tes (agar semua skor masuk riwayat)
+    _autoSaveScoreBeforeClose();
+
+    // Hapus test state tersimpan (tes ditutup manual)
+    clearTestState();
+    
     // Simpan flag sebelum reset
     const wasSequentialMode = isKecermatanSequentialMode;
     
@@ -537,6 +959,32 @@ function closeTest() {
         document.querySelector('.main-menu-grid').style.display = 'none';
         document.querySelector('.modern-header').style.display = 'none';
         showPsikotesSubMenu('kecermatan');
+        return;
+    }
+
+    // Cek apakah semua menu tersembunyi (kondisi setelah restore dari reload)
+    // Jika ya, restore nav state dari sessionStorage agar user kembali ke menu yang benar
+    const menuIds = ['psikotesMainMenu','psikotesSubMenu','psikotesDetailMenu','akademikMenu','categoryDetailMenu'];
+    const allMenusHidden = menuIds.every(id => {
+        const el = document.getElementById(id);
+        return !el || el.style.display === 'none' || el.style.display === '';
+    });
+    const mainGrid = document.querySelector('.main-menu-grid');
+    const mainGridHidden = !mainGrid || mainGrid.style.display === 'none' || mainGrid.style.display === '';
+
+    if (allMenusHidden && mainGridHidden) {
+        // Tidak ada menu yang terlihat — restore dari sessionStorage
+        try {
+            const savedNav = sessionStorage.getItem(NAV_SESSION_KEY);
+            if (savedNav) {
+                const navState = JSON.parse(savedNav);
+                restoreNavState(navState);
+            } else {
+                _showMain();
+            }
+        } catch(e) {
+            _showMain();
+        }
     }
 }
 
@@ -1372,6 +1820,7 @@ function showKecermatanFinalResult() {
     isKecermatanTest = false;
     isKecermatanSequentialMode = false;
     autoNextDuration = 0;
+    clearTestState(); // Tes selesai normal, hapus state tersimpan
 }
 
 function closeKecermatanResult() {
@@ -1412,7 +1861,7 @@ function getTimeLimitSeconds() {
     return 0; // Default tanpa batas
 }
 
-function startTimer(totalSeconds) {
+function startTimer(totalSeconds, startFromValue) {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -1421,24 +1870,29 @@ function startTimer(totalSeconds) {
     const timerEl = document.getElementById('timer');
     const timerTag = timerEl.parentElement;
     timerTag.classList.remove('timer-warning');
+    _timerIsCountdown = totalSeconds > 0;
     
     if (totalSeconds <= 0) {
         // Mode count-up (tanpa batas waktu)
-        let seconds = 0;
+        let seconds = (startFromValue !== undefined) ? startFromValue : 0;
+        _timerCurrentValue = seconds;
         updateTimerDisplay(seconds, timerEl);
         timerInterval = setInterval(() => {
             seconds++;
+            _timerCurrentValue = seconds;
             updateTimerDisplay(seconds, timerEl);
         }, 1000);
         return;
     }
     
-    // Mode countdown
-    let remaining = totalSeconds;
+    // Mode countdown — gunakan startFromValue jika ada (restore dari reload)
+    let remaining = (startFromValue !== undefined) ? startFromValue : totalSeconds;
+    _timerCurrentValue = remaining;
     updateTimerDisplay(remaining, timerEl);
     
     timerInterval = setInterval(() => {
         remaining--;
+        _timerCurrentValue = remaining;
         updateTimerDisplay(remaining, timerEl);
         
         // Warning saat sisa < 5 menit
