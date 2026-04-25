@@ -507,5 +507,8 @@ const quizData = [
     }
 </script>
 
+<script>
+(function(){if(window._sb)return;window._sb=1;var c=setInterval(function(){if(typeof showResult==='function'&&!window._sw){window._sw=1;clearInterval(c);var o=showResult;window.showResult=function(){o.apply(this,arguments);try{var q=typeof quizData!=='undefined'?quizData:[];var u=typeof userAnswers!=='undefined'?userAnswers:[];var r=0;u.forEach(function(a,i){if(q[i]&&a===q[i].a)r++});window.parent.postMessage({type:'quizResult',score:q.length>0?Math.round(r/q.length*100):0,correct:r,total:q.length},'*')}catch(e){}}}},200)})();
+</script>
 </body>
 </html>

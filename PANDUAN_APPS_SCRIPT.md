@@ -1,70 +1,85 @@
-# Kode Google Apps Script untuk Admin Dashboard
+# Panduan Integrasi Google Apps Script — SuperCasis
 
-## Petunjuk
-Tambahkan kode berikut ke Google Apps Script Anda agar Admin Dashboard dapat mengambil data user terdaftar dan riwayat akses dari Google Sheets.
+## Fitur yang Terhubung ke Google Sheets
 
-## Cara Menambahkan
-1. Buka Google Apps Script di: https://script.google.com
-2. Buka project yang terhubung dengan URL endpoint Anda
-3. Tambahkan kode berikut di dalam fungsi `doPost(e)` Anda, di bagian switch case atau if-else action:
+### 1. Registrasi & Login User (Sheet: "Users")
+Sudah berfungsi — data user disimpan di sheet "Users".
 
-```javascript
-// ====================================
-// TAMBAHKAN DI DALAM FUNGSI doPost(e)
-// ====================================
+### 2. Riwayat Nilai / Skor Permanen (Sheet: "ScoreHistory")
+**BARU!** Semua skor tes otomatis disimpan ke Google Sheets melalui Apps Script.
 
-// Ambil daftar semua user terdaftar
-if (action === 'get_users') {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1'); // Ganti nama sheet sesuai kebutuhan
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0]; // Baris pertama = header
-  var users = [];
-  
-  for (var i = 1; i < data.length; i++) {
-    var row = {};
-    for (var j = 0; j < headers.length; j++) {
-      row[headers[j].toString().toLowerCase()] = data[i][j];
-    }
-    users.push(row);
-  }
-  
-  return ContentService
-    .createTextOutput(JSON.stringify({ status: 'success', data: users }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+---
 
-// Ambil riwayat akses/login user
-if (action === 'get_access_log') {
-  // Jika ada sheet khusus untuk access log
-  var logSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('AccessLog');
-  
-  if (logSheet) {
-    var logData = logSheet.getDataRange().getValues();
-    var logHeaders = logData[0];
-    var logs = [];
-    
-    for (var i = 1; i < logData.length; i++) {
-      var row = {};
-      for (var j = 0; j < logHeaders.length; j++) {
-        row[logHeaders[j].toString().toLowerCase()] = logData[i][j];
-      }
-      logs.push(row);
-    }
-    
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'success', data: logs }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } else {
-    // Jika belum ada sheet AccessLog, kembalikan data kosong
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'success', data: [] }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-```
+## Setup Sheet "ScoreHistory"
 
-## Catatan
-- Pastikan nama sheet (`Sheet1`, `AccessLog`) sesuai dengan yang ada di Google Sheets Anda
-- Setelah menambahkan kode, **deploy ulang** Apps Script sebagai Web App
-- Pilih "New deployment" dan pastikan execute as "Me" dan access "Anyone"
-- Admin dashboard akan otomatis fallback ke localStorage jika endpoint tidak tersedia
+### Otomatis
+Sheet "ScoreHistory" akan **otomatis dibuat** oleh Apps Script saat pertama kali ada skor yang disimpan. Anda tidak perlu membuat sheet secara manual.
+
+### Struktur Kolom (Baris 1 = Header)
+| Kolom | Isi |
+|-------|-----|
+| A | Email |
+| B | TestName |
+| C | Category |
+| D | ParentCategory |
+| E | Score |
+| F | Correct |
+| G | Total |
+| H | PaketNumber |
+| I | SessionId |
+| J | Date |
+| K | PackageResults (JSON) |
+
+---
+
+## Cara Deploy Ulang Apps Script
+
+1. Buka [Google Apps Script](https://script.google.com)
+2. Buka project yang terhubung dengan Spreadsheet Anda
+3. **Ganti seluruh kode** dengan isi file `kode apss script.txt`
+4. Klik **Deploy** → **New deployment**
+5. Type: **Web app**
+6. Execute as: **Me** (muhammadnur41@guru.sma.belajar.id)
+7. Who has access: **Anyone**
+8. Klik **Deploy**
+
+> ⚠️ **PENTING**: Jika URL deployment berubah, update `SCORE_SCRIPT_URL` di file `app/script.js` (baris awal bagian Cloud Score Integration).
+
+---
+
+## Cara Kerja Sinkronisasi
+
+### Saat Simpan Skor (setelah tes selesai):
+1. Skor disimpan ke **localStorage** (cache lokal, instan)
+2. Skor dikirim ke **Google Sheets** via POST (fire-and-forget, async)
+3. Toast notification hijau muncul: "Skor tersimpan ke cloud" ☁️
+
+### Saat Buka Riwayat Nilai:
+1. Pertama kali: tampilkan loading screen, ambil data dari cloud
+2. Data cloud di-merge dengan data lokal (menghindari duplikat)
+3. Hasil merge disimpan ke localStorage sebagai cache
+4. Selanjutnya: render dari cache (cepat)
+5. Tombol **Sync** di header modal untuk refresh manual
+
+### Status Badge di Modal:
+- 🟢 **Cloud Synced** — Data sudah sinkron dari server
+- 🔵 **Syncing...** — Sedang mengambil data dari server
+- 🟡 **Offline** — Gagal sync, klik untuk coba lagi
+- ⚪ **Local** — Belum pernah sync
+
+---
+
+## Troubleshooting
+
+### Skor tidak muncul di Google Sheets
+- Pastikan sudah deploy ulang Apps Script dengan kode terbaru
+- Cek Console browser (F12) untuk pesan error `[CloudScore]`
+- Pastikan internet tersambung
+
+### Data tidak sinkron antar device
+- Buka Riwayat Nilai → Klik tombol **Sync** untuk force refresh
+- Pastikan login dengan email yang sama di kedua device
+
+### Error "Sheet 'Users' tidak ditemukan"
+- Pastikan ada sheet bernama "Users" di Google Spreadsheet
+- Sheet "ScoreHistory" akan otomatis dibuat oleh script

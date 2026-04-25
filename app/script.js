@@ -97,6 +97,7 @@ let currentTestPath = '';
 let currentPaketNumber = 0;
 let currentParentCategory = '';
 let currentKecermatanSession = null;
+let _scoreSavedForCurrentTest = false; // Flag mencegah duplikat simpan skor
 
 // === KECERMATAN SEQUENTIAL MODE STATE ===
 let isKecermatanSequentialMode = false;
@@ -213,6 +214,7 @@ function restoreTestState(savedState) {
             iframe.src = pkg.file + sep + 'packageTime=60&questionSpeed=' + kecermatanQuestionSpeed;
             iframe.onload = function() {
                 setTimeout(() => {
+                    _exposeIframeVarsOnWindow(iframe);
                     injectIframeOverrides(iframe);
                     _restoreIframeAnswers(iframe, savedState);
                 }, 300);
@@ -226,6 +228,7 @@ function restoreTestState(savedState) {
         iframe.src = currentTestPath;
         iframe.onload = function() {
             setTimeout(() => {
+                _exposeIframeVarsOnWindow(iframe);
                 injectIframeOverrides(iframe);
                 _restoreIframeAnswers(iframe, savedState);
                 // Resume timer dari nilai tersimpan
@@ -778,6 +781,7 @@ function openTest(title, path, category, paketNum) {
     currentTestPath = path;
     currentTestCategory = category;
     currentPaketNumber = paketNum || 0;
+    _scoreSavedForCurrentTest = false; // Reset flag simpan skor
     
     // Determine parent category
     if (currentPsikotesCategory) {
@@ -825,10 +829,76 @@ function launchTest() {
     // Setup iframe injection saat iframe selesai dimuat
     const iframe = document.getElementById('testIframe');
     iframe.onload = function() {
-        setTimeout(() => {
-            injectIframeOverrides(iframe);
+        setTimeout(function() {
+            _exposeIframeVarsOnWindow(iframe);
+            // Beri waktu bridge script dieksekusi browser sebelum override
+            setTimeout(function() {
+                injectIframeOverrides(iframe);
+            }, 150);
         }, 300);
     };
+}
+
+/**
+ * Inject script ke dalam iframe untuk:
+ * 1. Expose variabel quiz (const/let) sebagai window properties
+ * 2. Wrap showResult() agar otomatis kirim skor via postMessage ke parent
+ */
+function _exposeIframeVarsOnWindow(iframe) {
+    try {
+        const win = iframe.contentWindow;
+        if (!win || !win.document) return;
+        const bridge = win.document.createElement('script');
+        bridge.textContent = `
+            (function() {
+                try {
+                    // Expose variabel quiz ke window
+                    if (typeof quizData !== 'undefined' && !window.hasOwnProperty('quizData')) window.quizData = quizData;
+                    if (typeof userAnswers !== 'undefined' && !window.hasOwnProperty('userAnswers')) window.userAnswers = userAnswers;
+                    if (typeof currentIdx !== 'undefined' && !window.hasOwnProperty('currentIdx')) {
+                        Object.defineProperty(window, 'currentIdx', {
+                            get: function() { return currentIdx; },
+                            set: function(v) { currentIdx = v; },
+                            configurable: true
+                        });
+                    }
+                    if (typeof isReviewMode !== 'undefined' && !window.hasOwnProperty('isReviewMode')) {
+                        Object.defineProperty(window, 'isReviewMode', {
+                            get: function() { return isReviewMode; },
+                            set: function(v) { isReviewMode = v; },
+                            configurable: true
+                        });
+                    }
+
+                    // Wrap showResult agar kirim skor ke parent via postMessage
+                    if (typeof showResult === 'function' && !window._showResultWrapped) {
+                        var _origShowResult = showResult;
+                        showResult = function() {
+                            _origShowResult.apply(this, arguments);
+                            try {
+                                var qd = window.quizData || (typeof quizData !== 'undefined' ? quizData : []);
+                                var ua = window.userAnswers || (typeof userAnswers !== 'undefined' ? userAnswers : []);
+                                var correct = 0;
+                                ua.forEach(function(ans, i) {
+                                    if (qd[i] && ans === qd[i].a) correct++;
+                                });
+                                var total = qd.length;
+                                var score = total > 0 ? Math.round((correct / total) * 100) : 0;
+                                window.parent.postMessage({
+                                    type: 'quizResult',
+                                    score: score,
+                                    correct: correct,
+                                    total: total
+                                }, '*');
+                            } catch(pe) {}
+                        };
+                        window._showResultWrapped = true;
+                    }
+                } catch(e) {}
+            })();
+        `;
+        win.document.head.appendChild(bridge);
+    } catch(e) {}
 }
 
 /**
@@ -841,6 +911,9 @@ function _autoSaveScoreBeforeClose() {
         const iframe = document.getElementById('testIframe');
         if (!iframe || !iframe.contentWindow) return;
         const win = iframe.contentWindow;
+
+        // Pastikan variabel iframe ter-expose di window
+        _exposeIframeVarsOnWindow(iframe);
 
         if (isKecermatanSequentialMode) {
             // Kecermatan Sequential: simpan skor parsial dari paket yang sudah selesai
@@ -878,8 +951,8 @@ function _autoSaveScoreBeforeClose() {
         } else {
             // Tes Normal (non-kecermatan): hitung skor dari jawaban di iframe
             if (!win.quizData || !win.userAnswers) return;
-            // Cek apakah skor sudah tersimpan (user sudah klik Akhiri / timer habis)
-            if (win.isReviewMode) return; // Sudah showResult(), skor sudah tersimpan via override
+            // Cek apakah skor sudah tersimpan via override showResult
+            if (_scoreSavedForCurrentTest) return;
 
             let correct = 0, answered = 0;
             win.userAnswers.forEach(function(ans, i) {
@@ -900,6 +973,7 @@ function _autoSaveScoreBeforeClose() {
                     currentParentCategory,
                     currentKecermatanSession
                 );
+                _scoreSavedForCurrentTest = true;
             }
         }
     } catch(e) {
@@ -952,6 +1026,7 @@ function closeTest() {
     kecermatanSeqCurrentIdx = 0;
     kecermatanSeqAccCorrect = 0;
     kecermatanSeqAccTotal = 0;
+    _scoreSavedForCurrentTest = false;
     
     // Jika dari sequential kecermatan, kembali ke menu Tes Kecermatan
     if (wasSequentialMode) {
@@ -1243,7 +1318,9 @@ function resetAutoNextBar() {
 function injectIframeOverrides(iframe) {
     try {
         const win = iframe.contentWindow;
-        if (!win || !win.quizData || !win.showResult) return;
+        // PENTING: JANGAN cek win.quizData — const/let BUKAN properti window!
+        // Bridge script sudah expose ke window, tapi cek showResult saja cukup
+        if (!win || !win.showResult) return;
         
         if (isKecermatanSequentialMode) {
             // === KECERMATAN SEQUENTIAL MODE ===
@@ -1288,22 +1365,42 @@ function injectIframeOverrides(iframe) {
             win.showResult = function() {
                 origShowResult.call(this);
                 
-                let correct = 0;
-                win.userAnswers.forEach((ans, i) => {
-                    if (ans === win.quizData[i].a) correct++;
-                });
-                const score = Math.round((correct / win.quizData.length) * 100);
+                // Cegah duplikat simpan skor
+                if (_scoreSavedForCurrentTest) return;
                 
-                saveScore(
-                    currentTestTitle,
-                    currentTestCategory,
-                    score,
-                    correct,
-                    win.quizData.length,
-                    currentPaketNumber,
-                    currentParentCategory,
-                    currentKecermatanSession
-                );
+                try {
+                    // Re-expose variabel dari iframe (karena const/let)
+                    _exposeIframeVarsOnWindow(iframe);
+                    
+                    // Ambil quizData & userAnswers — coba window dulu, fallback ke scope lokal iframe
+                    var qd = win.quizData;
+                    var ua = win.userAnswers;
+                    if (!qd || !ua) {
+                        console.log('[Score] quizData/userAnswers belum tersedia di window');
+                        return;
+                    }
+                    
+                    let correct = 0;
+                    ua.forEach((ans, i) => {
+                        if (qd[i] && ans === qd[i].a) correct++;
+                    });
+                    const score = Math.round((correct / qd.length) * 100);
+                    
+                    saveScore(
+                        currentTestTitle,
+                        currentTestCategory,
+                        score,
+                        correct,
+                        qd.length,
+                        currentPaketNumber,
+                        currentParentCategory,
+                        currentKecermatanSession
+                    );
+                    _scoreSavedForCurrentTest = true;
+                    console.log('[Score] ✅ Skor tersimpan via showResult override:', currentTestTitle, score);
+                } catch(e) {
+                    console.log('[Score] ❌ Gagal simpan dari showResult override:', e.message);
+                }
                 
                 stopAutoNext();
             };
@@ -1547,12 +1644,18 @@ function showPackageTransition(idx, callback) {
 
 function accumulatePackageScores(iframeWindow) {
     try {
+        // Pastikan variabel quiz ter-expose di window iframe
+        const iframe = document.getElementById('testIframe');
+        if (iframe) _exposeIframeVarsOnWindow(iframe);
+        
         let correct = 0;
         const total = iframeWindow.quizData.length;
         
         iframeWindow.userAnswers.forEach((ans, i) => {
             if (ans === iframeWindow.quizData[i].a) correct++;
         });
+        
+        kecermatanSeqPackageResults.push({ correct: correct, total: total });
         
         kecermatanSeqAccCorrect += correct;
         kecermatanSeqAccTotal += total;
@@ -1955,10 +2058,19 @@ function showTimeUpNotification() {
     setTimeout(() => { if (notif.parentNode) notif.remove(); }, 3500);
 }
 
-// ========== RIWAYAT NILAI (ENHANCED with Chart) ==========
+// ========== CLOUD SCORE INTEGRATION ==========
+const SCORE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+let _cloudSyncStatus = 'idle';
+let _cloudSyncPromise = null;
+
+// ========== RIWAYAT NILAI (ENHANCED with Chart + Cloud) ==========
 function getScoreHistoryKey() {
     const username = localStorage.getItem('userUsername') || 'anonymous';
     return 'scoreHistory_' + username;
+}
+
+function _getUserEmail() {
+    return localStorage.getItem('userUsername') || '';
 }
 
 function saveScore(testName, category, score, correct, total, paketNumber, parentCategory, sessionId, packageResults) {
@@ -1975,14 +2087,153 @@ function saveScore(testName, category, score, correct, total, paketNumber, paren
         sessionId: sessionId || '',
         date: new Date().toISOString()
     };
-    // Simpan detail per-paket jika ada (untuk kecermatan)
     if (packageResults && packageResults.length > 0) {
         entry.packageResults = packageResults;
     }
     history.unshift(entry);
-    // Keep max 200 records
     if (history.length > 200) history = history.slice(0, 200);
     localStorage.setItem(key, JSON.stringify(history));
+
+    // === KIRIM KE GOOGLE SHEETS ===
+    _saveScoreToCloud(entry);
+}
+
+function _saveScoreToCloud(entry) {
+    var email = _getUserEmail();
+    if (!email) return;
+
+    // Gunakan FormData — pattern yang sama dengan login.html & register.html
+    var formData = new FormData();
+    formData.append('action', 'save_score');
+    formData.append('email', email);
+    formData.append('testName', entry.testName || '');
+    formData.append('category', entry.category || '');
+    formData.append('parentCategory', entry.parentCategory || '');
+    formData.append('score', String(entry.score || 0));
+    formData.append('correct', String(entry.correct || 0));
+    formData.append('total', String(entry.total || 0));
+    formData.append('paketNumber', String(entry.paketNumber || 0));
+    formData.append('sessionId', entry.sessionId || '');
+    formData.append('date', entry.date || new Date().toISOString());
+    if (entry.packageResults && entry.packageResults.length > 0) {
+        formData.append('packageResults', JSON.stringify(entry.packageResults));
+    }
+
+    // Fetch POST — sama persis dengan pola login.html
+    fetch(SCORE_SCRIPT_URL, { method: 'POST', body: formData })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.status === 'success') {
+                console.log('[Cloud] ✅ Skor disimpan ke Google Sheets');
+                _showCloudSyncToast('success');
+            } else {
+                console.warn('[Cloud] ❌ Gagal simpan:', result.message);
+                _showCloudSyncToast('error');
+            }
+        })
+        .catch(function(err) {
+            console.warn('[Cloud] ⚠️ Error jaringan saat simpan skor:', err);
+            _showCloudSyncToast('error');
+        });
+}
+
+// Ambil semua skor user dari Google Sheets lalu gabungkan dengan data lokal
+function syncScoresFromCloud(forceRefresh) {
+    var email = _getUserEmail();
+    if (!email) return Promise.resolve(getScoreHistory());
+
+    if (_cloudSyncStatus === 'synced' && !forceRefresh) {
+        return Promise.resolve(getScoreHistory());
+    }
+    if (_cloudSyncStatus === 'syncing' && _cloudSyncPromise) {
+        return _cloudSyncPromise;
+    }
+
+    _cloudSyncStatus = 'syncing';
+
+    // GET request — Apps Script doGet() handle action=get_scores
+    var url = SCORE_SCRIPT_URL + '?action=get_scores&email=' + encodeURIComponent(email) + '&t=' + Date.now();
+
+    _cloudSyncPromise = fetch(url)
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.status === 'success' && Array.isArray(result.data)) {
+                var cloudData = result.data;
+                var key = getScoreHistoryKey();
+                var localData = JSON.parse(localStorage.getItem(key) || '[]');
+
+                if (cloudData.length > 0) {
+                    // Buat fingerprint dari cloud untuk cegah duplikat
+                    var cloudFP = {};
+                    cloudData.forEach(function(c) {
+                        cloudFP[(c.testName||'') + '|' + (c.date||'') + '|' + c.score] = true;
+                    });
+
+                    // Gabung: cloud + data lokal yang belum ter-upload
+                    var merged = cloudData.slice();
+                    localData.forEach(function(l) {
+                        var fp = (l.testName||'') + '|' + (l.date||'') + '|' + l.score;
+                        if (!cloudFP[fp]) merged.push(l);
+                    });
+
+                    // Urutkan terbaru dulu
+                    merged.sort(function(a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    if (merged.length > 200) merged = merged.slice(0, 200);
+
+                    localStorage.setItem(key, JSON.stringify(merged));
+                    console.log('[Cloud] ✅ Sync berhasil: ' + cloudData.length + ' dari cloud, total ' + merged.length);
+                } else {
+                    console.log('[Cloud] ℹ️ Tidak ada data cloud, pakai data lokal');
+                }
+
+                _cloudSyncStatus = 'synced';
+                return getScoreHistory();
+            } else {
+                _cloudSyncStatus = 'error';
+                return getScoreHistory();
+            }
+        })
+        .catch(function(err) {
+            console.warn('[Cloud] ⚠️ Gagal sync:', err);
+            _cloudSyncStatus = 'error';
+            return getScoreHistory();
+        });
+
+    return _cloudSyncPromise;
+}
+
+function _showCloudSyncToast(type) {
+    var old = document.getElementById('cloudSyncToast');
+    if (old) old.remove();
+
+    var toast = document.createElement('div');
+    toast.id = 'cloudSyncToast';
+    var bg = type === 'success' ? 'linear-gradient(135deg,#10b981,#059669)'
+           : type === 'syncing' ? 'linear-gradient(135deg,#3b82f6,#2563eb)'
+           : 'linear-gradient(135deg,#f59e0b,#d97706)';
+    var ic = type === 'success' ? 'fa-cloud-arrow-up'
+           : type === 'syncing' ? 'fa-sync fa-spin'
+           : 'fa-exclamation-triangle';
+    var tx = type === 'success' ? 'Skor tersimpan ke cloud ☁️'
+           : type === 'syncing' ? 'Menyinkronkan...'
+           : 'Sinkronisasi gagal';
+
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;background:' + bg +
+        ';color:white;padding:10px 18px;border-radius:14px;font-size:0.78rem;font-weight:600;' +
+        'display:flex;align-items:center;gap:8px;box-shadow:0 8px 25px rgba(0,0,0,0.3);' +
+        'animation:slideUp 0.3s ease;font-family:inherit;pointer-events:none;opacity:0.95;';
+    toast.innerHTML = '<i class="fas ' + ic + '"></i> ' + tx;
+    document.body.appendChild(toast);
+
+    if (type !== 'syncing') {
+        setTimeout(function() {
+            toast.style.transition = 'opacity 0.5s';
+            toast.style.opacity = '0';
+            setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500);
+        }, 2500);
+    }
 }
 
 function getScoreHistory() {
@@ -2586,4 +2837,34 @@ document.addEventListener('DOMContentLoaded', function() {
             retina_detect: true
         });
     }
+});
+
+// ========== POSTMESSAGE LISTENER — Tangkap skor dari iframe ==========
+window.addEventListener('message', function(event) {
+    try {
+        var data = event.data;
+        if (!data || data.type !== 'quizResult') return;
+        
+        // Cegah duplikat simpan
+        if (_scoreSavedForCurrentTest) return;
+        
+        var score = data.score || 0;
+        var correct = data.correct || 0;
+        var total = data.total || 0;
+        
+        if (total > 0 && currentTestTitle) {
+            saveScore(
+                currentTestTitle,
+                currentTestCategory,
+                score,
+                correct,
+                total,
+                currentPaketNumber,
+                currentParentCategory,
+                currentKecermatanSession
+            );
+            _scoreSavedForCurrentTest = true;
+            console.log('[PostMessage] ✅ Skor ditangkap:', currentTestTitle, score);
+        }
+    } catch(e) {}
 });

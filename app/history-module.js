@@ -1,4 +1,4 @@
-// ========== RIWAYAT NILAI MODULE (Override) ==========
+// ========== RIWAYAT NILAI MODULE (Override with Cloud Sync) ==========
 
 function getCategoryBadgeColor(item) {
     const pc = item.parentCategory;
@@ -29,9 +29,9 @@ function getFilteredHistory(history, activeFilter) {
     return history;
 }
 
-function showScoreHistory(activeFilter) {
+// Render modal Riwayat Nilai dengan data yang sudah ada
+function _renderScoreHistoryModal(history, activeFilter) {
     activeFilter = activeFilter || 'semua';
-    const history = getScoreHistory();
     const existing = document.getElementById('scoreHistoryModal');
     if (existing) existing.remove();
     if (window._kecermatanChartInstance) { window._kecermatanChartInstance.destroy(); window._kecermatanChartInstance = null; }
@@ -44,6 +44,19 @@ function showScoreHistory(activeFilter) {
     const sT = filtered.length;
     const sA = sT > 0 ? Math.round(filtered.reduce((a,b) => a+b.score, 0) / sT) : 0;
     const sM = sT > 0 ? Math.max(...filtered.map(h => h.score)) : 0;
+
+    // Cloud sync status badge
+    const syncStatus = (typeof _cloudSyncStatus !== 'undefined') ? _cloudSyncStatus : 'idle';
+    let syncBadge = '';
+    if (syncStatus === 'synced') {
+        syncBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,0.15);color:#10b981;padding:3px 10px;border-radius:50px;font-size:0.65rem;font-weight:600;border:1px solid rgba(16,185,129,0.25);margin-left:8px;"><i class="fas fa-cloud-check" style="font-size:0.6rem;"></i> Cloud Synced</span>';
+    } else if (syncStatus === 'syncing') {
+        syncBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,0.15);color:#60a5fa;padding:3px 10px;border-radius:50px;font-size:0.65rem;font-weight:600;border:1px solid rgba(59,130,246,0.25);margin-left:8px;"><i class="fas fa-sync fa-spin" style="font-size:0.6rem;"></i> Syncing...</span>';
+    } else if (syncStatus === 'error') {
+        syncBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.15);color:#f59e0b;padding:3px 10px;border-radius:50px;font-size:0.65rem;font-weight:600;border:1px solid rgba(245,158,11,0.25);margin-left:8px;cursor:pointer;" onclick="syncScoresFromCloud(true).then(function(){showScoreHistory(\'' + activeFilter + '\');})" title="Klik untuk coba lagi"><i class="fas fa-exclamation-triangle" style="font-size:0.6rem;"></i> Offline</span>';
+    } else {
+        syncBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(148,163,184,0.12);color:#94a3b8;padding:3px 10px;border-radius:50px;font-size:0.65rem;font-weight:600;border:1px solid rgba(148,163,184,0.2);margin-left:8px;"><i class="fas fa-database" style="font-size:0.6rem;"></i> Local</span>';
+    }
 
     let tRows = '';
     if (sT === 0) {
@@ -107,6 +120,8 @@ function showScoreHistory(activeFilter) {
 .rn-td-name{font-weight:600}
 .rn-close{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:white;width:36px;height:36px;border-radius:11px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .3s}
 .rn-close:hover{background:#ef4444;border-color:#ef4444}
+.rn-sync-btn{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:6px 14px;border-radius:50px;font-size:0.72rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .3s;font-family:inherit;margin-right:8px}
+.rn-sync-btn:hover{background:rgba(59,130,246,0.3);color:#93c5fd}
 @media(max-width:600px){
  .rn-modal{border-radius:18px;max-height:95vh}
  .rn-header{padding:16px 16px}
@@ -121,9 +136,12 @@ function showScoreHistory(activeFilter) {
  <div class="rn-header">
   <div style="display:flex;align-items:center;gap:12px;">
    <div style="width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#8b5cf6,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 8px 20px rgba(139,92,246,0.3);"><i class="fas fa-chart-line"></i></div>
-   <div><h3 style="font-size:1.15rem;font-weight:800;margin:0;">Riwayat Nilai</h3><p style="color:#94a3b8;font-size:0.75rem;margin:3px 0 0;">${history.length} hasil tes tercatat</p></div>
+   <div><h3 style="font-size:1.15rem;font-weight:800;margin:0;display:flex;align-items:center;flex-wrap:wrap;">Riwayat Nilai ${syncBadge}</h3><p style="color:#94a3b8;font-size:0.75rem;margin:3px 0 0;">${history.length} hasil tes tercatat</p></div>
   </div>
-  <button onclick="closeScoreHistory()" class="rn-close"><i class="fas fa-times"></i></button>
+  <div style="display:flex;align-items:center;gap:6px;">
+   <button onclick="syncScoresFromCloud(true).then(function(){showScoreHistory('${activeFilter}');})" class="rn-sync-btn" title="Sinkronkan data dari cloud"><i class="fas fa-cloud-arrow-down"></i> Sync</button>
+   <button onclick="closeScoreHistory()" class="rn-close"><i class="fas fa-times"></i></button>
+  </div>
  </div>
  ${sT > 0 ? `<div class="rn-stats">
   <div class="rn-stat"><div class="rn-stat-val" style="color:#10b981;">${sT}</div><div class="rn-stat-lbl">Total Tes</div></div>
@@ -141,6 +159,44 @@ function showScoreHistory(activeFilter) {
 
     document.body.appendChild(m);
     document.body.style.overflow = 'hidden';
+}
+
+function showScoreHistory(activeFilter) {
+    activeFilter = activeFilter || 'semua';
+    
+    // Jika cloud belum pernah sync, tampilkan loading dulu lalu sync
+    if (typeof _cloudSyncStatus !== 'undefined' && _cloudSyncStatus === 'idle') {
+        // Show loading overlay
+        const existing = document.getElementById('scoreHistoryModal');
+        if (existing) existing.remove();
+        
+        const loader = document.createElement('div');
+        loader.id = 'scoreHistoryModal';
+        loader.className = 'rn-modal-overlay';
+        loader.onclick = function(e) { if (e.target === loader) { loader.remove(); document.body.style.overflow = ''; } };
+        loader.innerHTML = `<div style="background:linear-gradient(145deg,#141927,#1a2035);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:60px 40px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.5);animation:slideUp .4s cubic-bezier(.23,1,.32,1);">
+            <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.4rem;"><i class="fas fa-cloud-arrow-down"></i></div>
+            <h3 style="font-size:1.1rem;font-weight:800;color:#f1f5f9;margin:0 0 8px;">Memuat Data Cloud</h3>
+            <p style="color:#94a3b8;font-size:0.82rem;margin:0 0 20px;">Mengambil riwayat nilai dari server...</p>
+            <div style="width:200px;height:4px;background:rgba(255,255,255,0.08);border-radius:4px;margin:0 auto;overflow:hidden;">
+                <div style="width:40%;height:100%;background:linear-gradient(90deg,#8b5cf6,#3b82f6);border-radius:4px;animation:loadingBar 1.5s ease-in-out infinite;"></div>
+            </div>
+            <style>@keyframes loadingBar{0%{transform:translateX(-100%)}50%{transform:translateX(150%)}100%{transform:translateX(-100%)}}</style>
+        </div>`;
+        document.body.appendChild(loader);
+        document.body.style.overflow = 'hidden';
+
+        // Sync from cloud then render
+        syncScoresFromCloud(true).then(function(data) {
+            _renderScoreHistoryModal(data, activeFilter);
+        }).catch(function() {
+            _renderScoreHistoryModal(getScoreHistory(), activeFilter);
+        });
+    } else {
+        // Data sudah ter-sync atau sedang error/synced — render langsung dari cache
+        const history = getScoreHistory();
+        _renderScoreHistoryModal(history, activeFilter);
+    }
 }
 
 function buildSubTabs(tabs, activeFilter, color) {

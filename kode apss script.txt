@@ -1,9 +1,115 @@
 // Konfigurasi
 const SPREADSHEET_NAME = "Users";
+const SCORE_SHEET_NAME = "ScoreHistory";
 const FOLDER_ID = "1s-Uv2TOH5vNXus-UMvoj5GwN5HQhpZv-"; // GANTI DENGAN ID FOLDER DRIVE ANDA
 
 function doPost(e) {
   const action = e.parameter.action;
+  
+  // --- LOGIKA SIMPAN SKOR ---
+  if (action === 'save_score') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var scoreSheet = ss.getSheetByName(SCORE_SHEET_NAME);
+      
+      // Auto-create sheet jika belum ada
+      if (!scoreSheet) {
+        scoreSheet = ss.insertSheet(SCORE_SHEET_NAME);
+        scoreSheet.appendRow([
+          'Email', 'TestName', 'Category', 'ParentCategory', 
+          'Score', 'Correct', 'Total', 'PaketNumber', 
+          'SessionId', 'Date', 'PackageResults'
+        ]);
+        // Format header
+        scoreSheet.getRange(1, 1, 1, 11).setFontWeight('bold');
+      }
+      
+      var email = (e.parameter.email || '').toLowerCase();
+      var testName = e.parameter.testName || '';
+      var category = e.parameter.category || '';
+      var parentCategory = e.parameter.parentCategory || '';
+      var score = parseInt(e.parameter.score) || 0;
+      var correct = parseInt(e.parameter.correct) || 0;
+      var total = parseInt(e.parameter.total) || 0;
+      var paketNumber = parseInt(e.parameter.paketNumber) || 0;
+      var sessionId = e.parameter.sessionId || '';
+      var date = e.parameter.date || new Date().toISOString();
+      var packageResults = e.parameter.packageResults || '';
+      
+      scoreSheet.appendRow([
+        email, testName, category, parentCategory,
+        score, correct, total, paketNumber,
+        sessionId, date, packageResults
+      ]);
+      
+      return createResponse("success", "Skor berhasil disimpan!");
+    } catch (err) {
+      return createResponse("error", "Gagal menyimpan skor: " + err.toString());
+    }
+  }
+  
+  // --- LOGIKA AMBIL SKOR ---
+  if (action === 'get_scores') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var scoreSheet = ss.getSheetByName(SCORE_SHEET_NAME);
+      
+      if (!scoreSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var email = (e.parameter.email || '').toLowerCase();
+      var allData = scoreSheet.getDataRange().getValues();
+      var scores = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var rowEmail = allData[i][0].toString().toLowerCase();
+        if (rowEmail === email) {
+          var entry = {
+            testName: allData[i][1].toString(),
+            category: allData[i][2].toString(),
+            parentCategory: allData[i][3].toString(),
+            score: parseInt(allData[i][4]) || 0,
+            correct: parseInt(allData[i][5]) || 0,
+            total: parseInt(allData[i][6]) || 0,
+            paketNumber: parseInt(allData[i][7]) || 0,
+            sessionId: allData[i][8].toString(),
+            date: allData[i][9].toString()
+          };
+          
+          // Parse packageResults jika ada
+          var pkgStr = allData[i][10].toString();
+          if (pkgStr && pkgStr !== '' && pkgStr !== 'undefined') {
+            try {
+              entry.packageResults = JSON.parse(pkgStr);
+            } catch(pe) {
+              // Jika gagal parse, abaikan
+            }
+          }
+          
+          scores.push(entry);
+        }
+      }
+      
+      // Sort terbaru dulu
+      scores.sort(function(a, b) {
+        return new Date(b.date) - new Date(a.date);
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: scores
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil skor: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA YANG SUDAH ADA ---
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SPREADSHEET_NAME);
   
   if (!sheet) {
@@ -104,6 +210,75 @@ function doPost(e) {
     }
     return createResponse("error", "Email tidak ditemukan.");
   }
+}
+
+// --- doGet: Untuk mengambil skor via GET request ---
+function doGet(e) {
+  var action = e.parameter.action;
+  
+  if (action === 'get_scores') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var scoreSheet = ss.getSheetByName(SCORE_SHEET_NAME);
+      
+      if (!scoreSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var email = (e.parameter.email || '').toLowerCase();
+      var allData = scoreSheet.getDataRange().getValues();
+      var scores = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var rowEmail = allData[i][0].toString().toLowerCase();
+        if (rowEmail === email) {
+          var entry = {
+            testName: allData[i][1].toString(),
+            category: allData[i][2].toString(),
+            parentCategory: allData[i][3].toString(),
+            score: parseInt(allData[i][4]) || 0,
+            correct: parseInt(allData[i][5]) || 0,
+            total: parseInt(allData[i][6]) || 0,
+            paketNumber: parseInt(allData[i][7]) || 0,
+            sessionId: allData[i][8].toString(),
+            date: allData[i][9].toString()
+          };
+          
+          var pkgStr = allData[i][10].toString();
+          if (pkgStr && pkgStr !== '' && pkgStr !== 'undefined') {
+            try {
+              entry.packageResults = JSON.parse(pkgStr);
+            } catch(pe) {}
+          }
+          
+          scores.push(entry);
+        }
+      }
+      
+      scores.sort(function(a, b) {
+        return new Date(b.date) - new Date(a.date);
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: scores
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error",
+        message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "error",
+    message: "Action tidak dikenali"
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function createResponse(status, message) {

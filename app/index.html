@@ -325,6 +325,13 @@
                 </button>
             `;
 
+            // ===== CLOUD SYNC: Preload skor dari Google Sheets =====
+            if (typeof syncScoresFromCloud === 'function') {
+                syncScoresFromCloud(false).then(function(data) {
+                    console.log('[App] Cloud score sync selesai, ' + data.length + ' record');
+                }).catch(function() {});
+            }
+
             // ===== TEST STATE: Restore active test on reload (prioritas utama) =====
             const savedTestRaw = sessionStorage.getItem('appTestState');
             if (savedTestRaw) {
