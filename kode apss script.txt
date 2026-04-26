@@ -1,6 +1,7 @@
 // Konfigurasi
 const SPREADSHEET_NAME = "Users";
 const SCORE_SHEET_NAME = "ScoreHistory";
+const ACCESS_LOG_SHEET_NAME = "AccessLog";
 const FOLDER_ID = "1s-Uv2TOH5vNXus-UMvoj5GwN5HQhpZv-"; // GANTI DENGAN ID FOLDER DRIVE ANDA
 
 function doPost(e) {
@@ -108,15 +109,266 @@ function doPost(e) {
       return createResponse("error", "Gagal mengambil skor: " + err.toString());
     }
   }
+  // --- LOGIKA AMBIL SEMUA SKOR (untuk Admin Dashboard) ---
+  if (action === 'get_all_scores') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var scoreSheet = ss.getSheetByName(SCORE_SHEET_NAME);
+      
+      if (!scoreSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = scoreSheet.getDataRange().getValues();
+      var scores = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        scores.push({
+          email: allData[i][0] ? allData[i][0].toString() : '',
+          testName: allData[i][1] ? allData[i][1].toString() : '',
+          category: allData[i][2] ? allData[i][2].toString() : '',
+          parentCategory: allData[i][3] ? allData[i][3].toString() : '',
+          score: parseInt(allData[i][4]) || 0,
+          correct: parseInt(allData[i][5]) || 0,
+          total: parseInt(allData[i][6]) || 0,
+          paketNumber: parseInt(allData[i][7]) || 0,
+          sessionId: allData[i][8] ? allData[i][8].toString() : '',
+          date: allData[i][9] ? allData[i][9].toString() : ''
+        });
+      }
+      
+      // Sort terbaru dulu
+      scores.sort(function(a, b) {
+        try { return new Date(b.date) - new Date(a.date); }
+        catch(e) { return 0; }
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: scores
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil semua skor: " + err.toString());
+    }
+  }
 
-  // --- LOGIKA YANG SUDAH ADA ---
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SPREADSHEET_NAME);
+  // ============================================================
+  //  ADMIN INTEGRATION — get_users, get_access_log, log_access
+  // ============================================================
+
+  // --- LOGIKA AMBIL DAFTAR USER (untuk Admin Dashboard) ---
+  if (action === 'get_users') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(SPREADSHEET_NAME);
+      
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = sheet.getDataRange().getValues();
+      var users = [];
+      
+      // Baris 0 = header, mulai dari baris 1
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        users.push({
+          nama: row[0] ? row[0].toString() : '-',
+          nomor: row[1] ? row[1].toString().replace(/^'/, '') : '-',
+          email: row[2] ? row[2].toString() : '-',
+          // CATATAN: Password (kolom D / index 3) TIDAK dikirim ke client
+          buktiUrl: row[4] ? row[4].toString() : '',
+          status: row[5] ? row[5].toString() : 'Pending',
+          tanggalDaftar: row[6] ? row[6].toString() : '-',
+          terakhirLogin: row[7] ? row[7].toString() : '-'
+        });
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: users
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil data user: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA AMBIL RIWAYAT AKSES (untuk Admin Dashboard) ---
+  if (action === 'get_access_log') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var logSheet = ss.getSheetByName(ACCESS_LOG_SHEET_NAME);
+      
+      if (!logSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = logSheet.getDataRange().getValues();
+      var logs = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        logs.push({
+          email: row[0] ? row[0].toString() : '-',
+          nama: row[1] ? row[1].toString() : '-',
+          action: row[2] ? row[2].toString() : 'login',
+          timestamp: row[3] ? row[3].toString() : '-'
+        });
+      }
+      
+      // Sort terbaru dulu
+      logs.sort(function(a, b) {
+        try { return new Date(b.timestamp) - new Date(a.timestamp); }
+        catch(e) { return 0; }
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: logs
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil access log: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA CATAT LOG AKSES (login/register dari client) ---
+  if (action === 'log_access') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var logSheet = _getOrCreateAccessLogSheet(ss);
+      
+      var email = (e.parameter.email || '').toLowerCase();
+      var nama = e.parameter.nama || '-';
+      var actType = e.parameter.type || 'login';  // 'login' atau 'register'
+      var timestamp = e.parameter.timestamp || new Date().toISOString();
+      
+      logSheet.appendRow([email, nama, actType, timestamp]);
+      
+      return createResponse("success", "Access log berhasil disimpan!");
+    } catch (err) {
+      return createResponse("error", "Gagal menyimpan access log: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA UPDATE STATUS USER (approve/reject oleh Admin) ---
+  if (action === 'update_status') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(SPREADSHEET_NAME);
+      
+      if (!sheet) {
+        return createResponse("error", "Sheet 'Users' tidak ditemukan!");
+      }
+      
+      var targetEmail = (e.parameter.email || '').toLowerCase();
+      var newStatus = e.parameter.status || '';
+      
+      if (!targetEmail || !newStatus) {
+        return createResponse("error", "Email dan status harus diisi!");
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][2].toString().toLowerCase() === targetEmail) {
+          sheet.getRange(i + 1, 6).setValue(newStatus); // Kolom F = Status
+          return createResponse("success", "Status user berhasil diupdate menjadi: " + newStatus);
+        }
+      }
+      
+      return createResponse("error", "User dengan email tersebut tidak ditemukan.");
+    } catch (err) {
+      return createResponse("error", "Gagal update status: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA RESET PASSWORD (oleh Admin) ---
+  if (action === 'admin_reset_password') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(SPREADSHEET_NAME);
+      
+      if (!sheet) {
+        return createResponse("error", "Sheet 'Users' tidak ditemukan!");
+      }
+      
+      var targetEmail = (e.parameter.email || '').toLowerCase();
+      var newPassword = e.parameter.newPassword || '';
+      
+      if (!targetEmail || !newPassword) {
+        return createResponse("error", "Email dan password baru harus diisi!");
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][2].toString().toLowerCase() === targetEmail) {
+          sheet.getRange(i + 1, 4).setValue(newPassword); // Kolom D = Password
+          // Reset status dari "Minta Reset Password" ke "Aktif"
+          if (data[i][5].toString() === "Minta Reset Password") {
+            sheet.getRange(i + 1, 6).setValue("Aktif");
+          }
+          return createResponse("success", "Password user berhasil direset.");
+        }
+      }
+      
+      return createResponse("error", "User dengan email tersebut tidak ditemukan.");
+    } catch (err) {
+      return createResponse("error", "Gagal reset password: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA HAPUS USER (oleh Admin) ---
+  if (action === 'delete_user') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(SPREADSHEET_NAME);
+      
+      if (!sheet) {
+        return createResponse("error", "Sheet 'Users' tidak ditemukan!");
+      }
+      
+      var targetEmail = (e.parameter.email || '').toLowerCase();
+      
+      if (!targetEmail) {
+        return createResponse("error", "Email harus diisi!");
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][2].toString().toLowerCase() === targetEmail) {
+          sheet.deleteRow(i + 1);
+          return createResponse("success", "User berhasil dihapus.");
+        }
+      }
+      
+      return createResponse("error", "User dengan email tersebut tidak ditemukan.");
+    } catch (err) {
+      return createResponse("error", "Gagal menghapus user: " + err.toString());
+    }
+  }
+
+  // ============================================================
+  //  LOGIKA YANG SUDAH ADA (Register, Login, dll)
+  // ============================================================
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SPREADSHEET_NAME);
   
   if (!sheet) {
     return createResponse("error", "Sheet 'Users' tidak ditemukan!");
   }
   
-  const data = sheet.getDataRange().getValues();
+  var data = sheet.getDataRange().getValues();
 
   // --- LOGIKA REGISTRASI ---
   if (action === 'register') {
@@ -153,6 +405,12 @@ function doPost(e) {
         "-"         // Kolom H: Terakhir Login (Awalnya kosong)
       ]);
 
+      // Catat ke AccessLog (server-side)
+      try {
+        var logSheet = _getOrCreateAccessLogSheet(SpreadsheetApp.getActiveSpreadsheet());
+        logSheet.appendRow([email, nama, 'register', new Date().toISOString()]);
+      } catch(logErr) {}
+
       return createResponse("success", "Pendaftaran berhasil!");
     } catch (err) {
       return createResponse("error", "Gagal mendaftar: " + err.toString());
@@ -168,11 +426,23 @@ function doPost(e) {
       const dbEmail = data[i][2].toString().toLowerCase();
       const dbPassword = data[i][3].toString();
       const dbNama = data[i][0];
+      const dbStatus = data[i][5] ? data[i][5].toString() : '';
 
       if (dbEmail === usernameInput.toLowerCase() && dbPassword === passwordInput) {
         
+        // Cek status: jika Pending, tolak login
+        if (dbStatus.toLowerCase() === 'pending') {
+          return createResponse("error", "Akun Anda belum diverifikasi oleh Admin. Silakan tunggu.");
+        }
+        
         // --- UPDATE RIWAYAT LOGIN TERAKHIR (Kolom H / Baris i+1, Kolom 8) ---
         sheet.getRange(i + 1, 8).setValue(new Date()); 
+        
+        // Catat ke AccessLog (server-side)
+        try {
+          var logSheet = _getOrCreateAccessLogSheet(SpreadsheetApp.getActiveSpreadsheet());
+          logSheet.appendRow([dbEmail, dbNama, 'login', new Date().toISOString()]);
+        } catch(logErr) {}
         
         return ContentService.createTextOutput(JSON.stringify({
           status: "success",
@@ -210,9 +480,12 @@ function doPost(e) {
     }
     return createResponse("error", "Email tidak ditemukan.");
   }
+
+  // Jika action tidak dikenali
+  return createResponse("error", "Action tidak dikenali: " + action);
 }
 
-// --- doGet: Untuk mengambil skor via GET request ---
+// --- doGet: Untuk mengambil data via GET request ---
 function doGet(e) {
   var action = e.parameter.action;
   
@@ -274,6 +547,86 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
+
+  // GET: get_users (agar admin dashboard juga bisa via GET)
+  if (action === 'get_users') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(SPREADSHEET_NAME);
+      
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success", data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = sheet.getDataRange().getValues();
+      var users = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        users.push({
+          nama: row[0] ? row[0].toString() : '-',
+          nomor: row[1] ? row[1].toString().replace(/^'/, '') : '-',
+          email: row[2] ? row[2].toString() : '-',
+          buktiUrl: row[4] ? row[4].toString() : '',
+          status: row[5] ? row[5].toString() : 'Pending',
+          tanggalDaftar: row[6] ? row[6].toString() : '-',
+          terakhirLogin: row[7] ? row[7].toString() : '-'
+        });
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success", data: users
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // GET: get_access_log
+  if (action === 'get_access_log') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var logSheet = ss.getSheetByName(ACCESS_LOG_SHEET_NAME);
+      
+      if (!logSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success", data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = logSheet.getDataRange().getValues();
+      var logs = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        logs.push({
+          email: row[0] ? row[0].toString() : '-',
+          nama: row[1] ? row[1].toString() : '-',
+          action: row[2] ? row[2].toString() : 'login',
+          timestamp: row[3] ? row[3].toString() : '-'
+        });
+      }
+      
+      logs.sort(function(a, b) {
+        try { return new Date(b.timestamp) - new Date(a.timestamp); }
+        catch(e) { return 0; }
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success", data: logs
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   
   return ContentService.createTextOutput(JSON.stringify({
     status: "error",
@@ -281,9 +634,32 @@ function doGet(e) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
+// ============================================================
+//  HELPER FUNCTIONS
+// ============================================================
+
 function createResponse(status, message) {
   return ContentService.createTextOutput(JSON.stringify({
     status: status,
     message: message
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Mendapatkan atau membuat sheet "AccessLog" jika belum ada.
+ * Kolom: Email | Nama | Action | Timestamp
+ */
+function _getOrCreateAccessLogSheet(ss) {
+  var logSheet = ss.getSheetByName(ACCESS_LOG_SHEET_NAME);
+  if (!logSheet) {
+    logSheet = ss.insertSheet(ACCESS_LOG_SHEET_NAME);
+    logSheet.appendRow(['Email', 'Nama', 'Action', 'Timestamp']);
+    logSheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+    // Atur lebar kolom agar rapi
+    logSheet.setColumnWidth(1, 250); // Email
+    logSheet.setColumnWidth(2, 200); // Nama
+    logSheet.setColumnWidth(3, 120); // Action
+    logSheet.setColumnWidth(4, 250); // Timestamp
+  }
+  return logSheet;
 }

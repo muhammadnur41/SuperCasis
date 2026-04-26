@@ -241,6 +241,94 @@
         }
         .badge-active { background: rgba(16,185,129,0.12); color: #6ee7b7; }
         .badge-pending { background: rgba(245,158,11,0.12); color: #fcd34d; }
+        .badge-reset { background: rgba(239,68,68,0.12); color: #fca5a5; }
+
+        /* Action Buttons */
+        .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-action {
+            padding: 5px 12px; border: none; border-radius: 8px;
+            font-family: inherit; font-size: 0.7rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s;
+            display: inline-flex; align-items: center; gap: 5px;
+            white-space: nowrap;
+        }
+        .btn-action:hover { transform: translateY(-1px); filter: brightness(1.15); }
+        .btn-action:active { transform: scale(0.96); }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-approve { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+        .btn-reject { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+        .btn-reset-pw { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+        .btn-delete { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        /* Toast */
+        .admin-toast {
+            position: fixed; top: 24px; right: 24px; z-index: 9999;
+            background: linear-gradient(145deg, #141927, #1a2035);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 16px 22px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            animation: toastSlideIn 0.35s cubic-bezier(0.23,1,0.32,1);
+            max-width: 400px;
+        }
+        .admin-toast.success { border-left: 4px solid #10b981; }
+        .admin-toast.error { border-left: 4px solid #ef4444; }
+        .admin-toast .toast-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; flex-shrink: 0;
+        }
+        .admin-toast .toast-icon.success { background: rgba(16,185,129,0.15); color: #10b981; }
+        .admin-toast .toast-icon.error { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .admin-toast .toast-msg h4 { font-size: 0.85rem; font-weight: 700; }
+        .admin-toast .toast-msg p { font-size: 0.75rem; color: var(--text-muted); }
+        @keyframes toastSlideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes toastSlideOut { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(60px); } }
+
+        /* Confirm Modal */
+        .confirm-overlay {
+            position: fixed; inset: 0; z-index: 9000;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .confirm-box {
+            background: linear-gradient(145deg, #141927, #1a2035);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 32px;
+            max-width: 420px; width: 90%; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+        .confirm-box h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
+        .confirm-box p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+        .confirm-box input {
+            width: 100%; padding: 12px 16px; margin-bottom: 16px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            border-radius: 12px; color: white; font-family: inherit; font-size: 0.9rem;
+            outline: none; transition: border-color 0.3s;
+        }
+        .confirm-box input:focus { border-color: var(--primary); }
+        .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+        .confirm-btns button {
+            padding: 10px 24px; border: none; border-radius: 12px;
+            font-family: inherit; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s;
+        }
+        .confirm-btns .btn-cancel {
+            background: rgba(255,255,255,0.06); color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .confirm-btns .btn-cancel:hover { background: rgba(255,255,255,0.1); color: white; }
+        .confirm-btns .btn-confirm-action {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; box-shadow: 0 4px 15px var(--primary-glow);
+        }
+        .confirm-btns .btn-confirm-action:hover { transform: translateY(-2px); }
+        .confirm-btns .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+        }
+        .confirm-btns .btn-danger:hover { transform: translateY(-2px); }
 
         /* Chart placeholder */
         .chart-container {
@@ -332,6 +420,35 @@
         .fh-time { font-size: 0.72rem; color: #64748b; }
         .fh-cat { font-size: 0.72rem; color: #c4b5fd; background: rgba(139,92,246,0.12); padding: 2px 8px; border-radius: 50px; }
 
+        /* Score badges */
+        .score-high { color: #6ee7b7; }
+        .score-mid { color: #fcd34d; }
+        .score-low { color: #fca5a5; }
+        .score-bar-bg {
+            width: 80px; height: 6px; border-radius: 3px;
+            background: rgba(255,255,255,0.08); display: inline-block;
+            vertical-align: middle; margin-left: 8px;
+        }
+        .score-bar-fill {
+            height: 100%; border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        /* Refresh button */
+        .btn-admin-refresh {
+            background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+            color: #93c5fd; padding: 8px 18px; border-radius: 12px;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s; font-family: inherit;
+        }
+        .btn-admin-refresh:hover {
+            background: #3b82f6; color: white; border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        .btn-admin-refresh.spinning i { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
         /* Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp {
@@ -370,6 +487,9 @@
                 <div class="name" id="adminDisplayEmail">Admin</div>
                 <div class="role">Super Administrator</div>
             </div>
+            <button class="btn-admin-refresh" id="btnRefresh" onclick="refreshAllData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
             <button class="btn-admin-logout" onclick="adminLogout()">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
@@ -427,6 +547,9 @@
             <button class="tab-btn" onclick="switchTab('freeTests', this)">
                 <i class="fas fa-gift"></i> Tes Gratis
             </button>
+            <button class="tab-btn" onclick="switchTab('scores', this)">
+                <i class="fas fa-chart-line"></i> Skor Pengguna
+            </button>
         </div>
 
         <!-- Tab: Akun Terdaftar -->
@@ -449,6 +572,7 @@
                                 <th>No. WhatsApp</th>
                                 <th>Status</th>
                                 <th>Login Terakhir</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
@@ -544,6 +668,37 @@
                 <div class="chart-title"><i class="fas fa-gift"></i> Riwayat Tes Gratis yang Dikerjakan Pengunjung</div>
                 <div id="freeTestsContainer">
                     <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Skor Pengguna -->
+        <div id="tab-scores" class="tab-content">
+            <div class="data-table-wrapper">
+                <div class="table-header">
+                    <h3><i class="fas fa-chart-line"></i> Skor Tes Semua Pengguna</h3>
+                    <div class="search-wrapper-sm">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input-sm" placeholder="Cari email/tes..." id="searchScores" oninput="filterScoresTable()">
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="data-table" id="scoresTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Email</th>
+                                <th>Nama Tes</th>
+                                <th>Kategori</th>
+                                <th>Skor</th>
+                                <th>Benar/Total</th>
+                                <th>Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoresTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -647,12 +802,12 @@
                 .then(result => {
                     if (result.status === 'success' && result.data && Array.isArray(result.data)) {
                         allUsersData = result.data.map(user => ({
-                            nama: user.nama || user.Nama || '-',
-                            username: user.username || user.Username || user.email || user.Email || '-',
-                            nomor: user.nomor || user.Nomor || user.nomor_wa || user.whatsapp || '-',
-                            email: user.email || user.Email || user.username || '-',
-                            status: user.status || user.Status || 'Aktif',
-                            tanggal: user.tanggal || user.Tanggal || user.timestamp || '-'
+                            nama: user.nama || '-',
+                            username: user.email || '-',
+                            nomor: user.nomor || '-',
+                            email: user.email || '-',
+                            status: user.status || 'Pending',
+                            tanggal: user.terakhirLogin || user.tanggalDaftar || '-'
                         }));
                         document.getElementById('statTotalUsers').textContent = allUsersData.length.toLocaleString();
                         renderUsersTable(allUsersData);
@@ -695,7 +850,7 @@
         function renderUsersTable(users) {
             const tbody = document.getElementById('usersTableBody');
             if (users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6">
+                tbody.innerHTML = `<tr><td colspan="7">
                     <div class="empty-state">
                         <i class="fas fa-users-slash"></i>
                         <h4>Belum ada data user</h4>
@@ -717,9 +872,30 @@
                     } catch(e) { return u.tanggal; }
                 })() : '-';
                 const initials = (u.nama || '?').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
-                const statusBadge = (u.status || '').toLowerCase().includes('pending') || (u.status || '').toLowerCase().includes('belum')
-                    ? '<span class="badge-sm badge-pending"><i class="fas fa-clock" style="font-size:0.4rem;"></i> Pending</span>'
-                    : '<span class="badge-sm badge-active"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Aktif</span>';
+                const rawStatus = (u.status || '').toLowerCase();
+                let statusBadge;
+                if (rawStatus.includes('minta reset') || rawStatus.includes('reset password')) {
+                    statusBadge = '<span class="badge-sm badge-reset"><i class="fas fa-key" style="font-size:0.4rem;"></i> Reset PW</span>';
+                } else if (rawStatus.includes('pending') || rawStatus.includes('belum')) {
+                    statusBadge = '<span class="badge-sm badge-pending"><i class="fas fa-clock" style="font-size:0.4rem;"></i> Pending</span>';
+                } else {
+                    statusBadge = '<span class="badge-sm badge-active"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Aktif</span>';
+                }
+
+                // Action buttons
+                const emailEsc = (u.email || '').replace(/'/g, "\\'");
+                const isPending = rawStatus.includes('pending');
+                const isResetReq = rawStatus.includes('minta reset') || rawStatus.includes('reset password');
+                let actionBtns = '<div class="action-btns">';
+                if (isPending) {
+                    actionBtns += `<button class="btn-action btn-approve" onclick="adminUpdateStatus('${emailEsc}','Aktif')" title="Setujui"><i class="fas fa-check"></i> Approve</button>`;
+                }
+                if (isResetReq) {
+                    actionBtns += `<button class="btn-action btn-reset-pw" onclick="adminResetPassword('${emailEsc}')" title="Reset Password"><i class="fas fa-key"></i> Reset PW</button>`;
+                }
+                actionBtns += `<button class="btn-action btn-delete" onclick="adminDeleteUser('${emailEsc}','${(u.nama||'').replace(/'/g, "\\\'")}')" title="Hapus"><i class="fas fa-trash"></i></button>`;
+                actionBtns += '</div>';
+
                 return `
                     <tr>
                         <td style="font-weight:600;color:#64748b;">${i + 1}</td>
@@ -736,6 +912,7 @@
                         <td>${u.nomor}</td>
                         <td>${statusBadge}</td>
                         <td style="font-size:0.82rem;color:#94a3b8;">${lastLogin}</td>
+                        <td>${actionBtns}</td>
                     </tr>
                 `;
             }).join('');
@@ -773,10 +950,10 @@
                 .then(result => {
                     if (result.status === 'success' && result.data && Array.isArray(result.data)) {
                         allAccessData = result.data.map(entry => ({
-                            username: entry.username || entry.Username || entry.email || '-',
-                            nama: entry.nama || entry.Nama || '-',
-                            action: entry.action || entry.Action || entry.aktivitas || 'login',
-                            timestamp: entry.timestamp || entry.Timestamp || entry.tanggal || '-'
+                            username: entry.email || '-',
+                            nama: entry.nama || '-',
+                            action: entry.action || 'login',
+                            timestamp: entry.timestamp || '-'
                         })).sort((a, b) => {
                             try { return new Date(b.timestamp) - new Date(a.timestamp); } 
                             catch(e) { return 0; }
@@ -895,12 +1072,267 @@
             `;
         }
 
+        // ===== ADMIN ACTION FUNCTIONS =====
+
+        function showAdminToast(type, title, msg) {
+            const old = document.querySelector('.admin-toast');
+            if (old) old.remove();
+            const t = document.createElement('div');
+            t.className = `admin-toast ${type}`;
+            t.innerHTML = `
+                <div class="toast-icon ${type}"><i class="fas fa-${type === 'success' ? 'check' : 'xmark'}"></i></div>
+                <div class="toast-msg"><h4>${title}</h4><p>${msg}</p></div>
+            `;
+            document.body.appendChild(t);
+            setTimeout(() => {
+                t.style.animation = 'toastSlideOut 0.3s ease forwards';
+                setTimeout(() => t.remove(), 300);
+            }, 3500);
+        }
+
+        function showConfirmModal(title, message, onConfirm, options = {}) {
+            const old = document.querySelector('.confirm-overlay');
+            if (old) old.remove();
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            const hasInput = !!options.inputPlaceholder;
+            overlay.innerHTML = `
+                <div class="confirm-box">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    ${hasInput ? `<input type="${options.inputType || 'text'}" id="confirmInput" placeholder="${options.inputPlaceholder}" autocomplete="off">` : ''}
+                    <div class="confirm-btns">
+                        <button class="btn-cancel" id="confirmCancel">Batal</button>
+                        <button class="${options.danger ? 'btn-danger' : 'btn-confirm-action'}" id="confirmOk">
+                            <i class="fas fa-${options.icon || 'check'}"></i> ${options.confirmText || 'Konfirmasi'}
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.querySelector('#confirmCancel').onclick = () => overlay.remove();
+            overlay.querySelector('#confirmOk').onclick = () => {
+                const inputVal = hasInput ? overlay.querySelector('#confirmInput').value : null;
+                overlay.remove();
+                onConfirm(inputVal);
+            };
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        }
+
+        // Approve / Update Status
+        function adminUpdateStatus(email, newStatus) {
+            showConfirmModal(
+                'Setujui Akun',
+                `Ubah status akun <strong>${email}</strong> menjadi <strong>${newStatus}</strong>?`,
+                () => {
+                    const fd = new FormData();
+                    fd.append('action', 'update_status');
+                    fd.append('email', email);
+                    fd.append('status', newStatus);
+                    fetch(scriptURL, { method: 'POST', body: fd })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.status === 'success') {
+                                showAdminToast('success', 'Berhasil', res.message);
+                                loadUsers();
+                            } else {
+                                showAdminToast('error', 'Gagal', res.message);
+                            }
+                        })
+                        .catch(err => showAdminToast('error', 'Error', err.toString()));
+                },
+                { confirmText: 'Approve', icon: 'check-circle' }
+            );
+        }
+
+        // Reset Password
+        function adminResetPassword(email) {
+            showConfirmModal(
+                'Reset Password',
+                `Masukkan password baru untuk <strong>${email}</strong>:`,
+                (newPw) => {
+                    if (!newPw || newPw.length < 4) {
+                        showAdminToast('error', 'Gagal', 'Password minimal 4 karakter.');
+                        return;
+                    }
+                    const fd = new FormData();
+                    fd.append('action', 'admin_reset_password');
+                    fd.append('email', email);
+                    fd.append('newPassword', newPw);
+                    fetch(scriptURL, { method: 'POST', body: fd })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.status === 'success') {
+                                showAdminToast('success', 'Berhasil', res.message);
+                                loadUsers();
+                            } else {
+                                showAdminToast('error', 'Gagal', res.message);
+                            }
+                        })
+                        .catch(err => showAdminToast('error', 'Error', err.toString()));
+                },
+                { inputPlaceholder: 'Password baru...', inputType: 'text', confirmText: 'Reset', icon: 'key' }
+            );
+        }
+
+        // Delete User
+        function adminDeleteUser(email, nama) {
+            showConfirmModal(
+                'Hapus Akun',
+                `Yakin ingin menghapus akun <strong>${nama}</strong> (${email})? Tindakan ini tidak bisa dibatalkan.`,
+                () => {
+                    const fd = new FormData();
+                    fd.append('action', 'delete_user');
+                    fd.append('email', email);
+                    fetch(scriptURL, { method: 'POST', body: fd })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.status === 'success') {
+                                showAdminToast('success', 'Berhasil', res.message);
+                                loadUsers();
+                            } else {
+                                showAdminToast('error', 'Gagal', res.message);
+                            }
+                        })
+                        .catch(err => showAdminToast('error', 'Error', err.toString()));
+                },
+                { danger: true, confirmText: 'Hapus', icon: 'trash' }
+            );
+        }
+
+        // ===== LOAD ALL SCORES (for Admin) =====
+        let allScoresData = [];
+
+        function loadAllScores() {
+            const tbody = document.getElementById('scoresTableBody');
+            tbody.innerHTML = `<tr><td colspan="7">
+                <div class="empty-state" style="padding:40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:0.5;color:var(--primary);"></i>
+                    <h4 style="margin-top:12px;">Memuat skor pengguna...</h4>
+                </div>
+            </td></tr>`;
+
+            const formData = new FormData();
+            formData.append('action', 'get_all_scores');
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.status === 'success' && Array.isArray(result.data)) {
+                        allScoresData = result.data;
+                        renderScoresTable(allScoresData);
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <h4>Belum ada data skor</h4>
+                                <p>Skor akan muncul ketika pengguna menyelesaikan tes.</p>
+                            </div>
+                        </td></tr>`;
+                    }
+                })
+                .catch(err => {
+                    console.warn('Failed to load scores:', err);
+                    tbody.innerHTML = `<tr><td colspan="7">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>Gagal memuat skor</h4>
+                            <p>${err.toString()}</p>
+                        </div>
+                    </td></tr>`;
+                });
+        }
+
+        function renderScoresTable(scores) {
+            const tbody = document.getElementById('scoresTableBody');
+            if (scores.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h4>Belum ada data skor</h4>
+                        <p>Skor akan muncul ketika pengguna menyelesaikan tes.</p>
+                    </div>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = scores.map((s, i) => {
+                const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+                const scoreClass = pct >= 70 ? 'score-high' : pct >= 40 ? 'score-mid' : 'score-low';
+                const barColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#ef4444';
+
+                let dateStr = '-';
+                try {
+                    const d = new Date(s.date);
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toLocaleString('id-ID', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    }
+                } catch(e) { dateStr = s.date || '-'; }
+
+                const catDisplay = s.parentCategory 
+                    ? `<span style="font-size:0.7rem;color:#64748b;">${s.parentCategory} /</span> ${s.category}`
+                    : s.category;
+
+                return `
+                    <tr>
+                        <td style="font-weight:600;color:#64748b;">${i + 1}</td>
+                        <td style="font-size:0.82rem;">${s.email || '-'}</td>
+                        <td style="font-weight:600;">${s.testName || '-'}</td>
+                        <td style="font-size:0.82rem;">${catDisplay || '-'}</td>
+                        <td>
+                            <span class="${scoreClass}" style="font-weight:700;">${pct}%</span>
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+                            </div>
+                        </td>
+                        <td style="font-size:0.82rem;">${s.correct}/${s.total}</td>
+                        <td style="font-size:0.78rem;color:#94a3b8;">${dateStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterScoresTable() {
+            const q = document.getElementById('searchScores').value.toLowerCase();
+            const filtered = allScoresData.filter(s =>
+                (s.email || '').toLowerCase().includes(q) ||
+                (s.testName || '').toLowerCase().includes(q) ||
+                (s.category || '').toLowerCase().includes(q)
+            );
+            renderScoresTable(filtered);
+        }
+
+        // ===== REFRESH ALL DATA =====
+        function refreshAllData() {
+            const btn = document.getElementById('btnRefresh');
+            btn.classList.add('spinning');
+            btn.disabled = true;
+
+            Promise.all([
+                new Promise(resolve => { loadUsers(); setTimeout(resolve, 500); }),
+                new Promise(resolve => { loadAccessHistory(); setTimeout(resolve, 500); }),
+                new Promise(resolve => { loadAllScores(); setTimeout(resolve, 500); }),
+            ]).then(() => {
+                loadStats();
+                loadFreeTestHistory();
+                setTimeout(() => {
+                    btn.classList.remove('spinning');
+                    btn.disabled = false;
+                    showAdminToast('success', 'Data Diperbarui', 'Semua data berhasil di-refresh dari server.');
+                }, 1000);
+            });
+        }
+
         // ===== INITIALIZE =====
         document.addEventListener('DOMContentLoaded', function() {
             loadStats();
             loadUsers();
             loadAccessHistory();
             loadFreeTestHistory();
+            loadAllScores();
         });
     </script>
 </body>
