@@ -691,10 +691,26 @@
         });
 
         // ===== AUTH STATE =====
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Track landing page visit
+            // Track landing page visit (localStorage fallback)
             const currentVisits = parseInt(localStorage.getItem('visitCount_landing') || '0');
             localStorage.setItem('visitCount_landing', currentVisits + 1);
+
+            // Track ke server (fire-and-forget)
+            try {
+                const fd = new FormData();
+                fd.append('action', 'log_visit');
+                fd.append('page', 'landing');
+                fd.append('timestamp', new Date().toISOString());
+                fd.append('sessionId', sessionStorage.getItem('_visitSessionId') || (() => {
+                    const sid = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    sessionStorage.setItem('_visitSessionId', sid);
+                    return sid;
+                })());
+                fetch(scriptURL, { method: 'POST', body: fd }).catch(() => {});
+            } catch(e) {}
 
             const authSection = document.getElementById('authSection');
             const isLoggedIn = localStorage.getItem('isLoggedIn');

@@ -734,25 +734,50 @@
             }
         }
 
-        // ===== LOAD STATS =====
+        // ===== LOAD STATS (dari Server) =====
         function loadStats() {
+            // Fetch dari server
+            const formData = new FormData();
+            formData.append('action', 'get_visit_stats');
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.status === 'success' && result.data) {
+                        const s = result.data;
+                        updateStatsUI(s.landing || 0, s.free_access || 0, s.free_tests || 0, s.logins || 0);
+                    } else {
+                        // Fallback ke localStorage
+                        loadStatsFromLocalStorage();
+                    }
+                })
+                .catch(err => {
+                    console.warn('Failed to fetch visit stats, using localStorage:', err);
+                    loadStatsFromLocalStorage();
+                });
+        }
+
+        function loadStatsFromLocalStorage() {
             const landingVisits = parseInt(localStorage.getItem('visitCount_landing') || '0');
             const freeVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
             const freeTestHistory = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
             const loginHistory = JSON.parse(localStorage.getItem('loginHistory') || '[]');
+            updateStatsUI(landingVisits, freeVisits, freeTestHistory.length, loginHistory.length);
+        }
 
-            document.getElementById('statLandingVisits').textContent = landingVisits.toLocaleString();
-            document.getElementById('statFreeVisits').textContent = freeVisits.toLocaleString();
-            document.getElementById('statFreeTests').textContent = freeTestHistory.length.toLocaleString();
+        function updateStatsUI(landing, free, tests, logins) {
+            document.getElementById('statLandingVisits').textContent = landing.toLocaleString();
+            document.getElementById('statFreeVisits').textContent = free.toLocaleString();
+            document.getElementById('statFreeTests').textContent = tests.toLocaleString();
 
             // Visit tab duplicates
-            document.getElementById('visitLanding2').textContent = landingVisits.toLocaleString();
-            document.getElementById('visitFree2').textContent = freeVisits.toLocaleString();
-            document.getElementById('visitTests2').textContent = freeTestHistory.length.toLocaleString();
-            document.getElementById('visitLogins2').textContent = loginHistory.length.toLocaleString();
+            document.getElementById('visitLanding2').textContent = landing.toLocaleString();
+            document.getElementById('visitFree2').textContent = free.toLocaleString();
+            document.getElementById('visitTests2').textContent = tests.toLocaleString();
+            document.getElementById('visitLogins2').textContent = logins.toLocaleString();
 
             // Bar chart
-            renderBarChart(landingVisits, freeVisits, freeTestHistory.length, loginHistory.length);
+            renderBarChart(landing, free, tests, logins);
         }
 
         // ===== BAR CHART =====
@@ -1030,12 +1055,41 @@
             renderAccessTable(filtered);
         }
 
-        // ===== FREE TEST HISTORY =====
+        // ===== FREE TEST HISTORY (dari Server) =====
         function loadFreeTestHistory() {
-            const history = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+            const container = document.getElementById('freeTestsContainer');
+            container.innerHTML = `
+                <div class="empty-state" style="padding:40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:0.5;color:var(--primary);"></i>
+                    <h4 style="margin-top:12px;">Memuat riwayat tes gratis...</h4>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('action', 'get_free_test_log');
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.status === 'success' && Array.isArray(result.data)) {
+                        renderFreeTestHistory(result.data);
+                    } else {
+                        // Fallback ke localStorage
+                        const history = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+                        renderFreeTestHistory(history);
+                    }
+                })
+                .catch(err => {
+                    console.warn('Failed to fetch free test log, using localStorage:', err);
+                    const history = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
+                    renderFreeTestHistory(history);
+                });
+        }
+
+        function renderFreeTestHistory(history) {
             const container = document.getElementById('freeTestsContainer');
 
-            if (history.length === 0) {
+            if (!history || history.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-clipboard-list"></i>
@@ -1047,17 +1101,27 @@
             }
 
             // Sort newest first
-            const sorted = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const sorted = [...history].sort((a, b) => {
+                try { return new Date(b.timestamp) - new Date(a.timestamp); }
+                catch(e) { return 0; }
+            });
 
             container.innerHTML = `
                 <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:16px;"><strong style="color:white;">${sorted.length}</strong> tes gratis telah dikerjakan pengunjung</p>
                 <div class="free-history-grid">
                     ${sorted.map(item => {
-                        const date = new Date(item.timestamp);
-                        const dateStr = date.toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                        });
+                        let dateStr = '-';
+                        try {
+                            const date = new Date(item.timestamp);
+                            if (!isNaN(date.getTime())) {
+                                dateStr = date.toLocaleString('id-ID', {
+                                    day: '2-digit', month: 'short', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                });
+                            } else {
+                                dateStr = item.timestamp;
+                            }
+                        } catch(e) { dateStr = item.timestamp || '-'; }
                         return `
                             <div class="free-history-card">
                                 <div class="fh-top">

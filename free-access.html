@@ -615,6 +615,19 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="free-kecermatan.js"></script>
     <script>
+    // ===== CONFIG =====
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyMDqapWZQnBPeqzkZThKcYUeImNNTTc2E1SPgIso1rvroMxcG9F2ugddSEcqNFQJ1G/exec';
+
+    // Session ID unik per kunjungan browser
+    function _getSessionId() {
+        var sid = sessionStorage.getItem('_visitSessionId');
+        if (!sid) {
+            sid = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            sessionStorage.setItem('_visitSessionId', sid);
+        }
+        return sid;
+    }
+
     // ===== DATA =====
     const psikotesGroups = [
         {
@@ -1166,10 +1179,21 @@
         startTimer(0);
         // _freeCurrentView sudah di-set oleh fungsi navigasi sebelumnya
 
-        // Track free test access
+        // Track free test access (localStorage fallback)
         let freeTestHistory = JSON.parse(localStorage.getItem('freeTestHistory') || '[]');
         freeTestHistory.push({ testName: title, category: category, timestamp: new Date().toISOString() });
         localStorage.setItem('freeTestHistory', JSON.stringify(freeTestHistory));
+
+        // Track ke server (fire-and-forget)
+        try {
+            const fd = new FormData();
+            fd.append('action', 'log_free_test');
+            fd.append('testName', title);
+            fd.append('category', category);
+            fd.append('timestamp', new Date().toISOString());
+            fd.append('sessionId', _getSessionId());
+            fetch(scriptURL, { method: 'POST', body: fd }).catch(() => {});
+        } catch(e) {}
     }
 
     function closeTest() {
@@ -1277,6 +1301,17 @@
         history.replaceState({ view: 'viewMain' }, '');
         var currentVisits = parseInt(localStorage.getItem('visitCount_freeAccess') || '0');
         localStorage.setItem('visitCount_freeAccess', currentVisits + 1);
+
+        // Track ke server (fire-and-forget)
+        try {
+            var fd = new FormData();
+            fd.append('action', 'log_visit');
+            fd.append('page', 'free_access');
+            fd.append('timestamp', new Date().toISOString());
+            fd.append('sessionId', _getSessionId());
+            fetch(scriptURL, { method: 'POST', body: fd }).catch(function(){});
+        } catch(e) {}
+
         _initParticles();
     });
     </script>

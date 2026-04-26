@@ -2,6 +2,8 @@
 const SPREADSHEET_NAME = "Users";
 const SCORE_SHEET_NAME = "ScoreHistory";
 const ACCESS_LOG_SHEET_NAME = "AccessLog";
+const VISIT_LOG_SHEET_NAME = "VisitLog";
+const FREE_TEST_LOG_SHEET_NAME = "FreeTestLog";
 const FOLDER_ID = "1s-Uv2TOH5vNXus-UMvoj5GwN5HQhpZv-"; // GANTI DENGAN ID FOLDER DRIVE ANDA
 
 function doPost(e) {
@@ -262,6 +264,129 @@ function doPost(e) {
     }
   }
 
+  // --- LOGIKA CATAT KUNJUNGAN HALAMAN (landing/free-access) ---
+  if (action === 'log_visit') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var visitSheet = _getOrCreateVisitLogSheet(ss);
+      
+      var page = e.parameter.page || 'landing';  // 'landing' atau 'free_access'
+      var timestamp = e.parameter.timestamp || new Date().toISOString();
+      var sessionId = e.parameter.sessionId || '';
+      
+      visitSheet.appendRow([page, timestamp, sessionId]);
+      
+      return createResponse("success", "Visit log berhasil disimpan!");
+    } catch (err) {
+      return createResponse("error", "Gagal menyimpan visit log: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA CATAT TES GRATIS ---
+  if (action === 'log_free_test') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var ftSheet = _getOrCreateFreeTestLogSheet(ss);
+      
+      var testName = e.parameter.testName || '-';
+      var category = e.parameter.category || '-';
+      var timestamp = e.parameter.timestamp || new Date().toISOString();
+      var sessionId = e.parameter.sessionId || '';
+      
+      ftSheet.appendRow([testName, category, timestamp, sessionId]);
+      
+      return createResponse("success", "Free test log berhasil disimpan!");
+    } catch (err) {
+      return createResponse("error", "Gagal menyimpan free test log: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA AMBIL STATISTIK KUNJUNGAN (untuk Admin Dashboard) ---
+  if (action === 'get_visit_stats') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var stats = { landing: 0, free_access: 0, free_tests: 0, logins: 0 };
+      
+      // Hitung dari VisitLog
+      var visitSheet = ss.getSheetByName(VISIT_LOG_SHEET_NAME);
+      if (visitSheet) {
+        var visitData = visitSheet.getDataRange().getValues();
+        for (var i = 1; i < visitData.length; i++) {
+          var page = (visitData[i][0] || '').toString().toLowerCase();
+          if (page === 'landing') stats.landing++;
+          else if (page === 'free_access') stats.free_access++;
+        }
+      }
+      
+      // Hitung free tests dari FreeTestLog
+      var ftSheet = ss.getSheetByName(FREE_TEST_LOG_SHEET_NAME);
+      if (ftSheet) {
+        var ftData = ftSheet.getDataRange().getValues();
+        stats.free_tests = Math.max(0, ftData.length - 1); // minus header
+      }
+      
+      // Hitung logins dari AccessLog
+      var logSheet = ss.getSheetByName(ACCESS_LOG_SHEET_NAME);
+      if (logSheet) {
+        var logData = logSheet.getDataRange().getValues();
+        for (var i = 1; i < logData.length; i++) {
+          var act = (logData[i][2] || '').toString().toLowerCase();
+          if (act === 'login') stats.logins++;
+        }
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: stats
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil visit stats: " + err.toString());
+    }
+  }
+
+  // --- LOGIKA AMBIL RIWAYAT TES GRATIS (untuk Admin Dashboard) ---
+  if (action === 'get_free_test_log') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var ftSheet = ss.getSheetByName(FREE_TEST_LOG_SHEET_NAME);
+      
+      if (!ftSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = ftSheet.getDataRange().getValues();
+      var logs = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        logs.push({
+          testName: row[0] ? row[0].toString() : '-',
+          category: row[1] ? row[1].toString() : '-',
+          timestamp: row[2] ? row[2].toString() : '-',
+          sessionId: row[3] ? row[3].toString() : ''
+        });
+      }
+      
+      // Sort terbaru dulu
+      logs.sort(function(a, b) {
+        try { return new Date(b.timestamp) - new Date(a.timestamp); }
+        catch(e) { return 0; }
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: logs
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (err) {
+      return createResponse("error", "Gagal mengambil free test log: " + err.toString());
+    }
+  }
+
   // --- LOGIKA UPDATE STATUS USER (approve/reject oleh Admin) ---
   if (action === 'update_status') {
     try {
@@ -394,13 +519,14 @@ function doPost(e) {
       const fileUrl = folder.createFile(blob).getUrl();
 
       // SIMPAN DATA (Ditambah Tanggal Registrasi di Kolom G)
+      // Status langsung "Aktif" tanpa perlu verifikasi admin
       sheet.appendRow([
         nama, 
         "'" + nomor, 
         email, 
         password, 
         fileUrl, 
-        "Pending", 
+        "Aktif", 
         new Date(), // Kolom G: Tanggal Registrasi
         "-"         // Kolom H: Terakhir Login (Awalnya kosong)
       ]);
@@ -627,6 +753,88 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
   }
+
+  // GET: get_visit_stats
+  if (action === 'get_visit_stats') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var stats = { landing: 0, free_access: 0, free_tests: 0, logins: 0 };
+      
+      var visitSheet = ss.getSheetByName(VISIT_LOG_SHEET_NAME);
+      if (visitSheet) {
+        var visitData = visitSheet.getDataRange().getValues();
+        for (var i = 1; i < visitData.length; i++) {
+          var page = (visitData[i][0] || '').toString().toLowerCase();
+          if (page === 'landing') stats.landing++;
+          else if (page === 'free_access') stats.free_access++;
+        }
+      }
+      
+      var ftSheet = ss.getSheetByName(FREE_TEST_LOG_SHEET_NAME);
+      if (ftSheet) {
+        var ftData = ftSheet.getDataRange().getValues();
+        stats.free_tests = Math.max(0, ftData.length - 1);
+      }
+      
+      var logSheet = ss.getSheetByName(ACCESS_LOG_SHEET_NAME);
+      if (logSheet) {
+        var logData = logSheet.getDataRange().getValues();
+        for (var i = 1; i < logData.length; i++) {
+          var act = (logData[i][2] || '').toString().toLowerCase();
+          if (act === 'login') stats.logins++;
+        }
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: stats
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // GET: get_free_test_log
+  if (action === 'get_free_test_log') {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var ftSheet = ss.getSheetByName(FREE_TEST_LOG_SHEET_NAME);
+      
+      if (!ftSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success", data: []
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var allData = ftSheet.getDataRange().getValues();
+      var logs = [];
+      
+      for (var i = 1; i < allData.length; i++) {
+        var row = allData[i];
+        logs.push({
+          testName: row[0] ? row[0].toString() : '-',
+          category: row[1] ? row[1].toString() : '-',
+          timestamp: row[2] ? row[2].toString() : '-',
+          sessionId: row[3] ? row[3].toString() : ''
+        });
+      }
+      
+      logs.sort(function(a, b) {
+        try { return new Date(b.timestamp) - new Date(a.timestamp); }
+        catch(e) { return 0; }
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success", data: logs
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   
   return ContentService.createTextOutput(JSON.stringify({
     status: "error",
@@ -655,11 +863,45 @@ function _getOrCreateAccessLogSheet(ss) {
     logSheet = ss.insertSheet(ACCESS_LOG_SHEET_NAME);
     logSheet.appendRow(['Email', 'Nama', 'Action', 'Timestamp']);
     logSheet.getRange(1, 1, 1, 4).setFontWeight('bold');
-    // Atur lebar kolom agar rapi
-    logSheet.setColumnWidth(1, 250); // Email
-    logSheet.setColumnWidth(2, 200); // Nama
-    logSheet.setColumnWidth(3, 120); // Action
-    logSheet.setColumnWidth(4, 250); // Timestamp
+    logSheet.setColumnWidth(1, 250);
+    logSheet.setColumnWidth(2, 200);
+    logSheet.setColumnWidth(3, 120);
+    logSheet.setColumnWidth(4, 250);
   }
   return logSheet;
+}
+
+/**
+ * Mendapatkan atau membuat sheet "VisitLog" jika belum ada.
+ * Kolom: Page | Timestamp | SessionId
+ */
+function _getOrCreateVisitLogSheet(ss) {
+  var sheet = ss.getSheetByName(VISIT_LOG_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(VISIT_LOG_SHEET_NAME);
+    sheet.appendRow(['Page', 'Timestamp', 'SessionId']);
+    sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+    sheet.setColumnWidth(1, 150);
+    sheet.setColumnWidth(2, 250);
+    sheet.setColumnWidth(3, 200);
+  }
+  return sheet;
+}
+
+/**
+ * Mendapatkan atau membuat sheet "FreeTestLog" jika belum ada.
+ * Kolom: TestName | Category | Timestamp | SessionId
+ */
+function _getOrCreateFreeTestLogSheet(ss) {
+  var sheet = ss.getSheetByName(FREE_TEST_LOG_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(FREE_TEST_LOG_SHEET_NAME);
+    sheet.appendRow(['TestName', 'Category', 'Timestamp', 'SessionId']);
+    sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+    sheet.setColumnWidth(1, 250);
+    sheet.setColumnWidth(2, 200);
+    sheet.setColumnWidth(3, 250);
+    sheet.setColumnWidth(4, 200);
+  }
+  return sheet;
 }
