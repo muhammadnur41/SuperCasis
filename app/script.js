@@ -19,7 +19,7 @@ const psikotesGroups = [
             { name: "Tes Angka Hilang", icon: "fa-table", total: 20 },
             { name: "Tes Huruf Hilang", icon: "fa-font", total: 20 },
             { name: "Tes Simbol Hilang", icon: "fa-font", total: 20 },
-            { name: "Tes Koran Pauli dan Kreapelin", icon: "fa-newspaper", total: 20 }
+            { name: "Tes Gambar Hilang", icon: "fa-newspaper", total: 20 }
         ],
         color: "blue-gradient"
     },
