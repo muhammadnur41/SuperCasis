@@ -1,0 +1,461 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Sebuah ruangan drum plastik akan di isi dengan minyak jelantah. Drum tersebut memiliki luas alas 3.850 cm². Drum tersebut di isi setiap 3 hari sekali dan pengisian pertama pada hari senin. Jika hari senin saat pertama kali pengisian terisi 1/5 dari volumenya, dan pengisian dilakukan secara berkala secara rutin dengan volume yang sama setiap pengisian. Jika saat hari kamis pengisian dan diukur, ternyata volume drum adalah 77 liter. Maka tinggi drum tersebut adalah …",
+    "opt": ["25 cm", "50 cm", "60 cm", "70 cm", "100 cm"],
+    "a": 1
+  },
+  {
+    "q": "Jika $x = 3p + q$ dan $y = 5p - 2q$, maka nilai dari $2x + 3y$ adalah ...",
+    "opt": ["$15p + 6q$", "$21p - 3q$", "$21p - 4q$", "$15p - 6q$", "$15p - 3q$"],
+    "a": 2
+  },
+  {
+    "q": "Pasangan di bawah ini yang merupakan sisi dari suatu segitiga siku-siku adalah ...",
+    "opt": ["3, 5, 6", "9, 12, 15", "7, 9, 12", "4, 6, 9", "12, 13, 16"],
+    "a": 1
+  },
+  {
+    "q": "Pada musim liburan ramadhan Vernando pergi ke Joga mengendarai bus Maju Terus dengan kecepatan 80 km/jam dari Jakarta pukul 08.00 WIB. Sedangkan Mulya berangkat dari Jogja ke jakarta dengan Motor dengan waktu yang sama dan kecepatan 70 km/jam. Jika jarak Jakarta dan Joga adalah 450 km. Maka Vernando dan Mulya akan berpapasan pada pukul …",
+    "opt": ["10.00 WIB", "11.00 WIB", "12.00 WIB", "13.00 WIB", "14.00 WIB"],
+    "a": 1
+  },
+  {
+    "q": "Ibu Diaz memiliki 8 ruangan dirumahnya dengan luas yang sama untuk kedelapan anaknya. Luas tembok depannya 12 m², luas tembok sampingnya 15 m² dan luas ubin dikamarnya adalah 20 m². Menjelang Idul fitri setiap ruangan akan dicat ulang dengan warna yang berbeda agar lebih menarik. Setiap kamar memiliki pintu dengan ukuran 2 x 1 meter. Jika ibu Diaz akan mengecat semua ruangan kamar anaknya, maka luas dinding yang akan dicat adalah …",
+    "opt": ["396 m²", "416 m²", "432 m²", "776 m²", "792 m²"],
+    "a": 1
+  },
+  {
+    "q": "Jika $\\frac{4 - x}{x + 6} = 3x$, maka nilai dari $3x^2 + 19x$ adalah ...",
+    "opt": ["4", "7", "9", "12", "25"],
+    "a": 0
+  },
+  {
+    "q": "Jika $x = \\frac{1}{18} - \\frac{1}{20}$ dan $y = \\frac{1}{20} - \\frac{1}{24}$ maka pernyataan yang benar adalah ...",
+    "opt": ["$x = y$", "$x > y$", "$x < y$", "$x = 2y$", "$x^2 = \\frac{1}{2}y$"],
+    "a": 2
+  },
+  {
+    "q": "Perhatikan gambar berikut!<br><img src='MTK_3_no8.png'><br>Sebuah kubus ABCD.EFGH memiliki ukuran panjang rusuk 20 cm. Sebuah titik P terletak di tengah diagonal AC dan BD. Maka jarak antara titik P dan titik G adalah …",
+    "opt": ["$10\\sqrt{6}$ cm", "$10\\sqrt{3}$ cm", "$10\\sqrt{2}$ cm", "$20\\sqrt{6}$ cm", "$20\\sqrt{3}$ cm"],
+    "a": 0
+  },
+  {
+    "q": "Di sebuah desa Maju Mundur akan dibuat acara tumpengan dengan seluruh warga menyambut hari kemerdekaan. Tumpeng tersebut dibuat dari hasil panen warga dengan bantuan seluruh warga karena ukurannya yang besar. Jika luas alas tumpeng 154 dm² dan tinggi tumpeng 24 dm. Sebelum dibawa ke acara tersebut tumpeng akan ditutup kain bergambar garuda, Maka luas kain yang diperlukan untuk menutup tumpeng tersebut adalah …",
+    "opt": ["2.000 dm²", "1.650 dm²", "1.100 dm²", "616 dm²", "550 dm²"],
+    "a": 4
+  },
+  {
+    "q": "Bapak Aido memiliki dua anak masing-masing bernama Naufal dan Reiner. Dibulan Maret kedua anaknya akan berulang tahun dan akan mengadakan pesta ulang tahun bersama-sama. Umur Naufal saat 5 tahun yang lalu dua kali umur Reiner. Sedangkan 5 tahun yang akan datang umur Naufal 3/2 umur reiner. Pada saat berulang tahun nanti jumlah umur mereka adalah …",
+    "opt": ["40 Tahun", "35 Tahun", "30 Tahun", "25 Tahun", "20 Tahun"],
+    "a": 0
+  },
+  {
+    "q": "Disekolah Samudra Utama, memiliki 300 siswa kelas XII. Mereka ditanya mengenai pilihan sekolah lanjutan jika sudah lulus dari sekolah dan melakukan pilihan sebagai berikut: - 185 siswa memilih sebagai calon Taruna Akpol, - 190 siswa memilih sebagai calon Taruna Akmil, - 25 siswa tidak memilih Taruna Akpol ataupun Taruna Akmil, maka siswa yang memilih sebagai Taruna Akpol ataupun Taruna Akmil tersebut adalah...",
+    "opt": ["25 siswa", "85 siswa", "90 siswa", "95 siswa", "100 siswa"],
+    "a": 4
+  },
+  {
+    "q": "Hasil dari $$\\frac{16! - 15!}{14!}$$",
+    "opt": ["239", "329", "439", "539", "429"],
+    "a": 0
+  },
+  {
+    "q": "Seorang penjahit memiliki persediaan 4 m kain wol dan 5 m kain satin. Dari kain tersebut akan dibuat dua model baju. Baju pesta I memerlukan 2 m kain wol dan 1 m kain satin, sedangkan baju pesta II memerlukan 1 m kain wol dan 2 m kain satin. Baju pesta I dijual dengan harga Rp 600.000,00 dan baju pesta II seharga Rp 500.000,00. Jika baju pesta tersebut terjual, hasil penjualan maksimum penjahit tersebut adalah...",
+    "opt": ["Rp 1.800.000,00", "Rp 1.700.000,00", "Rp 1.600.000,00", "Rp 1.250.000,00", "Rp 1.200.000,00"],
+    "a": 2
+  },
+  {
+    "q": "Hasil dari $$\\sqrt{\\left(\\frac{1}{3}\\right)^2 : \\left(\\frac{4}{12}\\right)^2} = \\dots$$",
+    "opt": ["1", "3", "4", "6", "36"],
+    "a": 0
+  },
+  {
+    "q": "$\\frac{x + 2}{x^2 + 3x - 4} = 6$, berapakah persamaannya?",
+    "opt": ["$2x^2 - 3x - 32 = 0$", "$x^2 - 3x + 16 = 0$", "$x^2 + 3x - 32 = 0$", "$x^2 - 6x - 8 = 0$", "$6x^2 + 17x - 26 = 0$"],
+    "a": 4
+  },
+  {
+    "q": "Disebuah gedung baru, Raphael ingin mencoba melempar sebuah bola dari ketinggian 20 meter. Jika pantulan bola setelahnya adalah 3/5 dari tinggi sebelumnya. Maka panjang lintasan bola milik Raphael sampai berhenti adalah …",
+    "opt": ["40 meter", "60 meter", "100 meter", "80 meter", "160 meter"],
+    "a": 3
+  },
+  {
+    "q": "Sebuah toko alat tulis milik Rajwa memiliki penjual terlaris di penggaris dan penghapus karena tokonya berdekatan dengan Sekolah Dasar. Jumlah penjualan penggaris di sebuah toko Rajwa selama lima hari berturut-turut adalah 10, 12, 15, 19, dan 24. Sementara itu, jumlah penjualan penghapus untuk lima hari yang sama adalah 10, 8, 11, 9, dan 12. Jika tren penjualan tersebut bersifat konstan, maka jumlah penjualan penggaris dan penghapus pada hari keenam di toko milik Rajwa adalah …",
+    "opt": ["30 Penggaris dan 10 penghapus", "30 Penggaris dan 15 penghapus", "40 Penggaris dan 10 penghapus", "40 Penggaris dan 15 penghapus", "45 Penggaris dan 25 penghapus"],
+    "a": 0
+  },
+  {
+    "q": "Empat bilangan membentuk suatu barisan aritmetika. Jika bilangan pertama dan bilangan kedua tetap, serta bilangan ketiga ditambah bilangan pertama dan bilangan keempat dikalikan 2, maka terbentuk suatu barisan geometri. Jika beda suku-suku pada barisan aritmetika adalah 2, maka jumlah empat bilangan pertama pada barisan geometri tersebut adalah …",
+    "opt": ["24", "30", "36", "48", "60"],
+    "a": 1
+  },
+  {
+    "q": "Dalam rangka memperingati hari kemerdekaan Republik Indonesia, Desa Uhuy mengadakan lomba mengambil kelereng dari wadah dengan aturan sebagai berikut: - Setiap tim terdiri dari 5 orang dan setiap anggota kelompok harus mengambil kelereng sesuai urutannya - Pada pengambilan putaran pertama (5 orang secara bergantian) hanya diperbolehkan mengambil masing-masing satu kelereng - Pada putaran kedua, orang pertama setiap kelompok mengambil 2 kelereng dan selalu bertambah 3 kelereng untuk peserta pada urutan berikutnya dalam kelompok tersebut - Pada putaran selanjutnya, setiap anggota tim mengambil 3 kelereng lebih banyak dari anggota sebelumnya. Tim A beranggotakan Arjuna, Beliza, Ciro, Dharma, dan Ernando (Urutan pengambilan kelereng sesuai dengan urutan abjad awal nama). Bersamaan dengan habisnya waktu, ternyata Tim A berhasil mengumpulkan 265 kelereng. Banyak kelereng yang berhasil diambil pada pengambilan terakhir oleh salah seorang anggota Tim A adalah …",
+    "opt": ["38 kelereng", "41 kelereng", "44 kelereng", "47 kelereng", "50 kelereng"],
+    "a": 0
+  },
+  {
+    "q": "Jika $4a + b = 6$, maka persentase $16a + 4b$ dari $96$ adalah ...",
+    "opt": ["33%", "37,5%", "25%", "22,5%", "50%"],
+    "a": 2
+  },
+  {
+    "q": "Pak Saiful memiliki toko sayuran di pasar. Sayuran yang ia terima berasal dari pasar induk. Dari pasar tersebut ia mengambil dari 3 supplier berbeda. Berikut adalah tabel jadwal pengiriman dan besaran yang dikirimkan. <br><img src='MTK_3_no21.png'>Pada tanggal 1 April 2024 Pak Saiful menerima kiriman sayuran dari ketiga supplier secara bersamaan untuk pertama kalinya. Berat sayuran yang diterima Pak Saiful dari supplier B dan C selama bulan April 2024 adalah….... Kg.",
+    "opt": ["188", "220", "246", "300", "306"],
+    "a": 2
+  },
+  {
+    "q": "Lalila menempuh sebuah perjalanan menggunakan sepeda motor dengan kecepatan 85 km/jam. Dia berangkat pukul 09.00 dan sampai di tempat tujuan pukul 12.30. Jika skala pada peta 1: 2.500.000, berapakah jarak pada peta?",
+    "opt": ["11,8 km", "11,9 cm", "12 km", "12,1 cm", "13 cm"],
+    "a": 1
+  },
+  {
+    "q": "Suatu panitia yang terdiri atas 4 orang dengan rincian, seorang sebagai ketua, seorang sebagai sekretaris, dan dua orang sebagai anggota (kedua anggota tidak dibedakan) akan dipilih dari 3 pria dan 3 wanita. Jika ketua panitia harus wanita dan sekretarisnya harus pria, maka banyak susunan panitia berbeda yang bisa dibentuk adalah …",
+    "opt": ["54", "36", "27", "108", "72"],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan gambar berikut (tidak disertakan). Banyak cara pengunjung dapat masuk dan keluar arena tersebut adalah …",
+    "opt": ["26", "27", "28", "29", "30"],
+    "a": 2
+  },
+  {
+    "q": "Sekolah mengadakan pertemuan dengan orangtua murid pada hari libur. Pada saat pertemuan di sebuah ruangan terdapat 20 orang yang hadir pada acara tersebut. Jika mereka semua akan bersalam dengan seluruh tamu yang datang pada acara tersebut, maka banyak kejadian yang mungkin terjadi adalah …",
+    "opt": ["40", "190", "380", "400", "570"],
+    "a": 1
+  },
+  {
+    "q": "Di sebuah Bank Jago terdapat tiga nasabah dengan keterangan sebagai berikut : - Nasabah pertama bernama Jovi menabung selama 8 bulan dan mendapatkan bunga 15% pertahun. - Nasabah kedua bernama Nabila menyimpan deposito selama 2 tahun dan bunga deposito sebesar 10%. - Nasabah ketiga bernama Rajwa memiliki tabungan awal sebesar Rp15.000.000,00 dan ditabung selama 1 tahun. Jika Jovi pada saat mengambil tabungan diperoleh uangnya sebesar Rp 13.200.000,00 maka tabungan awal Jovi adalah …",
+    "opt": ["Rp 8.000.000,00", "Rp 9.000.000,00", "Rp 10.500.000,00", "Rp 11.000.000,00", "Rp 12.000.000,00"],
+    "a": 4
+  },
+  {
+    "q": "Pembangunan sebuah gedung direncanakan akan selesai 30 hari oleh 25 orang pekerja. Setelah dikerjakan selama 20 hari, pekerjaan dihentikan selama 8 hari. Karena ada sesuatu hal. Jika Kemampuan bekerja Setiap orang Sama dan agar gedungnya Selesai tepat Waktu maka banyak pekerja tambahan yang dibutuhkan adalah........... Orang.",
+    "opt": ["25", "50", "100", "33", "75"],
+    "a": 2
+  },
+  {
+    "q": "Jika saat mengambil tabungan akhir Rajwa mendapatkan uangnya sebesar Rp 16.800.000,00 maka besar bunga yang didapat Rajwa adalah …",
+    "opt": ["8%", "10%", "12%", "15%", "20%"],
+    "a": 2
+  },
+  {
+    "q": "Jika Jovi pada saat mengambil tabungan diperoleh uangnya sebesar Rp 13.200.000,00 , lalu selama dua tahun Nabila mendapatkan bunga sebesar Rp 2.000.000,00 dan saat mengambil tabungan akhir Rajwa mendapatkan uangnya sebesar Rp 16.800.000,00. Maka pernyataan yang benar adalah …",
+    "opt": ["Rajwa mendapatkan bunga paling besar", "Persentase bunga Nabila paling besar", "Tabungan akhir yang paling sedikit adalah Jovi", "Selisih bunga Nabila dan Rajwa adalah Rp 200.000,00", "Tidak ada pernyataan yang benar"],
+    "a": 4
+  },
+  {
+    "q": "Pada awal Maret akan diadakan reuni TIP 6. Sebanyak 30 taruna dan 20 taruni diundang untuk hadir dalam acara tersebut. Pada saat hari reuni beberapa orang tidak bisa hadir. Sebanyak 20% Taruna tidak bisa hadir dan 60% taruni bisa hadir. Berdasarkan informasi diatas, persentase alumni TIP yang hadir adalah …",
+    "opt": ["36%", "40%", "72%", "80%", "90%"],
+    "a": 2
+  },
+  {
+    "q": "Seutas tali dibagi menjadi 5 bagian yang panjangnya membentuk barisan geometri. Jika tali yang paling pendek adalah 10 cm. dan tali yang paling panjang adalah 160 cm, tentukanlah panjang tali semula...",
+    "opt": ["310", "320", "330", "340", "350"],
+    "a": 0
+  },
+  {
+    "q": "Sebuah acara menyediakan makan untuk 5 orang sebanyak 14 porsi dalam 1,5 hari. Jika jumlah orang bertambah dua kali lipat dari sebelumnya, maka makanan yang harus disediakan untuk 3 hari adalah …",
+    "opt": ["10 porsi", "28 porsi", "20 porsi", "56 porsi", "70 porsi"],
+    "a": 3
+  },
+  {
+    "q": "Sebuah pekerjaan akan dapat oleh Fauriza dalam waktu 6 hari, sedangkan pekerjaan yang sama dapat dikerjakan oleh Samudra dalam waktu 3 hari. Jika pekerjaan tersebut dikerjakan bersama-sama maka pekerjaan tersebut akan selesai dalam waktu …",
+    "opt": ["1 hari", "2 hari", "3 hari", "4 hari", "5 hari"],
+    "a": 1
+  },
+  {
+    "q": "Sebuah kelas akan melakukan ulangan harian matematika pada minggu depan. Setelah ulangan kelas tersebut memiliki nilai rata-rata nilai ulangan yaitu 84. Jika rata-rata siswa laki-laki adalah 80 dan rata-rata perempuan adalah 90 pada saat ulangan harian tersebut. Maka perbandingan murid perempuan dan laki-laki adalah …",
+    "opt": ["2 : 3", "3 : 2", "1 : 2", "2 : 1", "3 : 1"],
+    "a": 0
+  },
+  {
+    "q": "Hasil dari $$\\frac{1}{5a} + \\frac{1}{3ac} = \\dots$$",
+    "opt": ["$\\frac{5c + 3}{15ac}$", "$\\frac{5a + 3c}{15c}$", "$\\frac{3a + 5c}{15ac}$", "$\\frac{3c + 5}{15ac}$", "$\\frac{5(a + c)}{15ac}$"],
+    "a": 3
+  },
+  {
+    "q": "Pada saat liburan sekolah Nadira dan Geliza akan pergi berlibur. Mereka berencana berlibur ke Malang yang berjarak 90 km dengan mengendarai masing-masing mobil yang berbeda. Nadira berangkat pada pukul 10.00 WIB dengan kecepatan 60 km/jam sedangkan Geliza berangkat terlambat karena bangun kesiangan. Jika Geliza berangkat pukul 10.45 WIB dengan kecepatan 75 km/jam. Maka Ia akan menyusul Nadira pada pukul …",
+    "opt": ["12.00", "12.45", "13.00", "13.15", "13.45"],
+    "a": 4
+  },
+  {
+    "q": "Bapak Garda membeli 12 box pakaian yang akan disumbangkan kepada 96 anak yatim. Jika setiap pakaian box memiliki isi 2 kodi, maka setiap anak yatim akan mendapatkan baju dari bapak Garda masing-masing … Baju",
+    "opt": ["3", "4", "5", "6", "10"],
+    "a": 2
+  },
+  {
+    "q": "Bapak Andika memiliki sebuah toko beras Pasti Untung. Toko tersebut menjual beberapa jenis beras : - Sebuah karung beras tipe A memiliki bruto 60 kg dan tara 5% - Sebuah karung beras tipe B memiliki bruto 70 kg dan netto 90% - Sebuah karung beras tipe C memiliki netto 96 kg dan tara 4% Jika harga beras tipe A adalah Rp 12.000,00/kg, tipe B dengan harga Rp 15.000,00/kg dan tipe C dengan harga Rp 14.000,00/kg. Pernyataan berikut yang bernilai benar adalah …",
+    "opt": ["Berat netto tipe A adalah 57 kg", "Tara beras tipe B adalah 7 kg", "Bruto beras tipe C adalah 100 kg", "Tara beras tipe A adalah 3 kg", "Selisih netto beras tipe A dan C adalah 39 kg"],
+    "a": 2
+  },
+  {
+    "q": "Jika $a = \\frac{2b - 2}{c + 4}$, di mana nilai $b = 4$ dan $c = -1$, maka nilai dari $\\frac{a + 2b - c}{2a + 3c}$ adalah ...",
+    "opt": ["7", "9", "11", "13", "15"],
+    "a": 2
+  },
+  {
+    "q": "Suhu sebuah kamar di ukur pada saat pagi hari 15°C. setiap jam suhu naik 2°C, jika awal suhu diukur adalah pukul 08.00 WIB. Maka suhu saat pukul 13.00 adalah …",
+    "opt": ["5°C", "20°R", "25°R", "45°F", "292°K"],
+    "a": 1
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
