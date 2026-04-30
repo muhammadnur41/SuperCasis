@@ -87,8 +87,8 @@ function fkHandleMsg(e) {
     fkPkgResults.push({ correct: e.data.correct || 0, total: e.data.total || 0 });
     fkAccCorrect += (e.data.correct || 0);
     fkAccTotal += (e.data.total || 0);
-    if (fkSeqIdx < fkSeqPkgs.length - 1) { fkSeqIdx++; setTimeout(() => fkLoadPackage(fkSeqIdx), 500); }
-    else { window.removeEventListener('message', fkHandleMsg); setTimeout(() => fkShowFinalResult(), 500); }
+    if (fkSeqIdx < fkSeqPkgs.length - 1) { fkSeqIdx++; fkLoadPackage(fkSeqIdx); }
+    else { window.removeEventListener('message', fkHandleMsg); fkShowFinalResult(); }
 }
 
 function fkAddProgressBar() {
@@ -138,7 +138,7 @@ function fkLoadPackage(idx) {
         const iframe = document.getElementById('testIframe');
         const sep = pkg.file.includes('?') ? '&' : '?';
         iframe.src = pkg.file + sep + 'packageTime=60&questionSpeed=' + fkSpeed;
-        iframe.onload = function() { setTimeout(() => fkInjectIframe(iframe), 300); };
+        iframe.onload = function() { setTimeout(() => fkInjectIframe(iframe), 100); };
     });
 }
 
@@ -162,7 +162,7 @@ function fkShowTransition(idx, cb) {
         </div>
     </div>`;
     document.body.appendChild(o);
-    setTimeout(() => { o.style.opacity = '0'; o.style.transition = 'opacity 0.3s'; setTimeout(() => { o.remove(); if (cb) cb(); }, 300); }, 1500);
+    setTimeout(() => { o.style.opacity = '0'; o.style.transition = 'opacity 0.2s'; setTimeout(() => { o.remove(); if (cb) cb(); }, 200); }, 400);
 }
 
 function fkInjectIframe(iframe) {
@@ -194,8 +194,8 @@ function fkStartAutoNext(win) {
             } else {
                 fkStopAutoNext();
                 fkAccumulateScores(win);
-                if (fkSeqIdx < fkSeqPkgs.length - 1) { fkSeqIdx++; setTimeout(() => fkLoadPackage(fkSeqIdx), 500); }
-                else { setTimeout(() => fkShowFinalResult(), 500); }
+                if (fkSeqIdx < fkSeqPkgs.length - 1) { fkSeqIdx++; fkLoadPackage(fkSeqIdx); }
+                else { fkShowFinalResult(); }
             }
         } catch(e) { fkStopAutoNext(); }
     }, fkAutoDur * 1000);

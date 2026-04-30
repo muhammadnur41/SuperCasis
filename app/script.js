@@ -217,7 +217,7 @@ function restoreTestState(savedState) {
                     _exposeIframeVarsOnWindow(iframe);
                     injectIframeOverrides(iframe);
                     _restoreIframeAnswers(iframe, savedState);
-                }, 300);
+                }, 100);
             };
         }
     } else {
@@ -236,7 +236,7 @@ function restoreTestState(savedState) {
                     _timerIsCountdown ? _timerCurrentValue : 0,
                     _timerCurrentValue
                 );
-            }, 300);
+            }, 100);
         };
     }
 }
@@ -834,8 +834,8 @@ function launchTest() {
             // Beri waktu bridge script dieksekusi browser sebelum override
             setTimeout(function() {
                 injectIframeOverrides(iframe);
-            }, 150);
-        }, 300);
+            }, 50);
+        }, 100);
     };
 }
 
@@ -1268,10 +1268,10 @@ function startAutoNextTimer(iframeWindow) {
                     
                     if (kecermatanSeqCurrentIdx < kecermatanSeqPackages.length - 1) {
                         kecermatanSeqCurrentIdx++;
-                        setTimeout(() => loadKecermatanPackageByIndex(kecermatanSeqCurrentIdx), 500);
+                        loadKecermatanPackageByIndex(kecermatanSeqCurrentIdx);
                     } else {
                         // Semua 10 paket selesai
-                        setTimeout(() => showKecermatanFinalResult(), 500);
+                        showKecermatanFinalResult();
                     }
                 } else {
                     iframeWindow.showResult();
@@ -1469,11 +1469,11 @@ function handleIframeMessage(event) {
     // Pindah ke paket berikutnya atau tampilkan hasil akhir
     if (kecermatanSeqCurrentIdx < kecermatanSeqPackages.length - 1) {
         kecermatanSeqCurrentIdx++;
-        setTimeout(() => loadKecermatanPackageByIndex(kecermatanSeqCurrentIdx), 500);
+        loadKecermatanPackageByIndex(kecermatanSeqCurrentIdx);
     } else {
         // Semua 10 paket selesai
         window.removeEventListener('message', handleIframeMessage);
-        setTimeout(() => showKecermatanFinalResult(), 500);
+        showKecermatanFinalResult();
     }
 }
 
@@ -1631,15 +1631,15 @@ function showPackageTransition(idx, callback) {
     
     document.body.appendChild(overlay);
     
-    // Auto-dismiss setelah 1.5 detik
+    // Auto-dismiss cepat tanpa delay
     setTimeout(() => {
         overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.3s';
+        overlay.style.transition = 'opacity 0.2s';
         setTimeout(() => {
             overlay.remove();
             if (callback) callback();
-        }, 300);
-    }, 1500);
+        }, 200);
+    }, 400);
 }
 
 function accumulatePackageScores(iframeWindow) {
