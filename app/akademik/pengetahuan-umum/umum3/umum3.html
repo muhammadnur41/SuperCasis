@@ -1,0 +1,811 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Penataan lingkungan hidup dan fasilitas umum merupakan salah satu contoh pelaksanaan otonomi daerah. Dengan diberlakukannya undang-undang otonomidaerah,maka daerah diberi kewenangan dalam hal ...",
+    "opt": [
+      "mengelola daerah dengan potensi yang dimiliki",
+      "membuat kebijakan pertahanan",
+      "politik luar negeri",
+      "kebijakan moneter",
+      "keuangan daerah"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Anggota kepolisian negara Republik Indonesia adalah ....",
+    "opt": [
+      "pegawai negeri pada Kepolisian Negara Republik Indonesia",
+      "pegawai non negeri",
+      "warga negeri Indonesia",
+      "pegawai negeri sipil",
+      "non kepegawaian"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Arti tribrata dalam pengertian baru memiliki pengertian ....",
+    "opt": [
+      "tiga jalan",
+      "tiga kaul",
+      "tiga asas kehidupan",
+      "tiga asas kewajiban",
+      "tiga asas jalan kehidupan"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Pengertian bhayangkara dalam catur prasetya adalah ....",
+    "opt": [
+      "Kepolisian Negara Republik Indonesia bertugas mengawal dan mengamankan masyarakat, bangsa, dan negara",
+      "manusia sebagai makhluk tertinggi yang secara moral memiliki kesempurnaan dan bersih dari cela",
+      "wujud sikap moral tertinggi",
+      "secara rela dan ikhlas mendahulukan kepentingan masyarakat di atas kepentingan pribadi",
+      "terwujudnya penegakan hukum demi kesejahteraan hak dan kewajiban setiap warga negara"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Urutan kepangkatan bintara TNI dari yang paling tinggi adalah ....",
+    "opt": [
+      "serda, sertu, serka, dan serma",
+      "serma, serka, sertu, dan serda",
+      "serka, serma, sertu, dan serda",
+      "serma, serka, serda, dan sertu",
+      "serka, serda, dan sertu"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Kapolri pertama di Indonesia adalah ....",
+    "opt": [
+      "Soekarno Djojonegoro",
+      "Tito Karnavian",
+      "Soetjipto Danokoesoemo",
+      "Said Soekanto Tjokrodiatmodjo",
+      "Roesmanhadi"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Usia maksimum pensiun anggota kepolisian Republik Indonesia adalah ....",
+    "opt": [
+      "56 tahun",
+      "57 tahun",
+      "58 tahun",
+      "59 tahun",
+      "60 tahun"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Kekuatan utama dalam sistem pertahanan dan keamanan rakyat semesta adalah ....",
+    "opt": [
+      "Kepolisian Negara Republik Indonesia",
+      "seluruh rakyat Indonesia",
+      "Tentara Nasional Indonesia",
+      "angkatan bersenjata",
+      "militer"
+    ],
+    "a": 2
+  },
+  {
+    "q": "“Usaha pertahanan dan keamanan negara dilaksanakan melalui sistem pertahanan dan keamanan rakyat semesta oleh Tentara Nasional Indonesia dan Kepolisian Negara Republik Indonesia, sebagai kekuatan utama, dan rakyat, sebagai kekuatan pendukung.” merupakan bunyi UUD NRI Tahun 1945 Pasal ....",
+    "opt": [
+      "30 ayat (1)",
+      "30 ayat (2)",
+      "30 ayat (3)",
+      "30 ayat (4)",
+      "30 ayat (5)"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Kepolisian Negara Republik Indonesia sebagai alat negara yang menjaga keamanan dan ketertiban masyarakat bertugas ....",
+    "opt": [
+      "melindungi, mengayomi, melayani masyarakat, serta menegakkan hukum",
+      "mempertahankan, melindungi, dan memelihara keutuhan dan kedaulatan negara",
+      "memelihara keutuhan NKRI",
+      "menjaga ketertiban dan keamanan lingkungan",
+      "menjamin keharmonisan hidup di masyarakat"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pada tanggal 15 Juni 2022, Bapak Joko Widodo resmi melantik 2 figur menteri dan 3 figur wakil menteri Kabinet Indonesia Maju untuk sisa masa jabatan periode tahun 2019–2024. Menteri Perdagangan dijabat oleh ....",
+    "opt": [
+      "Zulkifli Hasan",
+      "Hadi Tjahjanto",
+      "Mohammad Mahfud MD",
+      "Erick Thohir",
+      "Yasonna Laoly"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Seorang anggota Brimob Bhayangkara Dua (Bharada) diketahui gugur seusai terlibat dalam kontak senjata dengan Kelompok Kriminal Bersenjata (KKB) di Nduga, Papua. Nama anggota kepolisian yang gugur di medan perang tersebut adalah ....",
+    "opt": [
+      "Brimob Bharada Aldy",
+      "Brimob Bharada Reza",
+      "Brimob Bharada Andi",
+      "Brimob Bharada Andre",
+      "Brimob Bharada Rizal"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Komisi Pemberantasan Korupsi (KPK) akan segera menyidang tiga tersangka kasus suap. Ketiganya yakni Direktur PT Nusa Arsa Sejahtera Muji Mustofa, Nelly Margaretha, serta Bupati Kudus periode 2018–2023, Muhammad Tamzil dan staf khususnya, Agoes Soeranto telah menyelesaikan proses penyidikan. <br>Atas perbuatannya,Muji disangkakan melanggar Pasal 5 ayat (1) huruf a atau Pasal 5 ayat (1) huruf b atau Pasal 13 Undang-undang Nomor 31 Tahun 1999 tentang Pemberantasan Tindak Pidana Korupsi sebagaimana telah diubah dengan ....",
+    "opt": [
+      "UU No. 20 Tahun 2000",
+      "UU No. 20 Tahun 2001",
+      "UU No. 20 Tahun 2002",
+      "UU No. 20 Tahun 2003",
+      "UU No. 20 Tahun 2004"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Kepala Kepolisian Negara Republik Indonesia yang mulai menjabat tanggal 1 November 2019 adalah ....",
+    "opt": [
+      "Hadi Tjahjanto",
+      "ST Burhanuddin",
+      "Tito Karnavian",
+      "Prabowo Subianto",
+      "Idham Azis"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Panglima Tentara Nasional Indonesia yang mulai menjabat tanggal 8 Desember 2017 adalah ....",
+    "opt": [
+      "Hadi Tjahjanto",
+      "ST Burhanuddin",
+      "Tito Karnavian",
+      "Prabowo Subianto",
+      "Idham Azis"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Sebagai upaya mengantisipasi serangan fajar pada hari pencoblosan 17 April, Polres Sumedang, Jawa Barat, akan menyiagakan posko diseluruh titik di desa-desa. Kapolres Sumedang AKBP Hartoyo mengatakan, posko siaga akan mulai aktif sejak malam hari sebelum hari H pencoblosan atau sejak 16 April 2019. “Nantinya, posko siaga ini ada diseluruh titik di desa di seluruh wilayah Sumedang. Tujuannya untuk mengantisipasi serangan fajar jelang hari H pencoblosan,” ujarnya. (KOMPAS, 22 Maret 2019). Berdasarkan berita tersebut, pengertian serangan fajar adalah ....",
+    "opt": [
+      "sebutan untuk bentuk politik uang dalam rangka membeli suara",
+      "serangan terhadap lawan politik",
+      "adanya kampanye hitam",
+      "politik bernuansa SARA",
+      "politik bebas"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pasukan Demokratik Suriah (SDF) memperingatkan terlepas dari benteng terakhir ISIS yang telah ditaklukkan, ribuan anggotanya yang berasal dari negara asing baik bom waktu yang harus segera “dijinakkan” oleh dunia. Anggota ISIS beserta istri dan anak-anak mereka keluar dari desa Baghous di provinsi Deir Ezzor, Suriah timur.(KOMPAS, 14 Maret 2019). Paham atau ajaran yang dianut oleh ISIS adalah ajaran yang menyimpang dari nilai-nilai Pancasila, karena hampir semua anggota ISIS menganut paham ....",
+    "opt": [
+      "komunis",
+      "fanatik",
+      "menyimpang",
+      "radikal",
+      "laten"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Segala macam aktivitas yang ditentang masyarakat karena melanggar hukum, sosial, dan agama serta merugikan baik secara psikologis maupun ekonomi adalah ....",
+    "opt": [
+      "pengoboman",
+      "pencurian",
+      "politik hitam",
+      "keributan",
+      "kriminalitas"
+    ],
+    "a": 4
+  },
+  {
+    "q": "MRT Jakarta adalah sebuah sistem transportasi transit cepat menggunakan kereta rel listrik di Jakarta. Proses pembangunan telah dimulai pada tanggal 10 Oktober 2013 dan diresmikan pada 24 Maret 2019. MRT merupakan singkatan dari ....",
+    "opt": [
+      "Mass Rapid Transit",
+      "Mass Rated Transport",
+      "Mass Railway Transit",
+      "Mass Rapid Transport",
+      "Mass Rapid Transportation"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Masih segar dalam ingatan peristiwa kematian paus di perairan Wakatobi, Sulawesi Tenggara yang ditemukan pada Senin (19/11/2018). Saat dibedah, peneliti menemukan sampah plastik 5,9 kilogram dalam organ paus malang tersebut. Diwartakan Kompas.com (22/11/2018), para peneliti dan aktivis lingkungan pun menduga penyebab utama kematian mamalia itu adalah sampah plastik yang tak bisa dicerna oleh perut paus. Banyaknya sampah plastik yang ada di perairan laut juga tak lepas dari meningkatnya jumlah sampah plastik dari tahun ke tahun di bumi. Berdasarkan berita di atas hal-hal kecil yang bisa kita lakukan untuk mengurangi banyaknya sampah plastik di lingkungan sekitar adalah ....",
+    "opt": [
+      "membersihkannya saja",
+      "tidak peduli dengan lingkungan",
+      "menggunakan tas ketika berbelanja",
+      "menggunakan plastik",
+      "membuangnya di lingkungan sekitar"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Indonesia saat ini tengah membangun Ibu Kota Nusantara (IKN). Konsep utama dari pembangunan IKN di Kalimantan Timur adalah...",
+    "opt": [
+      "Metropolitan City",
+      "Industrial City",
+      "Smart and Forest City",
+      "Megapolitan City",
+      "Heritage City"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada tahun 2023, Indonesia memegang Keketuaan ASEAN. Pada tahun 2024, estafet Keketuaan ASEAN diserahkan kepada negara...",
+    "opt": [
+      "Malaysia",
+      "Vietnam",
+      "Thailand",
+      "Laos",
+      "Filipina"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Kereta Cepat Jakarta-Bandung resmi beroperasi dan diberi nama 'Whoosh'. Kepanjangan dari Whoosh adalah...",
+    "opt": [
+      "Waktu Hemat, Operasional Optimal, Sistem Hebat",
+      "Waktu Hemat, Operasi Optimal, Sistem Handal",
+      "Waktu Hemat, Operasi Optimal, Sistem Hebat",
+      "Waktu Hemat, Operasional Optimal, Sistem Handal",
+      "Waktu Hemat, Opsi Optimal, Sistem Handal"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pemerintah Indonesia memfokuskan kebijakan ekonomi pada pengolahan barang mentah menjadi barang setengah jadi atau barang jadi sebelum diekspor. Kebijakan ini dikenal dengan istilah...",
+    "opt": [
+      "Globalisasi",
+      "Privatisasi",
+      "Hilirisasi",
+      "Nasionalisasi",
+      "Monopoli"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Jumlah provinsi di Indonesia saat ini setelah adanya pemekaran provinsi di Pulau Papua adalah...",
+    "opt": [
+      "34 Provinsi",
+      "37 Provinsi",
+      "38 Provinsi",
+      "39 Provinsi",
+      "40 Provinsi"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Kitab Undang-Undang Hukum Pidana (KUHP) Nasional yang baru (UU No. 1 Tahun 2023) telah disahkan dan akan berlaku secara efektif setelah masa transisi selama...",
+    "opt": [
+      "1 tahun",
+      "2 tahun",
+      "3 tahun",
+      "4 tahun",
+      "5 tahun"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Untuk meratakan akses internet di wilayah 3T (Tertinggal, Terdepan, Terluar), pemerintah Indonesia meluncurkan satelit terbesar di Asia yang bernama...",
+    "opt": [
+      "Satelit Palapa Ring",
+      "Satelit SATRIA-1",
+      "Satelit Merah Putih",
+      "Satelit Telkom-4",
+      "Satelit Nusantara Satu"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Negara ke-11 yang secara prinsip telah diterima keanggotaannya di ASEAN dan sedang dalam proses keanggotaan penuh adalah...",
+    "opt": [
+      "Papua Nugini",
+      "Timor Leste",
+      "Maladewa",
+      "Sri Lanka",
+      "Palau"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Organisasi internasional yang menghimpun negara-negara berkembang seperti Brasil, Rusia, India, China, dan Afrika Selatan, di mana Indonesia saat ini sedang dalam proses menjajaki keanggotaannya adalah...",
+    "opt": [
+      "OECD",
+      "G20",
+      "BRICS",
+      "APEC",
+      "OPEC"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dalam struktur Kepolisian Negara Republik Indonesia (Polri), pangkat tertinggi yang dijabat oleh Kepala Kepolisian Republik Indonesia (Kapolri) adalah...",
+    "opt": [
+      "Komisaris Jenderal Polisi",
+      "Inspektur Jenderal Polisi",
+      "Jenderal Polisi",
+      "Marsekal Polisi",
+      "Laksamana Polisi"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Panglima TNI merupakan pemegang kekuasaan tertinggi dalam hierarki Tentara Nasional Indonesia. Panglima TNI diangkat dan diberhentikan oleh...",
+    "opt": [
+      "MPR",
+      "DPR",
+      "Presiden dengan persetujuan DPR",
+      "Menteri Pertahanan",
+      "Mahkamah Konstitusi"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Lembaga internasional yang bertugas memfasilitasi kerja sama kepolisian lintas negara untuk memberantas kejahatan transnasional adalah...",
+    "opt": [
+      "Europol",
+      "Interpol",
+      "FBI",
+      "CIA",
+      "UNHCR"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Rumusan dasar negara Pancasila yang sah dan benar terdapat dalam...",
+    "opt": [
+      "Piagam Jakarta",
+      "Pembukaan UUD 1945 Alinea ke-4",
+      "Batang Tubuh UUD 1945",
+      "Tap MPR No. I/MPR/2003",
+      "Dokumen BPUPKI"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Menyebarkan berita bohong (hoaks) yang dapat menimbulkan keonaran di kalangan masyarakat merupakan pelanggaran hukum yang diatur ketat dalam Undang-Undang...",
+    "opt": [
+      "UU KPK",
+      "UU ITE",
+      "UU Ketenagakerjaan",
+      "UU Penyiaran",
+      "UU Pers"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Hak prerogatif Presiden untuk memberikan pengampunan dan pengurangan hukuman kepada terpidana yang sudah memiliki kekuatan hukum tetap disebut...",
+    "opt": [
+      "Grasi",
+      "Amnesti",
+      "Abolisi",
+      "Rehabilitasi",
+      "Remisi"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Sila ke-3 Pancasila, 'Persatuan Indonesia', dilambangkan dengan...",
+    "opt": [
+      "Bintang emas",
+      "Rantai emas",
+      "Pohon beringin",
+      "Kepala banteng",
+      "Padi dan kapas"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Sikap tidak memaksakan kehendak kepada orang lain dan mengutamakan musyawarah dalam mengambil keputusan adalah pengamalan Pancasila sila ke-...",
+    "opt": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Lembaga negara yang berwenang menguji undang-undang terhadap UUD 1945 adalah...",
+    "opt": [
+      "Mahkamah Agung (MA)",
+      "Mahkamah Konstitusi (MK)",
+      "Komisi Yudisial (KY)",
+      "Dewan Perwakilan Rakyat (DPR)",
+      "Majelis Permusyawaratan Rakyat (MPR)"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pemberontakan G30S/PKI merupakan sejarah kelam bangsa Indonesia. Untuk memperingati gugurnya para Pahlawan Revolusi, setiap tanggal 1 Oktober diperingati sebagai Hari...",
+    "opt": [
+      "Kebangkitan Nasional",
+      "Pahlawan",
+      "Kesaktian Pancasila",
+      "Lahir Pancasila",
+      "Bela Negara"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Sumpah Pemuda yang diikrarkan pada tanggal 28 Oktober 1928 merupakan hasil dari...",
+    "opt": [
+      "Kongres Pemuda I",
+      "Kongres Pemuda II",
+      "Sidang BPUPKI",
+      "Sidang PPKI",
+      "Kongres Budi Utomo"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pembagian kekuasaan negara menjadi eksekutif, legislatif, dan yudikatif disebut dengan teori...",
+    "opt": [
+      "Dwi Fungsi",
+      "Tri Koro Dharmo",
+      "Trias Politica",
+      "Dasasila Bandung",
+      "Tiga Pilar"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Zona Ekonomi Eksklusif (ZEE) Indonesia diukur dari garis pangkal laut wilayah Indonesia sejauh...",
+    "opt": [
+      "12 mil laut",
+      "24 mil laut",
+      "100 mil laut",
+      "200 mil laut",
+      "350 mil laut"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Semboyan 'Bhinneka Tunggal Ika' yang berarti berbeda-beda tetapi tetap satu jua, diambil dari Kitab Sutasoma karangan...",
+    "opt": [
+      "Mpu Prapanca",
+      "Mpu Tantular",
+      "Mpu Sedah",
+      "Mpu Panuluh",
+      "Mpu Kanwa"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Markas besar Perserikatan Bangsa-Bangsa (PBB) terletak di kota...",
+    "opt": [
+      "Jenewa, Swiss",
+      "London, Inggris",
+      "Paris, Prancis",
+      "New York, Amerika Serikat",
+      "Wina, Austria"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Sekretariat Jenderal ASEAN berkedudukan di kota...",
+    "opt": [
+      "Bangkok",
+      "Kuala Lumpur",
+      "Singapura",
+      "Manila",
+      "Jakarta"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Kebijakan pemberian izin tinggal khusus bagi warga negara asing (WNA) yang memberikan kontribusi ekonomi (investasi) signifikan di Indonesia yang baru diluncurkan pemerintah disebut...",
+    "opt": [
+      "KITAS",
+      "KITAP",
+      "Golden Visa",
+      "Tourist Visa",
+      "Diplomatic Visa"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Polri merupakan alat negara yang berperan dalam memelihara keamanan dan ketertiban masyarakat. Hal ini diatur secara khusus dalam...",
+    "opt": [
+      "UU No. 2 Tahun 2002",
+      "UU No. 34 Tahun 2004",
+      "UU No. 3 Tahun 2002",
+      "UU No. 20 Tahun 2003",
+      "UU No. 11 Tahun 2008"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Undang-Undang yang mengatur tentang Tentara Nasional Indonesia (TNI) adalah...",
+    "opt": [
+      "UU No. 2 Tahun 2002",
+      "UU No. 34 Tahun 2004",
+      "UU No. 3 Tahun 2002",
+      "UU No. 39 Tahun 1999",
+      "UU No. 12 Tahun 2011"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Negara yang memiliki hak veto di Dewan Keamanan PBB berjumlah 5 negara, yaitu...",
+    "opt": [
+      "AS, Inggris, Prancis, Rusia, Tiongkok (China)",
+      "AS, Inggris, Jerman, Rusia, Tiongkok",
+      "AS, Prancis, Jerman, Jepang, Rusia",
+      "AS, Inggris, Prancis, Italia, Tiongkok",
+      "AS, Rusia, Tiongkok, Jepang, Jerman"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Doktrin pertahanan keamanan negara Indonesia yang melibatkan seluruh warga negara, wilayah, dan sumber daya nasional secara terpadu disebut...",
+    "opt": [
+      "Sishankamrata",
+      "Wawasan Nusantara",
+      "Ketahanan Nasional",
+      "Bela Negara",
+      "Operasi Militer Selain Perang (OMSP)"
+    ],
+    "a": 0
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
