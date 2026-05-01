@@ -1,0 +1,811 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Teknologi kecerdasan buatan (AI) berkembang pesat dalam 5 tahun terakhir. Perusahaan teknologi manakah yang mengembangkan dan merilis ChatGPT pada akhir tahun 2022?",
+    "opt": [
+      "Google",
+      "Microsoft",
+      "Meta",
+      "OpenAI",
+      "Anthropic"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Budi menerima email yang mengatasnamakan bank resminya, memintanya untuk segera mengklik sebuah tautan dan memasukkan PIN serta kata sandi karena akunnya diblokir. Praktik penipuan untuk mencuri data sensitif ini disebut...",
+    "opt": [
+      "Ransomware",
+      "Phishing",
+      "Doxing",
+      "Carding",
+      "Cyberbullying"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pada awal tahun 2024, perusahaan Apple merilis perangkat headset canggih yang memadukan dunia nyata dan digital secara mulus. Apple menyebut kategori teknologi baru ini sebagai Spatial Computing. Apa nama perangkat tersebut?",
+    "opt": [
+      "Apple Glass",
+      "Meta Quest Pro",
+      "Apple Vision Pro",
+      "HoloLens 3",
+      "iVR Max"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Saat menjelajahi media sosial di malam hari, Siska terus-menerus membaca berita buruk dan tragedi yang terjadi di seluruh dunia hingga merasa cemas dan sulit tidur. Kebiasaan mengonsumsi berita negatif secara obsesif ini dikenal dengan istilah...",
+    "opt": [
+      "Doomscrolling",
+      "Gaslighting",
+      "Cyber-syndrome",
+      "Phubbing",
+      "Flexing"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Siapakah CEO dari perusahaan cip semikonduktor Nvidia, yang kekayaannya melonjak drastis di tahun 2023-2024 akibat tingginya permintaan perangkat keras untuk melatih Artificial Intelligence?",
+    "opt": [
+      "Tim Cook",
+      "Mark Zuckerberg",
+      "Sundar Pichai",
+      "Jensen Huang",
+      "Satya Nadella"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Pembangunan Ibu Kota Nusantara (IKN) di Kalimantan Timur mengusung konsep kota masa depan. Salah satu konsep utama yang diterapkan agar IKN ramah lingkungan dan terintegrasi dengan alam adalah...",
+    "opt": [
+      "Metropolis Sentris",
+      "Forest City",
+      "Industrial Hub",
+      "Cyberpunk City",
+      "Concrete Jungle"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Kereta Cepat Jakarta-Bandung (Whoosh) resmi beroperasi pada akhir 2023. Pembuatan kereta cepat ini merupakan hasil kerja sama patungan (konsorsium) antara Indonesia dengan negara...",
+    "opt": [
+      "Jepang",
+      "Korea Selatan",
+      "Jerman",
+      "Prancis",
+      "Tiongkok"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Andi seorang mahasiswa yang sering jajan menggunakan fitur Paylater di aplikasi e-commerce. Tanpa disadari, tagihannya menumpuk dan ia kesulitan membayar bunga yang besar. Fitur Paylater pada dasarnya adalah bentuk dari...",
+    "opt": [
+      "Tabungan berjangka",
+      "Investasi reksadana",
+      "Utang/Kredit tanpa agunan",
+      "Subsidi digital",
+      "Dompet digital prabayar"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada Pemilihan Umum Presiden RI 2024, terdapat tiga pasangan calon yang berkontestasi. Siapakah tokoh yang mendampingi Anies Baswedan sebagai Calon Wakil Presiden?",
+    "opt": [
+      "Mahfud MD",
+      "Gibran Rakabuming Raka",
+      "Muhaimin Iskandar",
+      "Sandiaga Uno",
+      "Agus Harimurti Yudhoyono"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Bencana letusan gunung berapi yang cukup masif terjadi pada awal tahun 2024 di Kabupaten Sitaro, Sulawesi Utara, yang mengharuskan evakuasi ribuan warga. Gunung berapi tersebut adalah...",
+    "opt": [
+      "Gunung Merapi",
+      "Gunung Ruang",
+      "Gunung Semeru",
+      "Gunung Sinabung",
+      "Gunung Marapi"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pada 1 Januari 2024, organisasi kerja sama ekonomi negara-negara berkembang (BRICS) resmi memperluas keanggotaannya. Negara mana di bawah ini yang bukan merupakan anggota baru yang bergabung pada tahun tersebut?",
+    "opt": [
+      "Mesir",
+      "Ethiopia",
+      "Iran",
+      "Uni Emirat Arab",
+      "Argentina"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Konflik militer skala penuh antara Rusia dan Ukraina dimulai pada Februari 2022. Wilayah di Ukraina bagian timur yang menjadi pusat pertempuran sengit dan dianeksasi sepihak oleh Rusia disebut kawasan...",
+    "opt": [
+      "Krimea",
+      "Donbas",
+      "Kyiv",
+      "Lviv",
+      "Odesa"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Konferensi Perubahan Iklim PBB ke-28 (COP28) di Dubai mencetak sejarah karena untuk pertama kalinya menghasilkan kesepakatan global untuk...",
+    "opt": [
+      "Melarang total penggunaan plastik sekali pakai",
+      "Beranjak meninggalkan (bertransisi dari) bahan bakar fosil",
+      "Membangun reaktor nuklir di setiap negara",
+      "Menutup semua pabrik batu bara dalam 1 tahun",
+      "Mewajibkan warga dunia menggunakan mobil listrik"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Aliansi militer NATO (North Atlantic Treaty Organization) mengalami perluasan pada 2023 dan 2024 dengan bergabungnya dua negara Nordik yang sebelumnya memegang prinsip netralitas. Kedua negara tersebut adalah...",
+    "opt": [
+      "Swiss dan Austria",
+      "Irlandia dan Islandia",
+      "Finlandia dan Swedia",
+      "Norwegia dan Denmark",
+      "Polandia dan Hungaria"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Saat terjadi boikot global terhadap produk-produk yang terafiliasi dengan negara tertentu akibat konflik Timur Tengah pada 2023-2024, banyak masyarakat beralih ke produk lokal. Fenomena mendukung produk dalam negeri karena alasan politik atau etika ini sering dihubungkan dengan sikap...",
+    "opt": [
+      "Hedonisme",
+      "Konsumerisme",
+      "Nasionalisme Ekonomi",
+      "Monopoli",
+      "Oligopoli"
+    ],
+    "a": 2
+  },
+  {
+    "q": "WHO menetapkan penyakit ini sebagai darurat kesehatan global pada tahun 2022. Gejalanya mirip cacar air namun dengan pembengkakan kelenjar getah bening, dan namanya kemudian diubah menjadi 'Mpox' untuk menghindari stigma. Nama sebelumnya dari penyakit ini adalah...",
+    "opt": [
+      "Chickenpox",
+      "Smallpox",
+      "Monkeypox",
+      "Cowpox",
+      "Swine flu"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dita ingin mengurangi jejak karbon (carbon footprint) dari aktivitas kesehariannya di kota besar. Tindakan mana di bawah ini yang paling signifikan membantu mengurangi emisi gas rumah kaca?",
+    "opt": [
+      "Mengganti semua lampu rumah dengan lampu pijar",
+      "Beralih dari menggunakan kendaraan pribadi ke transportasi umum listrik (seperti MRT/LRT)",
+      "Membakar sampah daun di halaman belakang agar tidak menumpuk",
+      "Menyalakan AC sepanjang hari saat rumah kosong",
+      "Mengonsumsi lebih banyak daging sapi impor"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pada Agustus 2023, India berhasil mendaratkan wahana antariksa di kutub selatan Bulan, menjadikannya negara pertama yang mendarat di area tersebut. Apa nama misi luar angkasa tersebut?",
+    "opt": [
+      "Apollo 18",
+      "Sputnik 3",
+      "Artemis 1",
+      "Chandrayaan-3",
+      "Luna-25"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Kasus gagal ginjal akut pada anak yang memakan banyak korban jiwa di Indonesia pada akhir 2022 disebabkan oleh cemaran zat kimia beracun pada obat sirop. Zat kimia tersebut adalah...",
+    "opt": [
+      "Parasetamol cair",
+      "Etilen Glikol (EG) dan Dietilen Glikol (DEG)",
+      "Formalin dan Boraks",
+      "Merkuri",
+      "Sianida"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Di dunia sains pada pertengahan 2023, peneliti dari Korea Selatan mengklaim menemukan material 'LK-99'. Meskipun akhirnya disanggah oleh ilmuwan global, material tersebut awalnya diklaim sebagai penemuan revolusioner berupa...",
+    "opt": [
+      "Baterai bertenaga air",
+      "Obat penyembuh kanker secara instan",
+      "Superkonduktor suhu ruang dan tekanan ambien",
+      "Mesin waktu berskala mikro",
+      "Plastik yang bisa terurai dalam 1 hari"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Fenomena turisme musik besar-besaran terjadi pada 2023-2024, di mana sebuah tur konser berhasil meningkatkan ekonomi lokal negara-negara yang dikunjunginya (sering disebut Swiftonomics). Tur konser tersebut adalah...",
+    "opt": [
+      "Music of the Spheres - Coldplay",
+      "The Eras Tour - Taylor Swift",
+      "Renaissance World Tour - Beyonce",
+      "Born Pink - Blackpink",
+      "Divide Tour - Ed Sheeran"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Mata uang kripto Bitcoin memiliki siklus 4 tahunan yang dirancang untuk mengurangi hadiah penambangan menjadi separuh guna menekan inflasi koin. Peristiwa yang terjadi pada April 2024 ini disebut dengan...",
+    "opt": [
+      "Bitcoin Mining",
+      "Bitcoin Staking",
+      "Bitcoin Halving",
+      "Bitcoin Forking",
+      "Bitcoin Bouncing"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada ajang penghargaan Oscar (Academy Awards) tahun 2024, film manakah yang mendominasi kemenangan, termasuk membawa pulang piala Film Terbaik dan Sutradara Terbaik (Christopher Nolan)?",
+    "opt": [
+      "Barbie",
+      "Poor Things",
+      "Oppenheimer",
+      "Killers of the Flower Moon",
+      "Anatomy of a Fall"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Olimpiade Musim Panas 2024 mencetak sejarah baru dengan mempertandingkan sebuah cabang olahraga untuk pertama kalinya. Cabang olahraga jalanan (urban) yang baru masuk ke Olimpiade Paris tersebut adalah...",
+    "opt": [
+      "Parkour",
+      "Breakdance (Breaking)",
+      "Esports",
+      "Polo Air",
+      "Tarik Tambang"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Rina diundang oleh seorang teman ke sebuah seminar bisnis. Di sana ia dijanjikan keuntungan berlipat ganda setiap bulan hanya dengan menyetor uang dan mencari 'anggota baru' (downline) di bawahnya, tanpa ada produk nyata yang dijual. Model bisnis penipuan ini disebut...",
+    "opt": [
+      "Waralaba (Franchise)",
+      "Pasar Saham",
+      "Skema Ponzi / Piramida",
+      "Dropshipping",
+      "Affiliate Marketing"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Rina ditelepon oleh nomor tak dikenal yang suaranya sangat mirip dengan ibunya. Suara tersebut menangis dan meminta transfer uang segera karena sedang kecelakaan. Rina hampir mentransfer uang sebelum ia menelepon nomor asli ibunya yang ternyata sedang baik-baik saja di rumah. Penipuan yang meniru suara seseorang menggunakan kecerdasan buatan disebut...",
+    "opt": [
+      "Deepfake Audio / AI Voice Cloning",
+      "Cyber-stalking",
+      "Ransomware",
+      "Pharming",
+      "Doxing"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pada pertengahan tahun 2024, layanan internet satelit milik Elon Musk resmi beroperasi di Indonesia untuk membantu pemerataan akses internet hingga ke pelosok daerah. Nama layanan tersebut adalah...",
+    "opt": [
+      "Blue Origin",
+      "SpaceX Web",
+      "Starlink",
+      "Neuralink",
+      "AstroNet"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada akhir tahun 2023, pemerintah Indonesia melalui Kementerian Perdagangan sempat melarang platform media sosial untuk bertindak sekaligus sebagai e-commerce demi melindungi UMKM lokal. Kebijakan ini berdampak langsung pada penutupan sementara layanan...",
+    "opt": [
+      "Shopee Video",
+      "Tokopedia Play",
+      "Instagram Shopping",
+      "TikTok Shop",
+      "Facebook Marketplace"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Saat ini, banyak perusahaan mengharuskan karyawannya menggunakan grup WhatsApp untuk komunikasi pekerjaan, bahkan di luar jam kerja dan hari libur. Karyawan yang merasa tidak memiliki batasan antara kehidupan pribadi dan kerja sering kali mengalami stres. Konsep hak untuk mengabaikan pesan pekerjaan di luar jam kerja disebut...",
+    "opt": [
+      "Quiet Quitting",
+      "Right to Disconnect",
+      "Hustle Culture",
+      "Toxic Productivity",
+      "Burnout Syndrome"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Perusahaan milik Elon Musk yang bergerak di bidang neuroteknologi mencetak sejarah pada awal 2024 karena berhasil menanamkan cip nirkabel ke dalam otak manusia untuk pertama kalinya. Nama perusahaan tersebut adalah...",
+    "opt": [
+      "OpenAI",
+      "X Corp",
+      "Tesla",
+      "Neuralink",
+      "The Boring Company"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Pada pertengahan tahun 2024, Indonesia mengalami krisis keamanan siber besar ketika Pusat Data Nasional Sementara (PDNS) diserang oleh peretas, yang melumpuhkan berbagai layanan publik termasuk imigrasi. Jenis malware yang menyandera data tersebut adalah...",
+    "opt": [
+      "Trojan Horse",
+      "Spyware Pegasus",
+      "Ransomware Brain Cipher",
+      "Worm ILOVEYOU",
+      "Adware"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Tono sering melihat iklan permainan slot berkedok game online di media sosial yang dipromosikan oleh influencer. Ia iseng mencoba dengan uang kecil, namun akhirnya kecanduan dan menjual barang-barang di rumahnya. Kasus yang menjerat Tono dan menjadi masalah darurat nasional di Indonesia saat ini adalah...",
+    "opt": [
+      "Investasi Kripto",
+      "Judi Online (Judol)",
+      "Paylater",
+      "Pinjaman Online Ilegal",
+      "Skema Ponzi"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Kebijakan ekonomi yang sangat digencarkan oleh Presiden Joko Widodo di masa jabatan keduanya adalah melarang ekspor bahan mentah agar diolah di dalam negeri untuk meningkatkan nilai jual. Kebijakan ini disebut...",
+    "opt": [
+      "Nasionalisasi Aset",
+      "Swastanisasi",
+      "Hilirisasi Industri (terutama Nikel)",
+      "Devisa Bebas",
+      "Substitusi Impor"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Indonesia resmi memiliki sirkuit balap bertaraf internasional yang digunakan untuk ajang MotoGP sejak tahun 2022. Sirkuit tersebut berlokasi di...",
+    "opt": [
+      "Sentul, Bogor",
+      "Mandalika, Lombok",
+      "Sepang, Kuala Lumpur",
+      "BSD City, Tangerang",
+      "Jakabaring, Palembang"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Undang-Undang baru peninggalan kolonial Belanda yang direvisi dan disahkan oleh DPR RI pada akhir tahun 2022 (berlaku efektif 2026) untuk memperbarui hukum pidana nasional adalah...",
+    "opt": [
+      "UU ITE",
+      "KUHP (Kitab Undang-Undang Hukum Pidana) Baru",
+      "UU Cipta Kerja",
+      "UU TPKS",
+      "UU Pemilu"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Siska menyadari bahwa harga camilan keripik kentang favoritnya di minimarket tidak naik dalam dua tahun terakhir. Namun, ketika ia perhatikan, isi bungkusnya semakin sedikit dan berat bersihnya (gramasi) berkurang. Strategi perusahaan mengurangi ukuran produk tanpa menurunkan harga ini disebut...",
+    "opt": [
+      "Deflasi",
+      "Inflasi",
+      "Shrinkflation",
+      "Skimpflation",
+      "Stagflasi"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Tren gaya hidup di dunia kerja pasca-pandemi di mana karyawan hanya melakukan pekerjaan sebatas deskripsi tugasnya tanpa mau mengambil beban kerja tambahan yang tidak dibayar, dikenal dengan sebutan...",
+    "opt": [
+      "Layoff",
+      "Quiet Quitting",
+      "Moonlighting",
+      "Hustle Culture",
+      "Freelancing"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Aturan Uni Eropa (Digital Markets Act) memaksa Apple untuk mengubah desain port pengisian daya pada seri iPhone 15 yang rilis tahun 2023. Apple akhirnya meninggalkan port Lightning dan beralih menggunakan standar universal, yaitu...",
+    "opt": [
+      "Micro-USB",
+      "USB Type-A",
+      "USB Type-C",
+      "Thunderbolt 2",
+      "MagSafe Only"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Saat berkumpul dengan teman-temannya di kafe, Budi sibuk sendiri menatap layar ponselnya dan mengabaikan teman-temannya yang sedang mengobrol di depannya. Perilaku mengabaikan orang di sekitar demi fokus pada gadget disebut...",
+    "opt": [
+      "Phubbing (Phone Snubbing)",
+      "Cyberbullying",
+      "Trolling",
+      "Catfishing",
+      "Vamping"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Sejak tahun 2023, dunia medis dan gaya hidup dihebohkan oleh tren penggunaan obat diabetes yang viral digunakan sebagai obat penurun berat badan secara drastis (yang sering dipakai selebriti Hollywood). Salah satu merek dagang obat yang mengandung semaglutide ini adalah...",
+    "opt": [
+      "Paracetamol",
+      "Ibuprofen",
+      "Ozempic",
+      "Amoxicillin",
+      "Melatonin"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada pertengahan tahun 2024, sebuah insiden kecelakaan helikopter di daerah pegunungan yang berkabut menewaskan Presiden dari salah satu negara di Timur Tengah yang sedang menjabat. Presiden tersebut adalah Ebrahim Raisi dari negara...",
+    "opt": [
+      "Irak",
+      "Arab Saudi",
+      "Suriah",
+      "Iran",
+      "Lebanon"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Pada awal tahun 2024, kapal kargo raksasa MV Dali menabrak tiang penyangga sebuah jembatan ikonik di Amerika Serikat hingga runtuh total dan memutus jalur transportasi pelabuhan. Insiden ini terjadi di jembatan Francis Scott Key yang berada di kota...",
+    "opt": [
+      "San Francisco",
+      "New York",
+      "Baltimore",
+      "Miami",
+      "Los Angeles"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pada tahun 2023, industri perfilman Amerika Serikat (Hollywood) lumpuh selama berbulan-bulan akibat mogok kerja massal (strike). Siapa yang melakukan mogok kerja tersebut untuk menuntut royalti streaming dan perlindungan dari ancaman AI?",
+    "opt": [
+      "Serikat Penulis (WGA) dan Serikat Aktor (SAG-AFTRA)",
+      "Serikat Sutradara dan Produser",
+      "Kru Special Effects dan Animator",
+      "Pemilik Bioskop",
+      "Penyanyi Soundtrack Film"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Di pertengahan 2024, turnamen sepak bola terbesar di benua Eropa (UEFA Euro 2024) diselenggarakan di Jerman. Negara manakah yang keluar sebagai juara dalam turnamen tersebut?",
+    "opt": [
+      "Inggris",
+      "Prancis",
+      "Spanyol",
+      "Italia",
+      "Jerman"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Fenomena grup musik pria (boyband) terbesar asal Korea Selatan yang memutuskan hiatus (jeda grup) sejak tahun 2022 hingga 2025 karena para anggotanya harus menjalani wajib militer adalah...",
+    "opt": [
+      "EXO",
+      "SEVENTEEN",
+      "BIGBANG",
+      "BTS",
+      "Stray Kids"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Kota X dilanda kabut asap pekat setiap pagi. Warga dihimbau menggunakan masker karena indeks kualitas udara (AQI) menunjukkan angka di atas 150. Salah satu penyebab utama polusi udara musiman di kawasan Asia Tenggara adalah...",
+    "opt": [
+      "Pembangunan gedung pencakar langit",
+      "Kebakaran hutan dan lahan (Karhutla) serta emisi kendaraan",
+      "Penggunaan AC yang berlebihan",
+      "Membuang sampah plastik ke sungai",
+      "Gempa bumi tektonik"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pada Juni 2023, lima orang penumpang tewas seketika akibat implosion (ledakan ke dalam) kapal selam komersial yang mereka tumpangi saat melakukan ekspedisi ke dasar laut. Apa objek wisata yang sedang mereka tuju?",
+    "opt": [
+      "Segitiga Bermuda",
+      "Palung Mariana",
+      "Bangkai Kapal Titanic",
+      "Terumbu Karang Great Barrier",
+      "Kota Atlantis"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Fenomena cuaca ekstrem memicu rekor suhu panas tertinggi (heatwave) di berbagai negara Asia, termasuk Indonesia, sepanjang tahun 2023 dan pertengahan 2024. Siklus pemanasan suhu permukaan laut di Samudra Pasifik tropis yang memicu cuaca panas dan kering ini disebut...",
+    "opt": [
+      "La Niña",
+      "El Niño",
+      "Monsun Australia",
+      "Angin Siklon Tropis",
+      "Gaya Coriolis"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Doni bekerja sebagai desainer grafis yang menghabiskan 10 jam sehari menatap layar komputer dan tablet. Belakangan ia sering mengalami mata kering, pandangan kabur, dan sakit kepala. Kondisi yang dialami Doni secara medis dikenal dengan istilah...",
+    "opt": [
+      "Computer Vision Syndrome (Digital Eye Strain)",
+      "Carpal Tunnel Syndrome",
+      "Vertigo",
+      "Insomnia",
+      "Katarak dini"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Keaktifannya dalam diplomasi internasional membawanya memimpin delegasi Norwegia pada Konferensi San Francisco tahun 1945—momen krusial perumusan Piagam PBB. Berkat reputasinya sebagai negosiator ulung dari negara kecil yang dipandang objektif, ia resmi terpilih sebagai Sekretaris Jenderal pertama pada 1 Februari 1946. <br><img src='PU-5 No_50.png'>Tokoh yang menjabat sebagai Sekretaris Jenderal PBB pertama adalah...",
+    "opt": [
+      "Ban Ki-moon",
+      "Kofi Annan",
+      "Dag Hammarskjöld",
+      "Trygve Lie",
+      "Boutros Boutros-Ghali"
+    ],
+    "a": 3
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
