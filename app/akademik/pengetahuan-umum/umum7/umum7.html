@@ -1,0 +1,811 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Di sebuah daerah, sekelompok warga menolak pelaksanaan program pemerintah dengan alasan program tersebut tidak sesuai dengan adat istiadat setempat. Padahal program tersebut diatur dalam undang-undang nasional dan bertujuan untuk kesejahteraan seluruh rakyat. Sikap kelompok tersebut bertentangan dengan prinsip negara karena...",
+    "opt": [
+      "Tidak mau menerima perubahan zaman",
+      "Menganggap hukum negara tidak perlu dipatuhi",
+      "Mengabaikan kepentingan kelompok sendiri",
+      "Menganggap adat istiadat lebih tinggi dari hukum negara",
+      "Menolak adanya keberagaman budaya"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Dalam sebuah rapat, seorang peserta mengemukakan pendapat bahwa Indonesia sebaiknya mengikuti sistem negara tertentu yang dianggap paling maju di dunia, tanpa mempertimbangkan nilai-nilai yang hidup di masyarakat Indonesia. Pendapat tersebut bertentangan dengan Pancasila karena...",
+    "opt": [
+      "Menganggap sistem luar negeri selalu lebih baik",
+      "Menolak adanya kemajuan dan perubahan",
+      "Tidak berlandaskan pada kepribadian dan nilai dasar bangsa",
+      "Melanggar hak asasi manusia",
+      "Mengabaikan kedaulatan rakyat"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Seorang tokoh masyarakat menyatakan bahwa kelompoknya memiliki hak istimewa dibandingkan kelompok lain karena sejarah asal-usulnya. Pernyataan ini melanggar nilai Pancasila sila ke-2 karena...",
+    "opt": [
+      "Menolak keadilan sosial",
+      "Mengutamakan kepentingan pribadi",
+      "Menghambat persatuan bangsa",
+      "Tidak mengakui persamaan derajat, hak, dan kewajiban antarwarga",
+      "Mengabaikan nilai ketuhanan"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Sebuah kelompok menyebarkan pendapat bahwa keberagaman agama di Indonesia adalah sumber masalah dan sebaiknya seluruh warga memeluk satu agama saja agar negara menjadi kuat. Pendapat ini bertentangan dengan UUD 1945 karena...",
+    "opt": [
+      "Mengutamakan satu kelompok di atas yang lain",
+      "Menghapus peran agama dalam masyarakat",
+      "Melanggar hak setiap warga negara untuk beribadah menurut agamanya masing-masing",
+      "Menganggap agama tidak penting bagi kehidupan bernegara",
+      "Mengusung paham ateisme"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dalam penyusunan peraturan desa, kepala desa memasukkan ketentuan yang mewajibkan seluruh warga mengikuti tradisi tertentu, meskipun ada warga yang memiliki keyakinan berbeda dan merasa ketentuan tersebut mengganggu hak mereka. Tindakan kepala desa bertentangan dengan prinsip Bhinneka Tunggal Ika karena...",
+    "opt": [
+      "Memaksakan keseragaman dan tidak menghargai keberagaman",
+      "Menghapus identitas budaya desa",
+      "Mengabaikan kepentingan kelompok mayoritas",
+      "Tidak melibatkan warga dalam penyusunan peraturan",
+      "Menganggap tradisi desa lebih penting dari hukum nasional"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Seorang tokoh politik menyatakan bahwa jika partainya menang dalam pemilu, ia akan mengubah bentuk negara Indonesia menjadi negara serikat agar daerah-daerah memiliki kekuasaan penuh. Usulan ini bertentangan dengan UUD 1945 karena...",
+    "opt": [
+      "Perubahan bentuk negara hanya bisa dilakukan oleh presiden",
+      "Negara serikat akan menimbulkan kemiskinan",
+      "Bentuk negara Indonesia adalah Negara Kesatuan yang bersifat tetap dan abadi",
+      "Perubahan bentuk negara tidak menguntungkan partai politik",
+      "Negara serikat tidak diakui oleh dunia internasional"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dalam sebuah diskusi, seseorang berpendapat bahwa Pancasila hanya cocok untuk zaman dahulu dan tidak relevan lagi untuk diterapkan di masa modern. Pendapat ini salah karena...",
+    "opt": [
+      "Pancasila hanya berlaku untuk kepentingan pemerintah",
+      "Pancasila adalah dasar negara dan ideologi yang berlaku selamanya sebagai pedoman hidup berbangsa dan bernegara",
+      "Pancasila tidak memiliki nilai praktis untuk diterapkan",
+      "Pancasila hanya dipahami oleh orang tua",
+      "Pancasila adalah produk sejarah yang tidak boleh diubah"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Sebuah organisasi menyatakan bahwa mereka tidak terikat oleh hukum negara karena menganggap aturan organisasi mereka lebih luhur dan benar. Sikap ini bertentangan dengan prinsip NKRI karena...",
+    "opt": [
+      "Organisasi harus selalu tunduk pada keinginan pemerintah",
+      "Hukum negara tidak boleh disanggah oleh siapapun",
+      "Organisasi tidak berhak membuat aturan sendiri",
+      "Di Indonesia hanya ada satu kedaulatan dan satu sistem hukum yang berlaku bagi seluruh warga dan lembaga",
+      "Hukum negara dibuat untuk menekan organisasi masyarakat"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Seorang calon pejabat daerah berjanji jika terpilih, ia akan mengutamakan kepentingan kelompok asalnya di atas kepentingan masyarakat secara keseluruhan. Janji ini bertentangan dengan Pancasila sila ke-5 karena...",
+    "opt": [
+      "Melanggar hak asasi manusia",
+      "Mengabaikan prinsip keadilan sosial bagi seluruh rakyat Indonesia",
+      "Menghambat pembangunan daerah",
+      "Tidak menghargai perbedaan pendapat",
+      "Mengutamakan kepentingan pribadi di atas segalanya"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Dalam perayaan hari besar nasional, sekelompok siswa menolak mengibarkan bendera Merah Putih dengan alasan bendera tersebut tidak mewakili identitas kelompok mereka. Sikap ini bertentangan dengan hukum negara karena...",
+    "opt": [
+      "Bendera negara adalah milik pemerintah saja",
+      "Bendera Merah Putih adalah lambang negara yang wajib dihormati dan dijunjung tinggi oleh seluruh warga negara",
+      "Pengibaran bendera hanya boleh dilakukan oleh aparat negara",
+      "Siswa tidak berhak menentukan lambang negara",
+      "Bendera negara tidak boleh dikritik oleh siapapun"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Sebuah kelompok mengusulkan agar lagu kebangsaan Indonesia Raya diubah liriknya agar lebih sesuai dengan pandangan kelompok mereka. Usulan ini bertentangan dengan UUD 1945 karena...",
+    "opt": [
+      "Perubahan lirik lagu akan menimbulkan kerusuhan",
+      "Lagu kebangsaan hanya boleh dinyanyikan oleh pemerintah",
+      "Lagu kebangsaan adalah lambang negara yang ditetapkan secara hukum dan tidak dapat diubah sesuka hati",
+      "Perubahan lirik lagu harus disetujui oleh seluruh rakyat secara langsung",
+      "Lagu kebangsaan adalah milik masa lalu dan tidak relevan diubah"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dalam sebuah pertemuan warga, seorang peserta menyatakan bahwa negara tidak berhak mengatur kehidupan pribadi warga selama tidak merugikan orang lain. Pernyataan ini bertentangan dengan prinsip bernegara karena...",
+    "opt": [
+      "Negara memiliki kekuasaan mutlak atas seluruh kehidupan warga",
+      "Warga negara tidak memiliki hak untuk menentukan nasibnya sendiri",
+      "Negara bertujuan untuk membatasi kebebasan warga",
+      "Setiap warga negara memiliki kewajiban untuk mematuhi hukum dan aturan negara dalam segala aspek kehidupan",
+      "Hukum negara berlaku untuk mengatur kehidupan pribadi saja"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Seorang tokoh masyarakat berpendapat bahwa hak asasi manusia di Indonesia hanya berlaku bagi warga negara dan orang asing tidak berhak mendapat perlindungan hukum. Pendapat ini salah karena...",
+    "opt": [
+      "Hak asasi manusia adalah hak yang diberikan oleh negara, sehingga bisa dicabut",
+      "Hak asasi manusia tidak perlu dilindungi oleh hukum",
+      "Hak asasi manusia hanya berlaku bagi warga negara asing",
+      "Hak asasi manusia hanya berlaku di negara asal seseorang",
+      "Hak asasi manusia berlaku bagi setiap orang tanpa memandang kewarganegaraan, dan Indonesia menjamin perlindungannya sesuai hukum dan perjanjian internasional"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Sebuah daerah ingin memisahkan diri dari Negara Kesatuan Republik Indonesia dengan alasan merasa tidak diuntungkan dalam pembangunan. Tindakan ini bertentangan dengan hukum dan prinsip negara karena...",
+    "opt": [
+      "Daerah tidak berhak menentukan nasibnya sendiri",
+      "Pemisahan daerah akan mengganggu perdagangan",
+      "Hanya pemerintah pusat yang berhak mengatur wilayah",
+      "Pemisahan daerah akan menurunkan pendapatan pemerintah",
+      "Wilayah Indonesia adalah satu kesatuan yang tidak dapat dipisah-pisahkan sesuai amanat UUD 1945"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Dalam sebuah debat, seseorang berpendapat bahwa demokrasi di Indonesia berarti kebebasan mutlak bagi setiap orang untuk melakukan apa saja tanpa batasan. Pendapat ini salah karena...",
+    "opt": [
+      "Demokrasi berarti kekuasaan mutlak pemerintah",
+      "Demokrasi berarti kebebasan untuk menentang pemerintah",
+      "Demokrasi di Indonesia adalah demokrasi Pancasila yang diimbangi dengan tanggung jawab dan tidak melanggar hak orang lain atau hukum negara",
+      "Demokrasi hanya berlaku dalam pemilihan umum saja",
+      "Demokrasi tidak memiliki aturan yang jelas"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pemerintah daerah mengeluarkan peraturan yang isinya sama persis dengan peraturan pemerintah pusat, namun dengan ketentuan sanksi yang jauh lebih berat dari yang diatur dalam peraturan pusat. Tindakan pemerintah daerah tersebut bertentangan dengan prinsip hukum karena...",
+    "opt": [
+      "Peraturan daerah harus berbeda dengan peraturan pusat",
+      "Sanksi harus disesuaikan dengan kondisi daerah saja",
+      "Pemerintah daerah tidak berhak membuat peraturan sendiri",
+      "Sanksi hanya boleh diatur oleh pemerintah pusat",
+      "Peraturan yang lebih rendah tidak boleh menambahkan atau memperberat sanksi yang diatur dalam peraturan yang lebih tinggi"
+    ],
+    "a": 4
+  },
+  {
+    "q": "DPR sedang membahas rancangan undang-undang yang diajukan oleh Presiden. Namun dalam pembahasan, DPR menolak rancangan tersebut secara keseluruhan tanpa memberikan alasan yang jelas atau usulan perbaikan. Berdasarkan UUD 1945, sikap DPR tersebut...",
+    "opt": [
+      "Benar karena DPR memiliki kekuasaan mutlak dalam pembentukan undang-undang",
+      "Tidak tepat karena DPR wajib menyetujui semua usulan Presiden",
+      "Tidak sepenuhnya tepat karena DPR harus berkonsultasi dengan rakyat sebelum menolak",
+      "Benar karena Presiden tidak berhak mengajukan rancangan undang-undang",
+      "Tidak sepenuhnya tepat karena DPR berkewajiban membahas dan memberikan pertimbangan atau alasan jika menolak rancangan undang-undang"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Mahkamah Konstitusi menerima permohonan uji materi undang-undang yang diajukan oleh sekelompok warga negara. Dalam keputusannya, Mahkamah Konstitusi menyatakan bahwa sebagian pasal dalam undang-undang tersebut bertentangan dengan UUD 1945. Akibat dari keputusan tersebut adalah...",
+    "opt": [
+      "DPR wajib mengajukan rancangan undang-undang baru yang sama persis",
+      "Pasal yang dinyatakan bertentangan menjadi tidak berlaku lagi dan tidak memiliki kekuatan hukum",
+      "Seluruh undang-undang tersebut harus dicabut oleh Presiden",
+      "Keputusan Mahkamah Konstitusi hanya bersifat anjuran dan tidak mengikat",
+      "Pemerintah pusat berhak menolak keputusan Mahkamah Konstitusi"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Gubernur mengeluarkan keputusan yang memerintahkan seluruh bupati dan walikota di wilayahnya untuk melaksanakan kebijakan tertentu, padahal kebijakan tersebut merupakan kewenangan pemerintah kabupaten/kota menurut undang-undang otonomi daerah. Tindakan Gubernur tersebut...",
+    "opt": [
+      "Benar karena Gubernur bertanggung jawab atas seluruh urusan di provinsi",
+      "Tidak tepat karena Gubernur sebaiknya berkonsultasi dengan presiden terlebih dahulu",
+      "Melanggar prinsip pembagian kewenangan karena mengganggu kewenangan pemerintah kabupaten/kota",
+      "Benar karena Gubernur adalah atasan dari bupati dan walikota",
+      "Tidak tepat karena Gubernur tidak berhak mengeluarkan keputusan"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Dalam masa jabatan yang tersisa kurang dari satu tahun, Presiden mengangkat seorang pejabat tinggi negara untuk masa jabatan lima tahun. Tindakan Presiden tersebut dianggap melanggar prinsip ketatanegaraan karena...",
+    "opt": [
+      "Pengangkatan pejabat harus disetujui oleh DPR terlebih dahulu",
+      "Pengangkatan pejabat tidak boleh melampaui masa jabatan Presiden yang mengangkatnya",
+      "Presiden tidak berhak mengangkat pejabat tinggi negara",
+      "Masa jabatan pejabat negara harus sama dengan masa jabatan DPR",
+      "Pengangkatan pejabat harus dilakukan pada awal masa jabatan Presiden"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Komisi Yudisial melakukan pengawasan terhadap kinerja seorang hakim yang sedang menangani perkara terkenal. Namun hakim tersebut menolak diperiksa dengan alasan bahwa lembaga peradilan bersifat mandiri dan tidak boleh diintervensi lembaga lain. Sikap hakim tersebut...",
+    "opt": [
+      "Benar karena hakim adalah pegawai pemerintah",
+      "Tidak tepat karena hakim wajib tunduk pada semua perintah lembaga negara",
+      "Tidak tepat karena Komisi Yudisial memiliki wewenang untuk mengawasi perilaku dan kinerja hakim sesuai undang-undang",
+      "Benar karena hakim tidak boleh diintervensi oleh siapapun",
+      "Benar karena Komisi Yudisial tidak berwenang mengawasi hakim yang sedang menangani perkara"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Pemerintah pusat mengeluarkan kebijakan nasional yang berdampak pada pengelolaan sumber daya alam di sebuah provinsi. Pemerintah daerah menolak melaksanakan kebijakan tersebut dengan alasan bahwa pengelolaan sumber daya alam adalah hak otonomi daerah. Sikap pemerintah daerah tersebut...",
+    "opt": [
+      "Benar karena otonomi daerah memberikan kekuasaan penuh kepada daerah",
+      "Tidak tepat karena pemerintah daerah tidak berhak menilai kebijakan pusat",
+      "Tidak sepenuhnya tepat karena pengelolaan sumber daya alam tetap dalam kerangka kewenangan pemerintah pusat untuk kepentingan nasional",
+      "Benar karena sumber daya alam adalah milik daerah setempat",
+      "Tidak tepat karena pemerintah daerah wajib melaksanakan semua perintah pemerintah pusat tanpa syarat"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Anggota DPR mengajukan pertanyaan kepada Menteri terkait pelaksanaan kebijakan yang dianggap merugikan rakyat. Namun Menteri menolak menjawab dengan alasan bahwa kebijakan tersebut adalah rahasia negara. Sikap Menteri tersebut...",
+    "opt": [
+      "Benar karena Menteri bertanggung jawab langsung kepada Presiden saja",
+      "Tidak tepat karena Menteri wajib memberikan penjelasan dan jawaban atas pertanyaan DPR sebagai bentuk tanggung jawab lembaga eksekutif",
+      "Tidak tepat karena Menteri wajib melapor kepada rakyat langsung",
+      "Benar karena tidak semua kebijakan boleh diketahui DPR",
+      "Tidak tepat karena Menteri tidak boleh memiliki rahasia"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Mahkamah Agung memutuskan sebuah perkara yang juga sedang ditangani oleh pengadilan di tingkat bawah. Namun pengadilan tingkat bawah tetap melanjutkan proses sidang dan membuat keputusan sendiri. Tindakan pengadilan tingkat bawah tersebut...",
+    "opt": [
+      "Benar karena setiap pengadilan memiliki kemandirian dalam memutus perkara",
+      "Tidak tepat karena pengadilan tingkat bawah tidak berhak memutus perkara",
+      "Benar karena perkara yang sama boleh diputus berbeda oleh pengadilan yang berbeda",
+      "Tidak tepat karena pengadilan tingkat bawah harus menunggu perintah presiden",
+      "Melanggar prinsip hierarki lembaga peradilan karena keputusan Mahkamah Agung adalah keputusan tertinggi dan mengikat"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Presiden membubarkan sebuah lembaga negara yang dibentuk berdasarkan undang-undang dengan alasan bahwa lembaga tersebut tidak efektif bekerja. Tindakan Presiden tersebut bertentangan dengan hukum karena...",
+    "opt": [
+      "Hanya DPR yang berhak membubarkan lembaga negara",
+      "Lembaga negara harus tetap ada meskipun tidak bekerja dengan baik",
+      "Presiden tidak berhak menilai kinerja lembaga negara",
+      "Pembentukan dan pembubaran lembaga negara yang diatur dalam undang-undang hanya dapat dilakukan melalui proses perubahan atau pencabutan undang-undang tersebut",
+      "Pembubaran lembaga negara harus disetujui oleh seluruh rakyat"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Dalam proses penyusunan peraturan daerah, DPRD mengajukan rancangan yang isinya bertentangan dengan putusan Mahkamah Konstitusi yang telah memiliki kekuatan hukum tetap. Sikap DPRD tersebut adalah keliru karena...",
+    "opt": [
+      "DPRD harus menunggu perintah presiden sebelum menyusun peraturan",
+      "Putusan Mahkamah Konstitusi hanya berlaku untuk lembaga pusat saja",
+      "DPRD tidak berhak menyusun peraturan daerah sendiri",
+      "Peraturan daerah tidak boleh berkaitan dengan putusan pengadilan",
+      "Seluruh lembaga negara wajib menghormati dan melaksanakan keputusan Mahkamah Konstitusi sebagai lembaga pengawal konstitusi"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Seorang menteri mengeluarkan peraturan menteri yang mengatur hal yang sebenarnya merupakan kewenangan pemerintah daerah menurut undang-undang otonomi daerah. Tindakan menteri tersebut bertentangan dengan prinsip...",
+    "opt": [
+      "Kemandirian lembaga eksekutif",
+      "Kesetaraan antarlembaga negara",
+      "Akuntabilitas publik",
+      "Hierarki peraturan perundang-undangan",
+      "Pembagian urusan pemerintahan antara pusat dan daerah"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Dalam pemilihan kepala daerah, calon kepala daerah yang kalah mengajukan gugatan ke Mahkamah Agung karena merasa proses pemilihan tidak adil. Padahal menurut undang-undang, penyelesaian sengketa hasil pemilihan kepala daerah menjadi kewenangan...",
+    "opt": [
+      "Mahkamah Agung",
+      "Pemerintah Pusat",
+      "Mahkamah Konstitusi",
+      "DPRD",
+      "Komisi Pemilihan Umum"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Ketua DPR mengeluarkan surat keputusan yang mengubah tata cara pembahasan undang-undang yang telah diatur secara tegas dalam undang-undang. Tindakan tersebut tidak sah karena...",
+    "opt": [
+      "Tata tertib lembaga tidak boleh bertentangan dengan aturan hukum yang lebih tinggi",
+      "Perubahan tata cara harus disetujui oleh seluruh anggota DPR",
+      "Perubahan tata cara harus disetujui oleh presiden",
+      "Ketua DPR tidak berhak mengeluarkan keputusan apa pun",
+      "Tata cara pembahasan undang-undang tidak boleh diubah sama sekali"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Pemerintah daerah mengalokasikan sebagian besar anggaran daerah untuk kegiatan seremonial pejabat, sementara fasilitas publik seperti sekolah dan puskesmas dalam kondisi rusak parah. Penggunaan anggaran tersebut bertentangan dengan prinsip...",
+    "opt": [
+      "Otonomi daerah yang luas",
+      "Kesetaraan antarwilayah",
+      "Kemandirian keuangan daerah",
+      "Kekuasaan pemerintah daerah yang bebas",
+      "Pemerintahan yang bertanggung jawab dan berorientasi pada kepentingan rakyat"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Pemerintah menerapkan kebijakan pembatasan penggunaan kendaraan pribadi di pusat kota untuk mengatasi kemacetan dan polusi udara. Kebijakan ini mendapat protes dari sebagian masyarakat yang merasa haknya untuk bergerak dibatasi. Analisis yang paling tepat terkait kebijakan ini adalah...",
+    "opt": [
+      "Kebijakan ini hanya berlaku sementara sampai kemacetan teratasi",
+      "Kebijakan ini tidak adil karena hanya menyasar masyarakat kota",
+      "Kebijakan ini sah dan diperbolehkan karena pembatasan tersebut bertujuan demi kepentingan umum dan kesejahteraan seluruh masyarakat",
+      "Kebijakan ini sebaiknya diganti dengan penambahan jalan raya saja",
+      "Kebijakan ini melanggar hak asasi manusia sehingga harus dibatalkan"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Sejumlah pedagang kecil mengeluh karena keberadaan pasar daring membuat pendapatan mereka menurun drastis. Di sisi lain, pembeli merasa pasar daring lebih praktis dan murah. Kebijakan pemerintah yang paling tepat untuk mengatasi masalah ini adalah...",
+    "opt": [
+      "Melarang sepenuhnya kegiatan jual beli melalui pasar daring",
+      "Mewajibkan semua pembeli untuk berbelanja di pasar tradisional saja",
+      "Membiarkan keadaan berjalan apa adanya sebagai konsekuensi kemajuan zaman",
+      "Memberikan bantuan uang tunai saja kepada pedagang kecil yang rugi",
+      "Mengatur persaingan usaha agar adil, sekaligus memberikan pelatihan dan dukungan agar pedagang kecil juga dapat memanfaatkan teknologi"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Di sebuah wilayah pesisir, terjadi kerusakan ekosistem terumbu karang akibat aktivitas penambangan pasir laut yang tidak terkontrol. Penduduk setempat khawatir hal ini akan menghilangkan sumber mata pencaharian mereka di masa depan. Kebijakan pemerintah yang paling mendasar untuk mengatasi masalah ini adalah...",
+    "opt": [
+      "Memindahkan penduduk ke tempat lain yang lebih aman",
+      "Memberikan ganti rugi kepada penduduk atas kerugian yang dialami",
+      "Melarang penduduk menangkap ikan di wilayah tersebut",
+      "Menegakkan aturan perlindungan lingkungan dan menghentikan aktivitas yang merusak, serta memulihkan ekosistem yang rusak",
+      "Membiarkan penambangan berjalan karena meningkatkan pendapatan daerah"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Banyak informasi palsu dan berita bohong beredar luas di media sosial terkait kebijakan kesehatan pemerintah. Hal ini menimbulkan kepanikan dan ketidakpercayaan masyarakat. Tindakan yang paling tepat bagi aparat hukum dalam menangani masalah ini adalah...",
+    "opt": [
+      "Melarang penggunaan media sosial secara keseluruhan",
+      "Mengabaikan karena setiap orang berhak menyampaikan pendapat",
+      "Meminta masyarakat untuk tidak mempercayai informasi apa pun di media sosial",
+      "Menutup semua akun yang menyebarkan informasi yang berbeda dengan pendapat pemerintah",
+      "Menindak tegas penyebar berita bohong sesuai aturan hukum, serta menyebarkan informasi yang benar dan akurat kepada masyarakat"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Perusahaan besar mendirikan pabrik di daerah pedesaan dan menyerap banyak tenaga kerja lokal. Namun belakangan diketahui pabrik tersebut membuang limbah berbahaya ke sungai yang menjadi sumber air minum warga. Hubungan antara dampak ekonomi dan sosial lingkungan dalam kasus ini menunjukkan bahwa...",
+    "opt": [
+      "Pendirian pabrik di pedesaan sebaiknya dilarang sepenuhnya",
+      "Perusahaan berhak melakukan apa saja asalkan sudah memberikan lapangan kerja",
+      "Kemajuan ekonomi harus diimbangi dengan perlindungan lingkungan agar tidak menimbulkan kerugian jangka panjang bagi masyarakat",
+      "Masyarakat sebaiknya menolak setiap bentuk pembangunan baru di daerahnya",
+      "Pembangunan ekonomi adalah hal yang paling utama sehingga kerusakan lingkungan dapat diabaikan"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Angka pengangguran lulusan perguruan tinggi masih cukup tinggi, padahal di sektor industri masih banyak kebutuhan tenaga kerja yang belum terpenuhi. Masalah ini terjadi terutama karena...",
+    "opt": [
+      "Pemerintah tidak menyediakan lapangan kerja yang cukup",
+      "Kurangnya kesesuaian antara keterampilan yang dimiliki lulusan dengan kebutuhan dunia kerja",
+      "Perusahaan lebih suka mempekerjakan tenaga kerja asing",
+      "Lulusan perguruan tinggi enggan bekerja di sektor industri",
+      "Jumlah perguruan tinggi di Indonesia terlalu banyak"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Harga kebutuhan pokok sering mengalami kenaikan menjelang hari besar agama, sementara pendapatan masyarakat tidak bertambah. Kebijakan pemerintah yang paling tepat untuk melindungi daya beli masyarakat adalah...",
+    "opt": [
+      "Menetapkan harga barang secara mutlak agar tidak boleh berubah sama sekali",
+      "Memberikan bantuan langsung tunai hanya pada saat hari besar saja",
+      "Melarang perdagangan kebutuhan pokok oleh pihak swasta",
+      "Membiarkan harga naik karena itu hukum pasar",
+      "Mengawasi jalur distribusi barang, menjamin ketersediaan pasokan, dan menindak penimbunan barang atau penentuan harga sepihak"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Di sebuah daerah yang kaya sumber daya alam, kemiskinan masih tinggi dan fasilitas publik kurang memadai, padahal pendapatan daerah dari pengelolaan sumber daya alam sangat besar. Masalah ini terjadi terutama karena...",
+    "opt": [
+      "Penduduk daerah tersebut enggan bekerja keras",
+      "Sumber daya alam di daerah tersebut jumlahnya sedikit",
+      "Pendapatan daerah habis untuk membayar utang negara",
+      "Pengelolaan pendapatan daerah tidak transparan dan tidak diarahkan secara tepat untuk peningkatan kesejahteraan masyarakat luas",
+      "Pemerintah pusat mengambil sebagian besar pendapatan daerah"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Kebijakan pemerintah untuk memindahkan ibu kota negara mendapat dukungan dan penolakan dari berbagai kalangan. Salah satu argumen yang paling mendasar untuk mendukung kebijakan ini adalah...",
+    "opt": [
+      "Memindahkan penduduk Jakarta ke pulau lain",
+      "Mempercantik wajah negara Indonesia",
+      "Menghindari bencana alam yang sering terjadi di Jakarta",
+      "Menyebarkan pusat pembangunan dan mengurangi beban Jakarta sebagai pusat pemerintahan sekaligus ekonomi",
+      "Menunjukkan kemajuan bangsa di mata dunia"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Pemerintah menerapkan program perlindungan sosial untuk masyarakat berpenghasilan rendah. Namun dalam pelaksanaannya, banyak warga yang sebenarnya mampu juga terdaftar sebagai penerima manfaat, sementara yang benar-benar membutuhkan tidak mendapatkannya. Masalah utama dalam kasus ini adalah...",
+    "opt": [
+      "Anggaran program terlalu besar sehingga mudah disalahgunakan",
+      "Masyarakat tidak jujur saat mendaftar program",
+      "Program tersebut tidak diatur dalam undang-undang",
+      "Pemerintah tidak memiliki wewenang untuk memeriksa data warga",
+      "Data dan penargetan penerima manfaat belum akurat dan tidak diperbarui secara berkala"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Negara A mengeluarkan kebijakan yang membatasi ekspor bahan baku industri ke negara lain, termasuk ke Indonesia, dengan alasan untuk memenuhi kebutuhan industri dalam negerinya sendiri. Dampak langsung yang mungkin terjadi bagi industri di Indonesia adalah...",
+    "opt": [
+      "Indonesia akan memaksa Negara A mengubah kebijakannya",
+      "Indonesia akan berhenti berdagang dengan Negara A selamanya",
+      "Tidak ada dampak yang berarti karena Indonesia tidak bergantung pada negara lain",
+      "Industri Indonesia akan segera bangkrut dan tutup semua",
+      "Keterbatasan pasokan bahan baku yang dapat menghambat proses produksi dan menaikkan harga barang"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Dalam pertemuan ASEAN, muncul usulan agar negara-negara anggota saling membuka sepenuhnya akses pasar tenaga kerja. Indonesia berhati-hati menyikapi usulan ini terutama karena...",
+    "opt": [
+      "Indonesia tidak setuju dengan prinsip kerja sama ASEAN",
+      "Indonesia ingin menjadi satu-satunya negara pengekspor tenaga kerja",
+      "Indonesia ingin menjaga agar warga negara lain tidak masuk ke wilayahnya",
+      "Kualitas dan keterampilan tenaga kerja Indonesia harus dipersiapkan agar mampu bersaing dan tidak kalah dengan tenaga kerja dari negara lain",
+      "Indonesia tidak membutuhkan tenaga kerja dari negara lain"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Sebuah organisasi internasional mengeluarkan laporan yang menyatakan bahwa Indonesia termasuk salah satu negara yang memiliki risiko tinggi terkena dampak perubahan iklim. Pernyataan ini berarti...",
+    "opt": [
+      "Indonesia harus menuntut ganti rugi kepada negara maju",
+      "Indonesia harus berhenti melakukan pembangunan ekonomi",
+      "Indonesia tidak lagi layak dihuni oleh manusia",
+      "Indonesia perlu memperkuat kebijakan perlindungan lingkungan dan beradaptasi dengan perubahan alam yang terjadi",
+      "Indonesia harus memindahkan penduduknya ke negara lain"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Konflik bersenjata di salah satu negara tetangga menyebabkan banyak warga negara tersebut melarikan diri dan masuk ke wilayah Indonesia. Sikap Indonesia sesuai dengan hukum internasional dan kebijakan luar negeri adalah...",
+    "opt": [
+      "Menutup perbatasan sepenuhnya dan tidak peduli dengan nasib mereka",
+      "Menyatakan perang terhadap negara asal penyebab konflik",
+      "Memberikan kewarganegaraan Indonesia secara langsung kepada semua pengungsi",
+      "Mengusir mereka kembali dengan paksa karena mereka bukan warga negara Indonesia",
+      "Memberikan perlindungan kemanusiaan sementara sambil berkoordinasi dengan organisasi internasional dan negara asal untuk penyelesaian jangka panjang"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Indonesia menjadi tuan rumah pertemuan tingkat tinggi antarnegara di kawasan Pasifik. Hal ini menunjukkan posisi Indonesia di mata dunia sebagai...",
+    "opt": [
+      "Negara yang paling kaya dan maju di kawasan",
+      "Negara yang mengikuti perintah negara-negara besar",
+      "Negara yang ingin menguasai negara lain",
+      "Negara yang hanya aktif dalam acara seremonial saja",
+      "Negara yang dihormati dan memiliki peran penting dalam menjaga stabilitas serta kerja sama di kawasan"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Salah satu negara anggota PBB tidak mau mematuhi keputusan Dewan Keamanan PBB yang mewajibkan penyelesaian sengketa secara damai menurut hukum internasional. Sikap negara tersebut bertentangan dengan prinsip dasar PBB yaitu...",
+    "opt": [
+      "Menghapus batas wilayah antarnegara di dunia",
+      "Memaksa semua negara mengikuti keinginan negara-negara besar",
+      "Membuat aturan yang hanya menguntungkan negara maju",
+      "Menghormati kedaulatan negara anggota sepenuhnya tanpa batasan apa pun",
+      "Menyelesaikan perselisihan internasional dengan cara damai dan tidak menggunakan kekerasan"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Dalam kerja sama ekonomi internasional, Indonesia sering menekankan agar perdagangan dilakukan secara adil dan tidak merugikan negara berkembang. Sikap ini sejalan dengan prinsip kebijakan luar negeri Indonesia yaitu...",
+    "opt": [
+      "Selalu memihak negara berkembang saja",
+      "Menolak segala bentuk kerja sama dengan negara maju",
+      "Mengutamakan kepentingan ekonomi semata",
+      "Mengikuti keinginan organisasi internasional tanpa syarat",
+      "Bebas aktif dan mendorong tatanan dunia yang adil dan demokratis"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Negara X mengklaim sebagian wilayah laut yang selama ini diakui sebagai wilayah kedaulatan Indonesia. Langkah yang paling tepat dan sesuai hukum internasional yang dapat dilakukan Indonesia adalah...",
+    "opt": [
+      "Menyerahkan wilayah tersebut kepada Negara X demi menjaga perdamaian",
+      "Mengabaikan klaim tersebut karena tidak akan berpengaruh apa pun",
+      "Meminta bantuan negara lain untuk menyerang Negara X",
+      "Segera menggunakan kekuatan militer untuk mengusir warga Negara X",
+      "Melakukan perundingan damai dan membuktikan dasar hukum kepemilikan wilayah tersebut melalui saluran diplomatik maupun hukum internasional"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Organisasi Kesehatan Dunia (WHO) menetapkan bahwa penyakit tertentu telah menjadi ancaman kesehatan global. Hal ini berarti bahwa...",
+    "opt": [
+      "WHO berhak mengatur sistem kesehatan di setiap negara",
+      "Penyakit tersebut tidak berbahaya lagi jika sudah ditetapkan secara internasional",
+      "Indonesia harus menutup semua pintu masuk dari luar negeri",
+      "Penyakit tersebut hanya bisa disembuhkan di negara maju",
+      "Setiap negara, termasuk Indonesia, wajib bekerja sama dalam pencegahan, pengendalian, dan penanganan penyakit tersebut demi keamanan kesehatan dunia"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Dalam forum internasional, Indonesia selalu mendorong agar negara-negara maju memberikan dukungan teknologi dan dana kepada negara berkembang untuk mengatasi dampak perubahan iklim. Sikap Indonesia ini didasarkan pada pemahaman bahwa...",
+    "opt": [
+      "Indonesia tidak mampu menangani masalah lingkungannya sendiri tanpa bantuan asing",
+      "Masalah lingkungan sepenuhnya menjadi urusan organisasi internasional, bukan urusan negara",
+      "Tujuan utama kerja sama internasional hanyalah untuk mendapatkan bantuan keuangan",
+      "Negara berkembang adalah pihak yang paling bertanggung jawab atas terjadinya perubahan iklim",
+      "Dampak perubahan iklim adalah tanggung jawab bersama, di mana negara maju memiliki kontribusi historis yang lebih besar sehingga memiliki kewajiban moral dan hukum untuk membantu negara berkembang"
+    ],
+    "a": 4
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
