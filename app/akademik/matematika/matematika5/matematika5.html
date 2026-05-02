@@ -1,0 +1,514 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Pada tahun 2002 negara X yang memiliki populasi sebanyak $P$ mengalami meningitis sebanyak $M$ kasus, dengan tingkat meningitis per kapita sebanyak $\\frac{M}{P}$. Jika dalam sepuluh tahun ke depan kasus meningitis menurun sebanyak 50% dan populasinya meningkat sebanyak 50%, berapakah persentase perubahan tingkat meningitis per kapita selama sepuluh tahun tersebut?",
+    "opt": [
+      "Naik sebanyak $33\\frac{1}{3}\\%$",
+      "Menurun sebanyak $66\\frac{2}{3}\\%$",
+      "Menurun sebanyak 50%",
+      "Naik sebanyak 50%",
+      "Tidak ada perubahan"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Sebuah angka dikatakan sempurna apabila sama dengan jumlah seluruh faktor positifnya yang kurang dari angka itu sendiri. Manakah dari angka-angka berikut ini yang dapat dikatakan sempurna?",
+    "opt": ["1", "4", "6", "8", "10"],
+    "a": 2
+  },
+  {
+    "q": "Pada gambar berikut ini, <br><img src='MTK_5_no3.png'> Luas bujur sangkar $ABCE = x^2$ dan $DC = y$. Berapakah luas segitiga $AED$?",
+    "opt": [
+      "$\\frac{1}{2}(x^2 - xy)$",
+      "$y(x - y)$",
+      "$x^2 - xy$",
+      "$xy - x^2$"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan gambar berikut! <br><img src='MTK_5_no4.png'>ABCD adalah persegi panjang. ABE adalah segitiga siku-siku sama kaki yang luasnya = 7, dan EC = 2 (BE). Luas ABCD adalah:",
+    "opt": ["14", "21", "28", "42", "56"],
+    "a": 3
+  },
+  {
+    "q": "Jika sebuah tiang setinggi 98 m membentuk bayangan setinggi 42 m, berapakah panjang bayangan untuk tiang setinggi 35 m pada saat yang sama?",
+    "opt": ["5 m", "10 m", "15 m", "20 m", "25 m"],
+    "a": 2
+  },
+  {
+    "q": "Sebidang tanah yang berbentuk persegi panjang dengan lebar 50 m dan panjang 120 m dibagi dua dengan sebuah garis diagonal. Berapa meterkah panjang pagar yang diperlukan untuk menutup salah satu bagian tanah tersebut?",
+    "opt": ["170 m", "180 m", "200 m", "300 m", "350 m"],
+    "a": 3
+  },
+  {
+    "q": "Jika A + B + C = 6, maka H + K + L = ...",
+    "opt": ["10", "17", "24", "31", "38"],
+    "a": 3
+  },
+  {
+    "q": "Seorang tukang kayu memerlukan empat papan, masing-masing berukuran 2 kaki kali 10 inci. Apabila papan yang dijual hanya dalam ukuran kaki, berapakah banyaknya kayu yang harus dibeli oleh tukang kayu tersebut?",
+    "opt": ["8 kaki", "9 kaki", "10 kaki", "11 kaki", "12 kaki"],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan gambar berikut! <br><img src='MTK_5_no9.png'>Dari gambar persegi panjang di atas yang lebarnya $4$ cm, rasio antara daerah (bidang) yang diarsir dengan daerah (bidang) yang tidak diarsir adalah:",
+    "opt": [
+      "$\\frac{4 + x}{8}$",
+      "$2$",
+      "$\\frac{4 + x}{4 - x}$",
+      "$\\frac{2 + x}{4}$",
+      "$\\frac{4 - x}{4 + x}$"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Jika A, B, C dan D adalah angka riil, berikut ini akan selalu sama dengan A(B + C + D), kecuali ………",
+    "opt": [
+      "(B + C + D) A",
+      "3A + B + C + D",
+      "A(B + C) + AD",
+      "AB + AC + AD",
+      "A(B + D) + AC"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Sebuah perusahaan memproduksi barang dengan biaya total $C(x) = 5x^2 - 200x + 5000$, di mana $x$ adalah jumlah barang dalam ratusan unit. Jika perusahaan ingin meminimalkan biaya produksi, berapa jumlah barang yang harus diproduksi?",
+    "opt": ["10 unit", "20 unit", "30 unit", "40 unit", "50 unit"],
+    "a": 1
+  },
+  {
+    "q": "Jika $f(x) = x^3 - 6x^2 + 11x - 6$, tentukan nilai $x$ yang membuat $f(x) = 0$.",
+    "opt": [
+      "$x = 1, 2, 3$",
+      "$x = -1, 2, 3$",
+      "$x = 1, -2, 3$",
+      "$x = 1, 2, -3$",
+      "$x = -1, -2, -3$"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Jika $3x - 4y = 5$ dan $2x + y = 7$, maka nilai dari $x + y$ adalah...",
+    "opt": ["2", "3", "4", "5", "6"],
+    "a": 2
+  },
+  {
+    "q": "Sebuah bilangan terdiri dari dua digit. Jumlah kedua digit adalah 12. Jika digit satuan dikurangi 2 kali digit puluhan, hasilnya adalah −2. Tentukan bilangan tersebut!",
+    "opt": ["39", "48", "57", "84", "93"],
+    "a": 2
+  },
+  {
+    "q": "Jumlahkan deret bilangan berikut 2+5+8+11+⋯+50 . Berapa jumlah totalnya?",
+    "opt": ["460", "495", "500", "505", "550"],
+    "a": 1
+  },
+  {
+    "q": "Jika diketahui $x = \\frac{1}{3}$, $y = \\frac{1}{5}$ dan $z = 2$ maka nilai dari $\\frac{x^{-4} y z^{-2}}{x^{-3} y^2 z^{-4}}$ adalah.....",
+    "opt": ["32", "60", "100", "320", "640"],
+    "a": 1
+  },
+  {
+    "q": "Sebuah bilangan ditambah 7, lalu dikalikan 3 hasilnya adalah 48. Berapakah bilangan tersebut?",
+    "opt": ["11", "10", "9", "8", "7"],
+    "a": 2
+  },
+  {
+    "q": "Dalam sebuah toko, harga 7 buku tulis dan 5 pena adalah Rp58.000. Jika harga satu buku tulis adalah Rp6.000, berapakah harga satu pena?",
+    "opt": ["Rp3.000", "Rp2.000", "Rp4.000", "Rp5.000", "Rp6.000"],
+    "a": 0
+  },
+  {
+    "q": "Jika sebuah bilangan dikurangi 8 lalu dibagi 2 hasilnya adalah 12, maka berapakah bilangan tersebut?",
+    "opt": ["28", "30", "32", "34", "36"],
+    "a": 2
+  },
+  {
+    "q": "Dalam sebuah kelas, rata-rata nilai 10 siswa adalah 75. Jika nilai seorang siswa ditambahkan 5 poin, maka rata-rata nilai seluruh siswa menjadi berapa?",
+    "opt": ["75,5", "76", "76,5", "77", "77,5"],
+    "a": 0
+  },
+  {
+    "q": "Hitung jumlah suku pertama hingga ke-10 dari deret aritmatika berikut 7,10,13,16,…",
+    "opt": ["150", "180", "195", "200", "205"],
+    "a": 4
+  },
+  {
+    "q": "Sebuah pekerjaan dapat diselesaikan oleh 4 pekerja dalam 12 hari. Jika pekerjaan yang sama dilakukan oleh 6 pekerja, berapa hari yang dibutuhkan untuk menyelesaikannya?",
+    "opt": ["6 hari", "7 hari", "8 hari", "9 hari", "10 hari"],
+    "a": 2
+  },
+  {
+    "q": "Seorang petani memiliki 240 meter kawat untuk membuat pagar berbentuk persegi panjang. Jika panjang pagar harus 2 kali lebarnya, berapa luas maksimal yang bisa dibuat petani?",
+    "opt": ["1.600 m²", "2.000 m²", "2.400 m²", "2.800 m²", "3.200 m²"],
+    "a": 4
+  },
+  {
+    "q": "Toko elektronik memberikan diskon bertingkat pada barang tertentu. Diskon pertama sebesar 20%, dan setelah itu diberikan diskon tambahan sebesar 10%. Jika harga awal barang adalah Rp2.000.000, berapa harga akhir barang setelah kedua diskon diberikan?",
+    "opt": ["Rp1.400.000", "Rp1.440.000", "Rp1.500.000", "Rp1.600.000", "Rp1.800.000"],
+    "a": 1
+  },
+  {
+    "q": "Seorang penjual buah mencampur dua jenis mangga. Mangga jenis pertama berharga Rp25.000/kg dan mangga jenis kedua berharga Rp15.000/kg. Jika total campuran 40 kg dijual seharga Rp20.000/kg, berapa banyak kilogram mangga jenis pertama dalam campuran tersebut?",
+    "opt": ["10 kg", "15 kg", "20 kg", "25 kg", "30 kg"],
+    "a": 2
+  },
+  {
+    "q": "Sebuah persegi memiliki panjang sisi 12 cm. Berapakah luas persegi tersebut?",
+    "opt": ["100 cm²", "120 cm²", "144 cm²", "156 cm²", "169 cm²"],
+    "a": 2
+  },
+  {
+    "q": "Keliling sebuah persegi adalah 48 cm. Berapakah panjang sisi persegi tersebut?",
+    "opt": ["10 cm", "11 cm", "12 cm", "13 cm", "14 cm"],
+    "a": 2
+  },
+  {
+    "q": "Berdasarkan data pada tabel 'Penerimaan Polri tahun 2025', jumlah persentase pendaftar yang lolos verifikasi dibanding dengan keseluruhan pendaftar adalah.... (data tidak tersedia, jawaban placeholder)",
+    "opt": ["45%", "50%", "55%", "60%", "75%"],
+    "a": 0
+  },
+  {
+    "q": "Sebuah persegi panjang memiliki panjang 12 cm dan lebar 8 cm. Berapakah keliling persegi panjang tersebut?",
+    "opt": ["36 cm", "40 cm", "44 cm", "48 cm", "50 cm"],
+    "a": 1
+  },
+  {
+    "q": "Dalam suatu gedung bioskop XXI terdapat 10 baris kursi. Pada baris pertama terdapat 6 kursi, baris kedua 8 kursi, baris ketiga 9 kursi, baris keempat 11 kursi, baris kelima 12 kursi, dan seterusnya mengikuti pola yang sama. Banyaknya kursi seluruhnya yang dapat ditempati pada 3 baris terakhir tersebut adalah.....",
+    "opt": ["35 kursi", "45 kursi", "55 kursi", "65 kursi", "75 kursi"],
+    "a": 2
+  },
+  {
+    "q": "Sebuah segitiga memiliki panjang alas 12 cm dan tinggi 8 cm. Berapakah luas segitiga tersebut?",
+    "opt": ["48 cm²", "96 cm²", "32 cm²", "24 cm²", "72 cm²"],
+    "a": 0
+  },
+  {
+    "q": "Sebuah kubus memiliki panjang rusuk 6 cm. Berapakah volume kubus tersebut?",
+    "opt": ["36 cm³", "72 cm³", "216 cm³", "144 cm³", "108 cm³"],
+    "a": 2
+  },
+  {
+    "q": "Bentuk sederhana dari sin 120⁰ adalah ….",
+    "opt": ["0", "½", "$\\frac{1}{2}\\sqrt{3}$", "$\\frac{1}{2}\\sqrt{2}$", "1"],
+    "a": 2
+  },
+  {
+    "q": "Jika $a = 4$, $b = 3$ dan $c = \\frac{a + 2b}{ab}$, Berapakah $\\frac{a + b}{c}$?",
+    "opt": [
+      "$8 \\frac{4}{5}$",
+      "$8 \\frac{2}{5}$",
+      "$8 \\frac{81}{12}$",
+      "$\\frac{34}{6}$",
+      "$4 \\frac{10}{13}$"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Cos 150⁰ senilai dengan ….",
+    "opt": [
+      "Cos (30⁰)",
+      "Cos (210⁰)",
+      "Sin (330⁰)",
+      "Sin 210⁰",
+      "Sin 30⁰"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Panjang jarum pendek sebuah jam dinding adalah 12 cm. Saat jarum jam menunjukkan pukul 02.00, berapa jarak antara ujung jarum pendek ke garis horizontal yang melalui titik pusat jam dinding?",
+    "opt": ["4 cm", "6 cm", "3 cm", "9 cm", "8 cm"],
+    "a": 1
+  },
+  {
+    "q": "Jika $x = 15\\%$ dari 40 dan $y = 27^{0,33}$, maka $x - y = ...$",
+    "opt": ["3", "4", "5", "6", "7"],
+    "a": 0
+  },
+  {
+    "q": "Nilai ujian matematika dari 5 siswa adalah: 75, 80, 85, 90, 95. Berapakah rata-rata nilai mereka?",
+    "opt": ["80", "82", "85", "87", "90"],
+    "a": 2
+  },
+  {
+    "q": "Jika $x = \\sqrt{20 + \\sqrt{20 + \\sqrt{20 + \\dots}}}$ dan $y = 64^{0,33}$. Manakah pernyataan dibawah ini yang benar?<br>(1) $x - y = 2$ <br>(2)$x^2 - y^2 = 10$ <br>(3)$x > y$ <br>Pernyataan yang benar adalah.....",
+    "opt": [
+      "Semua pernyataan benar",
+      "Pernyataan (1) dan (2) SAJA yang benar",
+      "Pernyataan (2) dan (3) SAJA yang benar",
+      "Pernyataan (3) SAJA yang benar",
+      "Tidak ada pernyataan yang benar"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Diagram di bawah menunjukkan hasil panen padi seorang petani dalam tiga tahun berturut-turut.<br><img src='MTK_5_no40.png'> Jika:<br>1. Pada tahun 2013 seluruh padi dijual dengan harga Rp 1.100.000,00 tiap ton.<br>2. Pada tahun 2014 seluruh padi dijual dengan harga Rp 1.200.000,00 tiap ton.<br>3. Pada tahun 2015 seluruh padi dijual dengan harga Rp 1.400.000 tiap ton<br>Maka pendapatan pada tahun 2015 adalah ....",
+    "opt": [
+      "Rp 10.200.000,00",
+      "Rp 11.200.000,00",
+      "Rp 12.600.000,00",
+      "Rp 13.400.000,00",
+      "Rp 14.500.000,00"
+    ],
+    "a": 0
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
