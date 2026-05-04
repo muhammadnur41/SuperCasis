@@ -118,46 +118,256 @@
 
 <script>
 const quizData = [
-  {"q":"Sistem operasi Android berbasis kernelâ€¦","opt":["Windows NT","macOS","Linux","Unix BSD","Solaris"],"a":2},
-  {"q":"Software gratis tanpa kode sumber disebutâ€¦","opt":["Open Source","Freeware","Shareware","Proprietary","Adware"],"a":1},
-  {"q":"Microsoft Office termasuk kategoriâ€¦","opt":["System Software","Utility Software","Application Software","Firmware","Middleware"],"a":2},
-  {"q":"File .pdf dibuka denganâ€¦","opt":["Microsoft Word","Notepad","Adobe Acrobat Reader","WinRAR","VLC"],"a":2},
-  {"q":"Proses install ulang OS disebutâ€¦","opt":["Formatting","Partitioning","Reinstalling","Defragmenting","Cloning"],"a":2},
-  {"q":"Task Manager Windows berfungsi untukâ€¦","opt":["Mengedit dokumen","Membuat presentasi","Memantau proses yang berjalan","Mengatur WiFi","Menginstal aplikasi"],"a":2},
-  {"q":"Ekstensi .exe menunjukkan file bertipeâ€¦","opt":["Gambar","Teks","Program/executable","Spreadsheet","Audio"],"a":2},
-  {"q":"Control Panel Windows digunakan untukâ€¦","opt":["Edit foto","Browsing","Mengatur pengaturan sistem","Menulis kode","Memutar musik"],"a":2},
-  {"q":"Perangkat penghubung dua jaringan yang mengarahkan paket data disebutâ€¦","opt":["Hub","Switch","Router","Bridge","Repeater"],"a":2},
-  {"q":"100 Mbps artinyaâ€¦","opt":["100 Megabyte/s","100 Megabit/s","100 Megapixel/s","100 Megahertz/s","100 Megawatt/s"],"a":1},
-  {"q":"WiFi menggunakanâ€¦","opt":["Fiber optik","Gelombang radio","Kabel tembaga","Infrared","Bluetooth saja"],"a":1},
-  {"q":"Protokol pengiriman email adalahâ€¦","opt":["HTTP","FTP","SMTP","DNS","DHCP"],"a":2},
-  {"q":"Firewall berfungsi untukâ€¦","opt":["Mempercepat internet","Menyimpan data cloud","Melindungi jaringan dari akses tidak sah","Membuat website","Mengompres file"],"a":2},
-  {"q":"www.google.com adalah contoh dariâ€¦","opt":["IP Address","MAC Address","Domain Name","Port Number","Subnet Mask"],"a":2},
-  {"q":"Topologi Star: semua komputer terhubung keâ€¦","opt":["Membentuk lingkaran","Satu perangkat pusat (hub/switch)","Kabel tunggal","Langsung ke semua komputer lain","Tanpa penghubung"],"a":1},
-  {"q":"Ethernet menggunakan mediaâ€¦","opt":["Gelombang radio","Satelit","Kabel (twisted pair/fiber optik)","Bluetooth","Infrared"],"a":2},
-  {"q":"Search engine paling banyak digunakan saat iniâ€¦","opt":["Yahoo","Bing","Google","DuckDuckGo","Baidu"],"a":2},
-  {"q":"CSS berfungsi untukâ€¦","opt":["Logika program","Mengelola database","Mengatur tampilan halaman web","Menangani server","Mengirim email"],"a":2},
-  {"q":"E-commerce adalahâ€¦","opt":["Email marketing","Perdagangan elektronik via internet","Edukasi komputer","Enkripsi data","Electronic certification"],"a":1},
-  {"q":"URL singkatan dariâ€¦","opt":["Universal Resource Locator","Uniform Resource Locator","United Resource Link","Universal Reference Locator","Uniform Reference Link"],"a":1},
-  {"q":"Cookies browser berfungsi untukâ€¦","opt":["Mempercepat download","Menghapus virus","Menyimpan info sesi dan preferensi","Memblokir iklan","Mengenkripsi password"],"a":2},
-  {"q":"Responsive web design bertujuan agarâ€¦","opt":["Website lebih cepat","Tampil baik di berbagai ukuran layar","Lebih aman","Bisa offline","Lebih banyak fitur"],"a":1},
-  {"q":"Python dikenal karenaâ€¦","opt":["Hanya untuk game","Sintaks sulit","Sintaks sederhana dan mudah dibaca","Hanya untuk web","Tidak untuk AI"],"a":2},
-  {"q":"Variabel dalam pemrograman berfungsi untukâ€¦","opt":["Menampilkan output","Menyimpan nilai/data dalam memori","Menghubungkan internet","Mengompilasi program","Menghapus file"],"a":1},
-  {"q":"Loop yang paling umum dalam pemrogramanâ€¦","opt":["if-else","try-catch","for dan while","import","return"],"a":2},
-  {"q":"Algoritma adalahâ€¦","opt":["Bahasa pemrograman","Perangkat keras","Langkah sistematis menyelesaikan masalah","Sistem operasi","Jenis virus"],"a":2},
-  {"q":"Output print(3+4*2) di Pythonâ€¦","opt":["14","10","11","24","7"],"a":2},
-  {"q":"Fungsi (function) berguna untukâ€¦","opt":["Menghapus program","Menghentikan komputer","Mengelompokkan kode berulang","Menginstal software","Membuat hardware"],"a":2},
-  {"q":"IDE adalahâ€¦","opt":["Jenis OS","Bahasa pemrograman","Lingkungan pengembangan terintegrasi","Perangkat jaringan","Format file"],"a":2},
-  {"q":"Tipe data boolean bernilaiâ€¦","opt":["0 dan 1","Yes dan No","True dan False","On dan Off","Positif dan Negatif"],"a":2},
-  {"q":"Two-Factor Authentication (2FA) bertujuanâ€¦","opt":["Mempercepat login","Menambah keamanan dengan verifikasi ganda","Mengganti password otomatis","Menghapus riwayat login","Memblokir email"],"a":1},
-  {"q":"Ransomware adalah malware yangâ€¦","opt":["Menampilkan iklan","Mencuri password","Mengenkripsi file dan meminta tebusan","Memperlambat internet","Menghapus OS"],"a":2},
-  {"q":"Password kuat mengandungâ€¦","opt":["Hanya angka","Hanya huruf kecil","Huruf besar, kecil, angka, dan simbol","Nama dan tanggal lahir","Satu kata sederhana"],"a":2},
-  {"q":"Backup data sebaiknya dilakukanâ€¦","opt":["Sekali seumur hidup","Saat komputer rusak","Secara berkala dan rutin","Hanya di hard disk internal","Tidak perlu"],"a":2},
-  {"q":"SSL/TLS (HTTPS) berfungsi untukâ€¦","opt":["Mempercepat loading","Menambah fitur","Mengenkripsi komunikasi browser-server","Memblokir iklan","Memperbesar bandwidth"],"a":2},
-  {"q":"Social engineering dalam keamanan siber adalahâ€¦","opt":["Membuat medsos","Manipulasi psikologis untuk info rahasia","Optimasi jaringan sosial","Desain UI medsos","Pengembangan app chat"],"a":1},
-  {"q":"Antivirus perlu di-update karenaâ€¦","opt":["Agar tampilan berubah","Mengenali malware baru","Ukuran file bertambah","Lisensi diperpanjang","Tidak perlu update"],"a":1},
-  {"q":"Incognito mode browser berfungsiâ€¦","opt":["Akses dark web","Mempercepat browsing","Tidak menyimpan riwayat lokal","Blokir virus","Akses website diblokir"],"a":2},
-  {"q":"SQL singkatan dariâ€¦","opt":["System Query Language","Structured Query Language","Standard Query Logic","Simple Question Language","Server Queue Language"],"a":1},
-  {"q":"Database relasional menyimpan data dalamâ€¦","opt":["Grafik","File teks","Tabel (baris dan kolom)","Gambar","Audio"],"a":2}
+  {
+    "q": "Sekumpulan perangkat komputer yang saling berhubungan serta berinteraksi satu sama lain untuk menjalankan suatu proses pengolahan data hingga menjadi suatu informasi yang dibutuhkan oleh pengguna, merupakan pengertian dari...",
+    "opt": ["Brainware", "Software", "Hardware", "Program", "Sistem komputer"],
+    "a": 4
+  },
+  {
+    "q": "Perangkat yang terdapat dalam sistem komputer diantaranya adalah...",
+    "opt": ["Hardware, program dan CPU", "Software, Brainware dan Linux", "User, program dan perangkat lunak", "Hardware, software dan brainware", "Hardware, program dan user"],
+    "a": 3
+  },
+  {
+    "q": "Berikut yang bukan merupakan perangkat masukan/input device adalah...",
+    "opt": ["Keyboard", "USB", "Monitor", "Touchpad", "Flashdisk"],
+    "a": 2
+  },
+  {
+    "q": "Berikut yang bukan termasuk jenis brainware adalah...",
+    "opt": ["Programer", "Proyektor", "Sistem analis", "Administrator", "Operator"],
+    "a": 1
+  },
+  {
+    "q": "Dibawah ini yang merupakan bagian dari sistem operasi, kecuali...",
+    "opt": ["CPU", "Linux", "Microsoft windows", "Mac OS", "DOS"],
+    "a": 0
+  },
+  {
+    "q": "Microsoft Excel merupakan bagian dari...",
+    "opt": ["Sistem operasi", "Program aplikasi", "Utility software", "Bahasa pemrograman", "Komponen brainware"],
+    "a": 1
+  },
+  {
+    "q": "Pilihlah yang termasuk ke dalam utility program...",
+    "opt": ["Photoshop", "Mac OS", "Anti Virus", "Java", "Microsoft Word"],
+    "a": 2
+  },
+  {
+    "q": "Pilihlah salah satu dibawah ini yang bukan bagian dari perangkat keluaran/output device adalah...",
+    "opt": ["Printer", "Monitor", "Keyboard", "Web camera", "Proyektor"],
+    "a": 3
+  },
+  {
+    "q": "Dibawah ini yang bukan bagian dari processing device adalah...",
+    "opt": ["VGA Card", "Floppy Disk", "Processor", "RAM", "DVD Drive"],
+    "a": 4
+  },
+  {
+    "q": "Sistem operasi yang hanya terdapat pada komputer jenis Apple adalah...",
+    "opt": ["Machintosh", "Windows", "Linux", "MS-DOS", "Android"],
+    "a": 0
+  },
+  {
+    "q": "Agar dapat mengakses BIOS dapat dilakukan dengan menekan tombol...",
+    "opt": ["F5", "Delete", "Spasi", "Enter", "Esc"],
+    "a": 1
+  },
+  {
+    "q": "Jika ingin merakit komputer langkah awal kita memerlukan...",
+    "opt": ["Program", "CPU", "Perangkat keras", "Perangkat lunak", "User"],
+    "a": 2
+  },
+  {
+    "q": "Software Alat Bantu yang berfungsi menghilangkan virus komputer adalah...",
+    "opt": ["Linux", "Microsoft word", "Floopy disk", "Anti virus", "Microsoft Excel"],
+    "a": 3
+  },
+  {
+    "q": "Variasi dari sistem operasi linux disebut juga dengan...",
+    "opt": ["UNIX", "Text", "Command line", "Distro", "Open source"],
+    "a": 3
+  },
+  {
+    "q": "Yang tidak termasuk bagian dari Microsoft Office adalah...",
+    "opt": ["Word", "Excel", "Power Point", "One note", "Notepad"],
+    "a": 4
+  },
+  {
+    "q": "Tujuan pokok dari sistem komputer adalah...",
+    "opt": ["Mengolah data menjadi informasi", "Mengolah data menjadi proses", "Mengolah data masuk", "Mengolah data keluar", "Menghasilkan komputer"],
+    "a": 0
+  },
+  {
+    "q": "Berapakah bilangan desimal dari bilangan biner 0101...",
+    "opt": ["7", "5", "6", "9", "8"],
+    "a": 1
+  },
+  {
+    "q": "Berapakah nilai bilangan biner yang benar dari bilangan desimal 23...",
+    "opt": ["10101", "10110", "10111", "11000", "00000"],
+    "a": 2
+  },
+  {
+    "q": "Berapakah nilai decimal dari bilangan biner 1011 011...",
+    "opt": ["100", "103", "102", "107", "110"],
+    "a": 3
+  },
+  {
+    "q": "Berapa nilai bilangan desimal dari bilangan biner 11100110...",
+    "opt": ["200", "210", "220", "204", "230"],
+    "a": 4
+  },
+  {
+    "q": "Berapakah nilai desimal dari bilangan biner 10101101...",
+    "opt": ["45", "40", "30", "35", "44"],
+    "a": 0
+  },
+  {
+    "q": "Metode membagi bilangan dengan nilai dua dimana sisa setiap pembagiannya merupakan digit biner dan bilangan biner dari hasil disebut...",
+    "opt": ["Metode ilmiah", "Metode sisa", "Metode pengukuran", "Pengurutan", "Bubble sort"],
+    "a": 1
+  },
+  {
+    "q": "Berapakah bilangan biner dari angka 28...",
+    "opt": ["001 1001", "0001 1010", "0001 1100", "0001 1011", "0000 0001"],
+    "a": 2
+  },
+  {
+    "q": "Suatu proses dimana satu sistem bilangan dengan basis tertentu akan dijadikan bilagan dengan basis yang lain disebut...",
+    "opt": ["Biner", "Decimal", "Logika informatika", "Konversi bilangan", "Pengurutan"],
+    "a": 3
+  },
+  {
+    "q": "Berapakah nilai bilangan biner untuk bilangan heksadesimal 25...",
+    "opt": ["10111", "11000", "11001", "11100", "11010"],
+    "a": 4
+  },
+  {
+    "q": "Alamat memori menggunakan basis bilangan...",
+    "opt": ["Hexadesimal", "Biner", "Decimal", "Konversi", "Oktal"],
+    "a": 0
+  },
+  {
+    "q": "Bilangan biner disebut dengan bilangan basis 2, yang berarti haya terdiri dari dua angka, yaitu...",
+    "opt": ["1 dan 2", "1 dan 0", "0 dan 2", "2 dan 3", "0 dan 4"],
+    "a": 1
+  },
+  {
+    "q": "Berapakah jumlah digit angka pada bilangan oktal...",
+    "opt": ["2", "5", "8", "7", "10"],
+    "a": 2
+  },
+  {
+    "q": "Pada bilangan heksadesimal huruf A yang berarti sama dengan angka...",
+    "opt": ["11", "12", "13", "10", "15"],
+    "a": 3
+  },
+  {
+    "q": "Sebagai perangkat keras ini memiliki fungsi untuk menampilkan data grafis tampilan yang ada pada CPU agar pengguna dapat melihat data yang telah dibuat, adalah kegunaan dari...",
+    "opt": ["Mouse", "Keyboard", "Printer", "Scanner", "Monitor"],
+    "a": 4
+  },
+  {
+    "q": "Tools yang terdiri dari item yang berhubungan dengan pengaturan huruf atau tulisan adalah…",
+    "opt": ["Standard tool bar", "Table tool bar", "Formatting tool bar", "Menu tool bar", "Semua pilihan di atas salah"],
+    "a": 2
+  },
+  {
+    "q": "Tools untuk menangani file, menyisipkan object baik gambar atau grafik disebut…",
+    "opt": ["Drawing tool bar", "Formatting tool bar", "Standard tool bar", "Menu tool bar", "Semua pilihan di atas salah"],
+    "a": 0
+  },
+  {
+    "q": "Perintah yang digunakan untuk merubah layout pada suatu slide adalah…",
+    "opt": ["Format – slide", "Format – layout", "Format – slide layout", "Format – style layout", "Semua pilihan di atas salah"],
+    "a": 0
+  },
+  {
+    "q": "Kegunaan kotak dialog color scheme adalah…",
+    "opt": ["Merubah pola warna teks", "Merubah pola warna slide", "Merubah pola clipart", "Merubah pola presentasi", "Semua pilihan di atas salah"],
+    "a": 0
+  },
+  {
+    "q": "Kegunaan dari format-background adalah…",
+    "opt": ["Merubah latar belakang monitor", "Merubah latar belakang desktop", "Merubah latar belakang slide", "Merubah latar belakang shape tool", "Semua pilihan di atas salah"],
+    "a": 2
+  },
+  {
+    "q": "Kegunaan dari tombol “Apply” pada kotak dialog format-background adalah…",
+    "opt": ["Mengaktifkan pilihan pada setiap presentasi", "Mengaktifkan pilihan pada slide aktif", "Mengaktifkan pilihan pada presentasi aktif", "Mengaktifkan pilihan pada setiap slide", "Semua pilihan di atas salah"],
+    "a": 1
+  },
+  {
+    "q": "Program yang biasa digunakan untuk pembuatan slide untuk presentasi agar terlihat lebih mudah disebut…",
+    "opt": ["MS. Access", "MS. Word", "MS. Excel", "MS. Power Point", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Untuk menambahkan slide baru dapat dilakukan melalui menu bar …",
+    "opt": ["Insert – Group Slides – New Slides", "Button – Insert – New Slides", "Home – Group Slides – New Slides", "Home – Styles – New Slides", "Semua pilihan di atas salah"],
+    "a": 2
+  },
+  {
+    "q": "Format file dokumen Microsoft PowerPoint pada umumnya ber-extention …",
+    "opt": ["xls", "ppt", "rft", "mdb", "Semua pilihan di atas salah"],
+    "a": 1
+  },
+  {
+    "q": "Cara menambahkan Bullets and Numbering adalah …",
+    "opt": ["Home – Font – Bullets and Numbering", "Home – Editing – Numbering", "Home – Styles – Bullets and Numbering", "Home – Paragraph – Bullets and Numbering", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Yang digunakan untuk menghubungkan antara slide satu dengan slide yang lain atau dengan file presentasi yang lain disebut",
+    "opt": ["Hyperslide", "Action", "Transition", "Hyperlink", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Untuk menambahkan teks pada slide, pilih dan klik menu …",
+    "opt": ["Insert – Group Text – Text Box", "Insert – Paragraph – Text Box", "Home – Group Text – Text Box", "Home – Group Text – Font", "Semua pilihan di atas salah"],
+    "a": 0
+  },
+  {
+    "q": "Cara membuat presentasi dengan master presentasi, klik …",
+    "opt": ["Home – Presentation Views – Slide Master", "Home – View – Slide Master", "Insert – Presentation Views - Slide Master", "View – Presentation Views – Slide Master", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Untuk mengatur format teks dengan cara seleksi atau klik teks yang akan diedit, kemudian klik menu …",
+    "opt": ["Insert – Group Font", "View – Group Font", "Home – Text", "Design – Text", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Cara menghapus slide yaitu pilih slide yang akan dihapus kemudian pilih menu …",
+    "opt": ["Home – Slides – Delete", "Home – Editing – Delete", "Insert – Slides – Delete", "Insert – Editing – Delete", "Semua pilihan di atas salah"],
+    "a": 0
+  },
+  {
+    "q": "Yang tidak termasuk dalam menu insert adalah …",
+    "opt": ["Illustrations", "Table", "Text", "Animation", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Cara membuat album foto dengan menambahkan foto album melalui menu …",
+    "opt": ["Home – photo album – new photo album", "Insert – photo album – new photo album", "Insert – picture – new photo album", "Insert – image – new photo album", "Semua pilihan di atas salah"],
+    "a": 1
+  },
+  {
+    "q": "Mengolah Presentasi adalah fungsi dari",
+    "opt": ["Microsoft excel", "Microsoft Word", "Microsoft PowerPoint", "Microsoft Acces", "Semua pilihan di atas salah"],
+    "a": 2
+  },
+  {
+    "q": "Untuk menambahkan efek animasi pada Power Point 2007 maka Pilih",
+    "opt": ["View", "Insert", "Edit", "Animation", "Semua pilihan di atas salah"],
+    "a": 3
+  },
+  {
+    "q": "Menambahkan gambar ke dalam materi presentasi yang sedang dipersiapkan baik berasal dari default power point maupun dari file yang kita punyai merupakan fungsi dari…",
+    "opt": ["Insert word art", "Insert clip art", "Insert table", "Insert table", "Semua pilihan di atas salah"],
+    "a": 1
+  }
 ];
 
     let currentIdx = 0;
@@ -297,8 +507,5 @@ const quizData = [
     }
 </script>
 
-<script>
-(function(){if(window._sb)return;window._sb=1;var c=setInterval(function(){if(typeof showResult==='function'&&!window._sw){window._sw=1;clearInterval(c);var o=showResult;window.showResult=function(){o.apply(this,arguments);try{var q=typeof quizData!=='undefined'?quizData:[];var u=typeof userAnswers!=='undefined'?userAnswers:[];var r=0;u.forEach(function(a,i){if(q[i]&&a===q[i].a)r++});window.parent.postMessage({type:'quizResult',score:q.length>0?Math.round(r/q.length*100):0,correct:r,total:q.length},'*')}catch(e){}}},200)})();
-</script>
 </body>
 </html>
