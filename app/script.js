@@ -73,6 +73,13 @@ const akademikCategories = {
         folder: 'wawasan-kebangsaan', 
         icon: 'fa-flag',
         color: 'orange-gradient'
+    },
+    komputer: { 
+        title: 'Tes Komputer', 
+        prefix: 'komputer', 
+        folder: 'tes-komputer', 
+        icon: 'fa-desktop',
+        color: 'cyan-gradient'
     }
 };
 

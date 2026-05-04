@@ -1,0 +1,511 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Untuk merapikan teks dalam surat resmi agar rata di sisi kiri dan kanan secara bersamaan, gunakan fitur...",
+    "opt": ["Align Left", "Center", "Justify", "Line Spacing", "Indent"],
+    "a": 2
+  },
+  {
+    "q": "Jika ingin memberikan nomor halaman otomatis pada posisi bawah tengah dokumen, menu yang dipilih adalah...",
+    "opt": ["Insert → Header", "Insert → Page Number", "Layout → Page Setup", "Review → Numbering", "Home → Paragraph"],
+    "a": 1
+  },
+  {
+    "q": "Untuk mengganti kata \"Polisi\" menjadi \"Polri\" secara otomatis di seluruh dokumen yang panjang, gunakan fitur...",
+    "opt": ["Replace", "Find", "Select", "Edit", "Search"],
+    "a": 0
+  },
+  {
+    "q": "Syarat utama agar dapat membuat Daftar Isi (Table of Contents) secara otomatis adalah...",
+    "opt": ["Menggunakan Bold", "Menggunakan Heading Style", "Menggunakan Font besar", "Menggunakan Bullet", "Menggunakan Italic"],
+    "a": 1
+  },
+  {
+    "q": "Kombinasi tombol keyboard (shortcut) untuk menyimpan dokumen (Save) adalah...",
+    "opt": ["Ctrl + P", "Ctrl + S", "Ctrl + O", "Ctrl + N", "Ctrl + C"],
+    "a": 1
+  },
+  {
+    "q": "Untuk mengatur jarak antar baris kalimat (misalnya menjadi 1,5 spasi), menu yang digunakan adalah...",
+    "opt": ["Paragraph → Line Spacing", "Insert → Spacing", "Layout → Margin", "Review → Spacing", "Home → Font"],
+    "a": 0
+  },
+  {
+    "q": "Fitur untuk membuat huruf pertama pada awal paragraf menjadi besar (seperti di koran) disebut Drop Cap, terletak di menu...",
+    "opt": ["Insert", "Home", "Layout", "Design", "Review"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi dari fitur \"Track Changes\" adalah...",
+    "opt": ["Menghapus teks otomatis", "Melacak dan melihat setiap perubahan yang dilakukan pada dokumen", "Mengunci file agar tidak bisa dibuka", "Mengganti jenis font secara massal", "Menyimpan file secara otomatis setiap menit"],
+    "a": 1
+  },
+  {
+    "q": "Jika ingin menyisipkan tanda tangan digital secara resmi pada dokumen, gunakan...",
+    "opt": ["Insert → Signature Line", "Home → Sign", "Review → Signature", "Layout → Signature", "File → Print"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi dari shortcut \"Ctrl + B\" pada teks adalah...",
+    "opt": ["Membuat teks miring", "Memberi garis bawah", "Menebalkan teks", "Menyalin teks", "Menempel teks"],
+    "a": 2
+  },
+  {
+    "q": "Menu yang digunakan untuk membuat Tabel di Microsoft Word adalah...",
+    "opt": ["Home", "Insert", "Layout", "Design", "Review"],
+    "a": 1
+  },
+  {
+    "q": "Fungsi utama dari fitur \"Mail Merge\" adalah...",
+    "opt": ["Menggabungkan beberapa file menjadi satu", "Membuat surat massal dengan format sama namun tujuan berbeda", "Menyimpan dokumen ke dalam format email", "Menghapus data yang ganda", "Membuat tabel secara otomatis"],
+    "a": 1
+  },
+  {
+    "q": "Untuk mengubah batas tepi kertas (Margin), menu yang digunakan adalah...",
+    "opt": ["Home", "Insert", "Layout", "Review", "Design"],
+    "a": 2
+  },
+  {
+    "q": "Jika ingin memberikan komentar atau catatan tambahan pada bagian teks tertentu, gunakan...",
+    "opt": ["Insert → Comment", "Review → Comment", "Home → Comment", "Layout → Comment", "File → Comment"],
+    "a": 1
+  },
+  {
+    "q": "Fungsi dari shortcut \"Ctrl + Z\" adalah...",
+    "opt": ["Mengulang perintah (Redo)", "Membatalkan perintah terakhir (Undo)", "Menyalin teks (Copy)", "Menempel teks (Paste)", "Menghapus teks (Delete)"],
+    "a": 1
+  },
+  {
+    "q": "Langkah untuk memasukkan gambar ke dalam dokumen adalah...",
+    "opt": ["Insert → Picture", "Home → Picture", "Layout → Picture", "Review → Picture", "File → Picture"],
+    "a": 0
+  },
+  {
+    "q": "Fitur \"Header\" berfungsi untuk memberikan informasi atau teks pada...",
+    "opt": ["Judul tengah dokumen", "Bagian paling atas di setiap halaman", "Bagian paling bawah di setiap halaman", "Halaman pertama saja", "Catatan kaki (Footnote)"],
+    "a": 1
+  },
+  {
+    "q": "Untuk mengatur orientasi halaman (Portrait/tegak atau Landscape/miring), gunakan menu...",
+    "opt": ["Insert", "Layout", "Home", "Review", "Design"],
+    "a": 1
+  },
+  {
+    "q": "Fitur untuk membuat daftar poin menggunakan simbol (bukan angka) adalah...",
+    "opt": ["Numbering", "Bullet", "Paragraph", "Font", "Style"],
+    "a": 1
+  },
+  {
+    "q": "Shortcut keyboard untuk mencetak (Print) dokumen adalah...",
+    "opt": ["Ctrl + P", "Ctrl + S", "Ctrl + O", "Ctrl + N", "Ctrl + F"],
+    "a": 0
+  },
+  {
+    "q": "Untuk memilih seluruh teks dalam satu dokumen secara cepat, gunakan shortcut...",
+    "opt": ["Ctrl + A", "Ctrl + S", "Ctrl + X", "Ctrl + V", "Ctrl + Z"],
+    "a": 0
+  },
+  {
+    "q": "Fitur \"Footnote\" biasanya digunakan untuk memberikan...",
+    "opt": ["Judul dokumen", "Nomor halaman", "Catatan kaki di bagian bawah halaman", "Gambar latar belakang", "Daftar isi"],
+    "a": 2
+  },
+  {
+    "q": "Jika ingin mengecek ejaan teks dalam bahasa Inggris, fitur yang digunakan adalah...",
+    "opt": ["Layout → Margins", "Review → Spelling & Grammar", "Insert → Text Box", "Home → Font", "View → Zoom"],
+    "a": 1
+  },
+  {
+    "q": "Shortcut untuk memindahkan teks (Cut) adalah...",
+    "opt": ["Ctrl + C", "Ctrl + X", "Ctrl + V", "Ctrl + P", "Ctrl + S"],
+    "a": 1
+  },
+  {
+    "q": "Apa fungsi utama dari software Microsoft Excel?",
+    "opt": ["Membuat surat", "Membuat desain grafis", "Mengolah data angka dan tabel", "Membuat presentasi", "Mengedit video"],
+    "a": 2
+  },
+  {
+    "q": "Kumpulan sel yang memanjang secara horizontal (mendatar) dari kiri ke kanan disebut...",
+    "opt": ["Column (Kolom)", "Row (Baris)", "Range", "Sheet", "Cell"],
+    "a": 1
+  },
+  {
+    "q": "Setiap rumus atau fungsi dalam Excel harus selalu diawali dengan tanda...",
+    "opt": ["Sama dengan (=)", "Tambah (+)", "Kurang (-)", "Kali (*)", "Bagi (/)"],
+    "a": 0
+  },
+  {
+    "q": "Satuan terkecil berupa kotak yang merupakan pertemuan antara Baris dan Kolom disebut...",
+    "opt": ["Row", "Column", "Cell", "Range", "Workbook"],
+    "a": 2
+  },
+  {
+    "q": "Untuk mengurutkan data dari yang terkecil ke terbesar atau sebaliknya, gunakan fitur...",
+    "opt": ["Sort", "Filter", "Insert", "Delete", "Copy"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi VLOOKUP dalam Excel digunakan untuk...",
+    "opt": ["Menghapus data ganda", "Mencari data secara vertikal pada sebuah tabel referensi", "Menjumlahkan angka secara cepat", "Mengurutkan nama sesuai abjad", "Membuat grafik lingkaran"],
+    "a": 1
+  },
+  {
+    "q": "Untuk menghapus hanya isi data di dalam sel tanpa menghapus selnya, gunakan perintah...",
+    "opt": ["Delete", "Backspace", "Clear", "Remove", "Erase"],
+    "a": 2
+  },
+  {
+    "q": "Untuk menambahkan kolom baru di antara kolom yang sudah ada, pilih menu...",
+    "opt": ["Insert Column", "Delete Column", "Format", "Sort", "Filter"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi \"MIN\" digunakan untuk mencari...",
+    "opt": ["Nilai terbesar", "Nilai terkecil", "Nilai rata-rata", "Total jumlah", "Logika benar/salah"],
+    "a": 1
+  },
+  {
+    "q": "Fitur untuk menyaring data agar hanya menampilkan informasi tertentu saja adalah...",
+    "opt": ["Sort", "Filter", "Insert", "Delete", "Copy"],
+    "a": 1
+  },
+  {
+    "q": "Jika ingin menggabungkan beberapa sel menjadi satu sel tunggal, gunakan fitur...",
+    "opt": ["Merge Cells", "Split Cells", "Copy", "Paste", "Delete"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi \"MAX\" digunakan untuk mencari...",
+    "opt": ["Nilai terbesar", "Nilai terkecil", "Nilai rata-rata", "Total jumlah", "Logika benar/salah"],
+    "a": 0
+  },
+  {
+    "q": "Langkah untuk membuat tabel secara otomatis di Excel adalah...",
+    "opt": ["Insert → Table", "Home → Table", "Data → Table", "Review → Table", "View → Table"],
+    "a": 0
+  },
+  {
+    "q": "Shortcut untuk menyimpan file (Save) di Excel adalah...",
+    "opt": ["Ctrl + S", "Ctrl + P", "Ctrl + O", "Ctrl + N", "Ctrl + Z"],
+    "a": 0
+  },
+  {
+    "q": "Untuk mengunci baris atau kolom agar tidak bergerak saat layar digeser (scroll), gunakan...",
+    "opt": ["Freeze Panes", "Lock Cells", "Protect Sheet", "Hide", "Format"],
+    "a": 0
+  },
+  {
+    "q": "Fungsi rumus =SUM(A1:A5) berarti...",
+    "opt": ["Menghitung rata-rata dari sel A1 sampai A5", "Menjumlahkan total angka dari sel A1 sampai A5", "Mencari nilai terbesar di antara A1 sampai A5", "Menghitung jumlah sel yang terisi angka", "Menghapus data dari A1 sampai A5"],
+    "a": 1
+  },
+  {
+    "q": "Fungsi \"AVERAGE\" digunakan untuk mencari...",
+    "opt": ["Total jumlah", "Nilai tertinggi", "Nilai rata-rata", "Nilai terendah", "Jumlah data sel"],
+    "a": 2
+  },
+  {
+    "q": "Lembar kerja dalam aplikasi PowerPoint disebut dengan...",
+    "opt": ["Page", "Sheet", "Slide", "Frame", "Document"],
+    "a": 2
+  },
+  {
+    "q": "Untuk memulai presentasi dari slide pertama, tekan tombol keyboard...",
+    "opt": ["F5", "F1", "F12", "Enter", "Space"],
+    "a": 0
+  },
+  {
+    "q": "Ekstensi file standar untuk dokumen PowerPoint adalah...",
+    "opt": [".docx", ".xlsx", ".pptx", ".pdf", ".jpg"],
+    "a": 2
+  },
+  {
+    "q": "Untuk menambahkan gambar ke dalam slide, langkahnya adalah...",
+    "opt": ["Insert → Picture", "Home → Picture", "Design → Picture", "Review → Picture", "View → Picture"],
+    "a": 0
+  },
+  {
+    "q": "Fitur \"Slide Master\" digunakan untuk...",
+    "opt": ["Menghapus slide secara otomatis", "Mengatur desain dasar (template) agar seragam di semua slide", "Menambah teks animasi", "Menambahkan musik ke presentasi", "Menyimpan file dalam format PDF"],
+    "a": 1
+  },
+  {
+    "q": "Untuk memberikan efek perpindahan antara slide satu ke slide berikutnya, gunakan menu...",
+    "opt": ["Animations", "Transitions", "Design", "View", "Review"],
+    "a": 1
+  },
+  {
+    "q": "Shortcut untuk menyimpan file presentasi adalah...",
+    "opt": ["Ctrl + S", "Ctrl + P", "Ctrl + O", "Ctrl + N", "Ctrl + Z"],
+    "a": 0
+  },
+  {
+    "q": "Untuk menambahkan kotak teks secara bebas di area slide, gunakan menu...",
+    "opt": ["Insert → Text Box", "Home → Text", "Design → Text", "Review → Text", "View → Text"],
+    "a": 0
+  },
+  {
+    "q": "Untuk menghapus slide yang dipilih, tekan tombol...",
+    "opt": ["Delete", "Remove", "Erase", "Clear", "Backspace"],
+    "a": 0
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

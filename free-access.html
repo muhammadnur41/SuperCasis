@@ -232,7 +232,7 @@
         /* ===== CATEGORY GRID ===== */
         .category-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 18px;
         }
         .cat-card {
@@ -477,14 +477,14 @@
             .free-nav-badge { display: none; }
             .nav-actions a { padding: 7px 14px; font-size: 0.75rem; }
             .test-nav { flex-direction: column; gap: 10px; padding: 14px; }
-            .category-grid { grid-template-columns: 1fr 1fr; }
+            .category-grid { grid-template-columns: repeat(3, 1fr); }
             .auto-next-indicator { padding:6px 10px; gap:6px; }
             .auto-next-bar-wrap { width:50px; }
             .auto-next-label { font-size:0.65rem; }
             .auto-next-countdown { font-size:0.75rem; }
         }
         @media (max-width: 400px) {
-            .category-grid { grid-template-columns: 1fr; }
+            .category-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -537,7 +537,7 @@
                 <div class="main-card" onclick="showAkademik()">
                     <div class="card-icon icon-blue"><i class="fas fa-graduation-cap"></i></div>
                     <h3>AKADEMIK</h3>
-                    <p>Latihan Matematika, Bahasa Inggris, Pengetahuan Umum & Wawasan Kebangsaan secara gratis.</p>
+                    <p>Latihan Matematika, Bahasa Inggris, Pengetahuan Umum, Wawasan Kebangsaan & Tes Komputer secara gratis.</p>
                     <div class="card-arrow">Buka Modul <i class="fas fa-chevron-right"></i></div>
                 </div>
             </div>
@@ -663,7 +663,8 @@
         matematika: { title: 'Matematika', prefix: 'matematika', folder: 'matematika', icon: 'fa-calculator', color: 'icon-purple' },
         inggris: { title: 'Bahasa Inggris', prefix: 'inggris', folder: 'bahasa-inggris', icon: 'fa-language', color: 'icon-blue' },
         umum: { title: 'Pengetahuan Umum', prefix: 'umum', folder: 'pengetahuan-umum', icon: 'fa-globe', color: 'icon-emerald' },
-        wawasan: { title: 'Wawasan Kebangsaan', prefix: 'wawasan', folder: 'wawasan-kebangsaan', icon: 'fa-flag', color: 'icon-amber' }
+        wawasan: { title: 'Wawasan Kebangsaan', prefix: 'wawasan', folder: 'wawasan-kebangsaan', icon: 'fa-flag', color: 'icon-amber' },
+        komputer: { title: 'Tes Komputer', prefix: 'komputer', folder: 'tes-komputer', icon: 'fa-desktop', color: 'icon-cyan' }
     };
 
     const FREE_LIMIT = 3; // First 3 packs are free
