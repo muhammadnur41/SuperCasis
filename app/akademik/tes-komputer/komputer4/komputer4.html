@@ -118,46 +118,256 @@
 
 <script>
 const quizData = [
-  {"q":"Proses install ulang OS disebutâ€¦","opt":["Formatting","Partitioning","Reinstalling","Defragmenting","Cloning"],"a":2},
-  {"q":"Task Manager Windows berfungsi untukâ€¦","opt":["Mengedit dokumen","Membuat presentasi","Memantau proses yang berjalan","Mengatur WiFi","Menginstal aplikasi"],"a":2},
-  {"q":"Ekstensi .exe menunjukkan file bertipeâ€¦","opt":["Gambar","Teks","Program/executable","Spreadsheet","Audio"],"a":2},
-  {"q":"Control Panel Windows digunakan untukâ€¦","opt":["Edit foto","Browsing","Mengatur pengaturan sistem","Menulis kode","Memutar musik"],"a":2},
-  {"q":"Perangkat penghubung dua jaringan yang mengarahkan paket data disebutâ€¦","opt":["Hub","Switch","Router","Bridge","Repeater"],"a":2},
-  {"q":"100 Mbps artinyaâ€¦","opt":["100 Megabyte/s","100 Megabit/s","100 Megapixel/s","100 Megahertz/s","100 Megawatt/s"],"a":1},
-  {"q":"WiFi menggunakanâ€¦","opt":["Fiber optik","Gelombang radio","Kabel tembaga","Infrared","Bluetooth saja"],"a":1},
-  {"q":"Protokol pengiriman email adalahâ€¦","opt":["HTTP","FTP","SMTP","DNS","DHCP"],"a":2},
-  {"q":"Firewall berfungsi untukâ€¦","opt":["Mempercepat internet","Menyimpan data cloud","Melindungi jaringan dari akses tidak sah","Membuat website","Mengompres file"],"a":2},
-  {"q":"www.google.com adalah contoh dariâ€¦","opt":["IP Address","MAC Address","Domain Name","Port Number","Subnet Mask"],"a":2},
-  {"q":"Topologi Star: semua komputer terhubung keâ€¦","opt":["Membentuk lingkaran","Satu perangkat pusat (hub/switch)","Kabel tunggal","Langsung ke semua komputer lain","Tanpa penghubung"],"a":1},
-  {"q":"Ethernet menggunakan mediaâ€¦","opt":["Gelombang radio","Satelit","Kabel (twisted pair/fiber optik)","Bluetooth","Infrared"],"a":2},
-  {"q":"Search engine paling banyak digunakan saat iniâ€¦","opt":["Yahoo","Bing","Google","DuckDuckGo","Baidu"],"a":2},
-  {"q":"CSS berfungsi untukâ€¦","opt":["Logika program","Mengelola database","Mengatur tampilan halaman web","Menangani server","Mengirim email"],"a":2},
-  {"q":"E-commerce adalahâ€¦","opt":["Email marketing","Perdagangan elektronik via internet","Edukasi komputer","Enkripsi data","Electronic certification"],"a":1},
-  {"q":"URL singkatan dariâ€¦","opt":["Universal Resource Locator","Uniform Resource Locator","United Resource Link","Universal Reference Locator","Uniform Reference Link"],"a":1},
-  {"q":"Cookies browser berfungsi untukâ€¦","opt":["Mempercepat download","Menghapus virus","Menyimpan info sesi dan preferensi","Memblokir iklan","Mengenkripsi password"],"a":2},
-  {"q":"Responsive web design bertujuan agarâ€¦","opt":["Website lebih cepat","Tampil baik di berbagai ukuran layar","Lebih aman","Bisa offline","Lebih banyak fitur"],"a":1},
-  {"q":"Python dikenal karenaâ€¦","opt":["Hanya untuk game","Sintaks sulit","Sintaks sederhana dan mudah dibaca","Hanya untuk web","Tidak untuk AI"],"a":2},
-  {"q":"Variabel dalam pemrograman berfungsi untukâ€¦","opt":["Menampilkan output","Menyimpan nilai/data dalam memori","Menghubungkan internet","Mengompilasi program","Menghapus file"],"a":1},
-  {"q":"Loop yang paling umum dalam pemrogramanâ€¦","opt":["if-else","try-catch","for dan while","import","return"],"a":2},
-  {"q":"Algoritma adalahâ€¦","opt":["Bahasa pemrograman","Perangkat keras","Langkah sistematis menyelesaikan masalah","Sistem operasi","Jenis virus"],"a":2},
-  {"q":"Output print(3+4*2) di Pythonâ€¦","opt":["14","10","11","24","7"],"a":2},
-  {"q":"Fungsi (function) berguna untukâ€¦","opt":["Menghapus program","Menghentikan komputer","Mengelompokkan kode berulang","Menginstal software","Membuat hardware"],"a":2},
-  {"q":"IDE adalahâ€¦","opt":["Jenis OS","Bahasa pemrograman","Lingkungan pengembangan terintegrasi","Perangkat jaringan","Format file"],"a":2},
-  {"q":"Tipe data boolean bernilaiâ€¦","opt":["0 dan 1","Yes dan No","True dan False","On dan Off","Positif dan Negatif"],"a":2},
-  {"q":"Two-Factor Authentication (2FA) bertujuanâ€¦","opt":["Mempercepat login","Menambah keamanan dengan verifikasi ganda","Mengganti password otomatis","Menghapus riwayat login","Memblokir email"],"a":1},
-  {"q":"Ransomware adalah malware yangâ€¦","opt":["Menampilkan iklan","Mencuri password","Mengenkripsi file dan meminta tebusan","Memperlambat internet","Menghapus OS"],"a":2},
-  {"q":"Password kuat mengandungâ€¦","opt":["Hanya angka","Hanya huruf kecil","Huruf besar, kecil, angka, dan simbol","Nama dan tanggal lahir","Satu kata sederhana"],"a":2},
-  {"q":"Backup data sebaiknya dilakukanâ€¦","opt":["Sekali seumur hidup","Saat komputer rusak","Secara berkala dan rutin","Hanya di hard disk internal","Tidak perlu"],"a":2},
-  {"q":"SSL/TLS (HTTPS) berfungsi untukâ€¦","opt":["Mempercepat loading","Menambah fitur","Mengenkripsi komunikasi browser-server","Memblokir iklan","Memperbesar bandwidth"],"a":2},
-  {"q":"Social engineering dalam keamanan siber adalahâ€¦","opt":["Membuat medsos","Manipulasi psikologis untuk info rahasia","Optimasi jaringan sosial","Desain UI medsos","Pengembangan app chat"],"a":1},
-  {"q":"Antivirus perlu di-update karenaâ€¦","opt":["Agar tampilan berubah","Mengenali malware baru","Ukuran file bertambah","Lisensi diperpanjang","Tidak perlu update"],"a":1},
-  {"q":"Incognito mode browser berfungsiâ€¦","opt":["Akses dark web","Mempercepat browsing","Tidak menyimpan riwayat lokal","Blokir virus","Akses website diblokir"],"a":2},
-  {"q":"SQL singkatan dariâ€¦","opt":["System Query Language","Structured Query Language","Standard Query Logic","Simple Question Language","Server Queue Language"],"a":1},
-  {"q":"Database relasional menyimpan data dalamâ€¦","opt":["Grafik","File teks","Tabel (baris dan kolom)","Gambar","Audio"],"a":2},
-  {"q":"Primary key berfungsi untukâ€¦","opt":["Enkripsi data","Menghapus tabel","Identifikasi record secara unik","Mengurutkan","Membuat backup"],"a":2},
-  {"q":"Big Data merujuk padaâ€¦","opt":["Data 1 GB","Kumpulan data sangat besar dan kompleks","Data di flashdisk","Video HD","Data dihapus"],"a":1},
-  {"q":"Spreadsheet Excel digunakan untukâ€¦","opt":["Edit video","Presentasi","Mengolah data angka, rumus, tabel","Desain grafis","Menulis kode"],"a":2},
-  {"q":"=VLOOKUP() berfungsi untukâ€¦","opt":["Menjumlahkan","Rata-rata","Mencari data vertikal dalam tabel","Mengurutkan","Membuat grafik"],"a":2}
+  {
+    "q": "Untuk memberikan efek pada pemunculan teks atau gambar dalam slide, maka menu yang digunakan adalah...",
+    "opt": ["Entrance", "Exit", "In", "Emphasis", "Motion Paths"],
+    "a": 0
+  },
+  {
+    "q": "Microsoft PowerPoint adalah paket program Microsoft Office yang digunakan untuk...",
+    "opt": ["Membuat pengetikan naskah dan surat menyurat", "Membuat laporan keuangan dan tabel data", "Membuat grafik dan pengolahan angka statistik", "Membuat presentasi dalam berbagai tampilan", "Membuat basis data (database) perusahaan"],
+    "a": 3
+  },
+  {
+    "q": "Lembar kerja pada Microsoft PowerPoint biasa disebut sebagai...",
+    "opt": ["Slide", "Clip", "Layer", "Themes", "Worksheet"],
+    "a": 0
+  },
+  {
+    "q": "Presentasi visual menggunakan media utama berupa...",
+    "opt": ["Gambar", "Suara", "Teks", "Sinyal", "Aroma"],
+    "a": 0
+  },
+  {
+    "q": "Berikut adalah ikon yang ada di Office Button atau Menu File, kecuali...",
+    "opt": ["New", "Save", "Publish", "Insert", "Open"],
+    "a": 3
+  },
+  {
+    "q": "Suatu daerah pada worksheet yang berbentuk segi empat dan merupakan tempat kumpulan beberapa sel disebut ….",
+    "opt": ["sheet", "column", "range", "pointer", "gridline"],
+    "a": 2
+  },
+  {
+    "q": "Tombol manajemen berkas dokumen pada Microsoft Office Excel berbentuk bulat dengan logo Office di tengahnya disebut ….",
+    "opt": ["Excel Options", "Office Button", "Ribbon", "Tilte Bar", "Toolbar"],
+    "a": 1
+  },
+  {
+    "q": "Salah satu cara menyimpan workbook pada excel adalah dengan menggunakan ….",
+    "opt": ["Ctrl+B", "Ctrl+P", "Ctrl+C", "Ctrl+V", "Ctrl+S"],
+    "a": 4
+  },
+  {
+    "q": "Berikut ini yang merupakan alamat sel, yaitu ….",
+    "opt": ["84", "3F", "B5", "BB", "F0"],
+    "a": 2
+  },
+  {
+    "q": "Ikon “save”, “redo”, dan “undo” merupakan bagian menu dari ….",
+    "opt": ["Ribbon", "Office Button", "Status Bar", "Quick Access Toolbar", "Titlebar"],
+    "a": 3
+  },
+  {
+    "q": "Untuk mengubah satuan ukuran di dalam Excel, digunakan perintah ….",
+    "opt": ["Start–Setting–Control Panel–Regional–Currency", "Tools–Options–Print", "Office Button–Open", "Office Button–Excel Options–Save–Default File Location", "Office Button–Excel Options–Advanced–Display–RulerUnits"],
+    "a": 4
+  },
+  {
+    "q": "Ikon “Undo” berfungsi ….",
+    "opt": ["mencetak dokumen", "menyimpan dokumen", "membuka file", "memotong bagian dari dokumen", "membatalkan pengerjaan"],
+    "a": 4
+  },
+  {
+    "q": "Ctrl+P adalah shortcut key untuk memunculkan kotak dialog ….",
+    "opt": ["Page setup", "Customize", "Heater", "Format cells", "Print"],
+    "a": 4
+  },
+  {
+    "q": "Fungsi dalam Excel yang digunakan menghitung rata-rata dari sekelompok nilai ….",
+    "opt": ["SUM", "AVERAGE", "MAX", "MIN", "IF"],
+    "a": 1
+  },
+  {
+    "q": "Untuk memindahkan atau menyalin worksheet, menu yang harus dipilih setelah klik kanan pada tab sheet adalah ….",
+    "opt": ["Delete", "Rename", "Select all sheet", "Move or copy", "Paste"],
+    "a": 3
+  },
+  {
+    "q": "Untuk memberi bingkai pada sel, menu yang harus dipilih pada kotak dialog Format Cells adalah ….",
+    "opt": ["Number", "Alignment", "Borders", "Font", "Fill"],
+    "a": 2
+  },
+  {
+    "q": "Menu yang harus dipilih untuk memperlebar atau mempersempit ukuran kolom pada worksheet adalah ….",
+    "opt": ["Insert Sheet Column", "Insert Sheet", "Borders", "Row Height", "Column Width"],
+    "a": 4
+  },
+  {
+    "q": "Untuk menambah garis dalam Excel, perintah yang diklik pada menu Insert adalah ….",
+    "opt": ["Insert Cells", "Insert Sheet Rows", "Insert Sheet Column", "Insert Sheet", "Insert Name"],
+    "a": 1
+  },
+  {
+    "q": "Berikut merupakan tombol yang digunakan dalam memformat teks agar menjadi miring, yaitu ….",
+    "opt": ["Ctrl+B", "Ctrl+I", "Ctrl+U", "Ctrl+S", "Ctrl+O"],
+    "a": 1
+  },
+  {
+    "q": "Pengertian dari range adalah….",
+    "opt": ["pertemuan antara worksheet", "pertemuan antara workbook", "kumpulan sel sembarang", "kumpulan sel berbentuk persegi panjang", "pertemuan antara garis dan kolom"],
+    "a": 3
+  },
+  {
+    "q": "Fungsi utama program Microsoft Excel adalah …",
+    "opt": ["Pengolah kata", "Pengolah data angka", "Mengelola dokumen", "Berkomunikasi", "Mencari informasi"],
+    "a": 1
+  },
+  {
+    "q": "Microsoft Excel merupakan program yang menggunakan system wysiwyg, yang mempunyai arti …",
+    "opt": ["Apa yang di dapat akan dilihat", "Apa yang dilihat sama dengan yang didapat", "Apa yang diminati pasti akan didapati", "Mempermudah dalam perhitungan", "Membantu dalam menyelesaikan masalah"],
+    "a": 1
+  },
+  {
+    "q": "Worksheet adalah …",
+    "opt": ["Kumpulan dari worksheet", "Kumpulan beberapa sel", "Pertemuan antara baris dengan kolom", "Pertemuan antara sel dengan range", "Lembar kerja dalam excel"],
+    "a": 4
+  },
+  {
+    "q": "Apa yang dimaksud dengan sel (Cell) dalam excel ?",
+    "opt": ["Kumpulan dari worksheet", "Kumpulan beberapa sel", "Pertemuan antara baris dengan kolom", "Pertemuan antara sel dengan range", "Lembar kerja dalam excel"],
+    "a": 2
+  },
+  {
+    "q": "Apa yang dimaksud dengan Range dalam excel?",
+    "opt": ["Kumpulan dari worksheet", "Kumpulan dari beberapa sel", "Pertemuan antara baris dengan kolom", "Pertemuan antara sel dengan range", "Lembar kerja dalam excel"],
+    "a": 1
+  },
+  {
+    "q": "Program aplikasi yang digunakan untuk pengolahan angka, tabel dan grafik disebut….",
+    "opt": ["Windows", "Ms-word", "Ms-excel", "Ms-office", "Dos"],
+    "a": 2
+  },
+  {
+    "q": "Cara yang tepat untuk mengaktifkan ms-excel adalah…",
+    "opt": ["Start – program – ms office – ms word", "Ms excel – start – program – ms office", "Program – ms excel – start – ms office", "Start – program – ms office – ms excel", "Semua benar"],
+    "a": 3
+  },
+  {
+    "q": "Cara menutup ms-excel adalah…",
+    "opt": ["File – open", "File – new", "File – close", "Edit - close", "Edit - paste"],
+    "a": 2
+  },
+  {
+    "q": "Dibawah ini yang termasuk lembar kerja ms-excel adalah , kecuali…",
+    "opt": ["Menubar", "Toolbar", "Titlebar", "Excelbar", "Semua salah"],
+    "a": 3
+  },
+  {
+    "q": "Dibawah ini fungsi ms-excel adalah, kecuali..",
+    "opt": ["menghitung data", "membuat grafik", "membuat tabel", "membuat makalah", "Menggambar"],
+    "a": 3
+  },
+  {
+    "q": "Baris judul dalam ms-excel disebut juga dengan….",
+    "opt": ["title bar", "menubar", "toolbar", "semua jawaban salah", "semua jawaban benar"],
+    "a": 0
+  },
+  {
+    "q": "Lembar kerja dalam excel disebut juga dengan….",
+    "opt": ["range", "cell", "worksheet", "area slide", "Toolbar"],
+    "a": 2
+  },
+  {
+    "q": "Daerah tempat penulisan rumus excel disebut…",
+    "opt": ["menubar", "titlebar", "formulabar", "toolbar", "Fungsibar"],
+    "a": 2
+  },
+  {
+    "q": "Membuat grafik merupakan salah satu fungsi dari",
+    "opt": ["ms- word", "ms-power point", "ms-excel", "semua jawaban salah", "DOS"],
+    "a": 2
+  },
+  {
+    "q": "Jumlah lembar kerja dalam buku kerja Microsoft excel terdiri atas…",
+    "opt": ["256 kolom dan 65356 baris", "256 kolom dan 65536 baris", "256 kolom dan 63536 baris", "256 kolom dan 65536 baris", "265 kolom dan 65256 baris"],
+    "a": 3
+  },
+  {
+    "q": "Suatu daerah pada worksheet yang berbentuk segi empat dan merupakan tempat kumpulan beberapa sel disebut ….",
+    "opt": ["sheet", "column", "range", "pointer", "gridline"],
+    "a": 2
+  },
+  {
+    "q": "Tombol manajemen berkas dokumen pada Microsof Office Excel berbentuk bulat dengan logo Office di tengahnya disebut ….",
+    "opt": ["Excel Options", "Office Button", "Ribbon", "Tilte Bar", "Toolbar"],
+    "a": 1
+  },
+  {
+    "q": "Salah satu cara menyimpan wordbook pada excel adalah dengan menggunakan ….",
+    "opt": ["Ctrl+B", "Ctrl+P", "Ctrl+C", "Ctrl+V", "Ctrl+S"],
+    "a": 4
+  },
+  {
+    "q": "Berikut ini yang merupakan alamat sel, yaitu ….",
+    "opt": ["84", "3F", "B5", "BB", "F0"],
+    "a": 2
+  },
+  {
+    "q": "Ikon “save”, “redo”, dan “undo” merupakan bagian menu dari ….",
+    "opt": ["Ribbon", "Office Button", "Status Bar", "Quick Access Toolbar", "Titlebar"],
+    "a": 3
+  },
+  {
+    "q": "Untuk mengubah satuan ukuran di dalam Excel, digunakan perintah ….",
+    "opt": ["Start–Setting–Control Panel–Regional–Currency", "Tools–Options–Print", "Office Button–Open", "Office Button–Excel Options–Save–Default File Location", "Office Button–Excel Options–Advanced–Display–Ruler Units"],
+    "a": 4
+  },
+  {
+    "q": "Ikon “Undo” berfungsi ….",
+    "opt": ["mencetak dokumen", "menyimpan dokumen", "membuka file", "memotong bagian dari dokumen", "membatalkan pengerjaan"],
+    "a": 4
+  },
+  {
+    "q": "Ctrl+P adalah shortcut key untuk memunculkan kotak dialog ….",
+    "opt": ["Page setup", "Customize", "Heater", "Format cells", "Print"],
+    "a": 4
+  },
+  {
+    "q": "Fungsi dalam Excel yang digunakan menghitung rata-rata dari sekelompok nilai….",
+    "opt": ["SUM", "AVERAGE", "MAX", "MIN", "IF"],
+    "a": 1
+  },
+  {
+    "q": "Untuk memindahkan atau menyalin worksheet, menu yang harus dipilih setelah klik kanan pada tab sheet adalah ….",
+    "opt": ["Delete", "Rename", "Select all sheet", "Move or copy", "Paste"],
+    "a": 3
+  },
+  {
+    "q": "Untuk memberi bingkai pada sel, menu yang harus dipilih pada kotak dialog Format Cells adalah….",
+    "opt": ["Number", "Alignment", "Borders", "Font", "Fill"],
+    "a": 2
+  },
+  {
+    "q": "Menu yang harus dipilih untuk memperlebar atau mempersempit ukuran kolom pada worksheet adalah ….",
+    "opt": ["Insert Sheet Column", "Insert Sheet", "Borders", "Row Height", "Column Width"],
+    "a": 4
+  },
+  {
+    "q": "Untuk menembah garis dalam Excel, perintah yang diklik pada menu Insert adalah ….",
+    "opt": ["Insert Cells", "Insert Sheet Rows", "Insert Sheet Column", "Insert Sheet", "Insert Name"],
+    "a": 1
+  },
+  {
+    "q": "Berikut merupakan tombol yang digunakan dalam memformat teks agar menjadi miring, yaitu ….",
+    "opt": ["Ctrl+B", "Ctrl+I", "Ctrl+U", "Ctrl+S", "Ctrl+O"],
+    "a": 1
+  },
+  {
+    "q": "Pengertian dari range adalah ….",
+    "opt": ["pertemuan antara worksheet", "pertemuan antara workbook", "kumpulan sel sembarang", "kumpulan sel berbentuk persegi panjang", "pertemuan antara garis dan kolom"],
+    "a": 3
+  }
 ];
 
     let currentIdx = 0;
@@ -297,8 +507,5 @@ const quizData = [
     }
 </script>
 
-<script>
-(function(){if(window._sb)return;window._sb=1;var c=setInterval(function(){if(typeof showResult==='function'&&!window._sw){window._sw=1;clearInterval(c);var o=showResult;window.showResult=function(){o.apply(this,arguments);try{var q=typeof quizData!=='undefined'?quizData:[];var u=typeof userAnswers!=='undefined'?userAnswers:[];var r=0;u.forEach(function(a,i){if(q[i]&&a===q[i].a)r++});window.parent.postMessage({type:'quizResult',score:q.length>0?Math.round(r/q.length*100):0,correct:r,total:q.length},'*')}catch(e){}}},200)})();
-</script>
 </body>
 </html>
