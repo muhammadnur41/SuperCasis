@@ -1,0 +1,557 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Profesional - Mode Review</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        .main-wrapper { display: flex; gap: 20px; width: 100%; max-width: 1500px; align-items: flex-start; }
+        
+        .sidebar-numbers { background: rgb(220, 222, 228); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+        
+        .quiz-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); flex-grow: 1; min-width: 0; }
+
+        .status-container { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 6px; 
+            justify-content: center; 
+        }
+
+        .num-box { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid #ccc; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 12px; 
+        }
+
+        .num-unanswered { background: #f8f9fa; color: #999; }
+        .num-answered { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-active { background: #3498db !important; color: white; border-color: #2980b9; transform: scale(1.1); box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+        .num-correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .num-wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        #options-container { margin-top: 25px; display: flex; flex-direction: column; gap: 5px; }
+        .option-btn { width: 100%; text-align: left; padding: 14px; border: 2px solid #eee; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
+        .option-btn.selected { border-color: #3498db; background: #3498db; color: rgb(5, 5, 5); }
+        .option-btn.correct-ans { border: 2px solid #2ecc71 !important; background: #e8f5e9 !important; color: #2e7d32 !important; font-weight: bold; }
+        .option-btn.wrong-selected { border: 2px solid #e74c3c !important; background: #fdeaea !important; color: #c0392b !important; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; font-size: 14px; transition: 0.3s; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-orange { background: #f39c12; color: white; }
+        .btn-gray { background: #95a5a6; color: white; }
+
+        #result-screen { display: none; }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            .sidebar-numbers { width: 90%; position: static; order: 2; }
+            .quiz-container { width: 90%; order: 1; }
+        }
+
+        /* Tambahan style agar paragraf dan gambar di soal terlihat rapi */
+        #question-text p { margin-top: 0; margin-bottom: 10px; }
+        #question-text img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="sidebar-numbers" id="sidebar-nav">
+        <h5 style="margin: 0 0 15px 0; text-align: center; color: #2c3e50; font-size: 16px;">Navigasi Soal</h5>
+        <div class="status-container" id="status-container"></div>
+        <button id="finish-quiz-btn" class="btn btn-green" style="width:100%; margin-top:20px; font-size: 14px; padding: 10px;" onclick="showResult()">Akhiri Tes</button>
+    </div>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <div id="question-header" style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <span id="question-number" style="font-weight: bold; color: #3498db; font-size: 18px;">Soal #1</span>
+            </div>
+            <div id="question-text" style="color: #000000; line-height: 1.2; text-align: justify; font-size: 16px; margin: 0; font-weight: normal;">Memuat pertanyaan...</div>
+            
+            <div id="options-container"></div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-gray" id="prev-btn" onclick="prevQuestion()">Kembali</button>
+                <button class="btn btn-blue" id="next-btn" onclick="nextQuestion()">Selanjutnya</button>
+            </div>
+            
+            <button class="btn btn-orange" id="back-to-result-btn" style="width:100%; margin-top:15px; display:none;" onclick="exitReview()">Selesai Review (Kembali ke Skor)</button>
+        </div>
+
+        <div id="result-screen" style="text-align: center;">
+            <h2 style="color: #2c3e50;">Hasil Skor Anda</h2>
+            <h1 id="final-score" style="font-size: 70px; color: #2ecc71; margin: 10px 0;">0</h1>
+            <p id="stats-text" style="color: #7f8c8d; font-size: 18px; margin-bottom: 30px;"></p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto;">
+                <button class="btn btn-orange" onclick="startReview()">Review Jawaban</button>
+                <button class="btn btn-blue" onclick="location.reload()">Ulangi Kuis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "Tentukan penyelesaian dari pertidaksamaan: $$|3 - \\frac{1}{2}x| > 5$$",
+    "opt": [
+      "$-16 < x < 4$",
+      "$-4 < x < 16$",
+      "$4 < x < 16$",
+      "$x < -16$ atau $x > 4$",
+      "$x < -4$ atau $x > 16$"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Harga 2 kg apel, 2 kg kurma, dan 1 kg mangga adalah Rp190.000,00 dan harga 1 kg apel, 2 kg kurma, dan 2 kg mangga adalah Rp160.000,00. Jika harga 2 kg apel, 2 kg kurma, dan 3 kg mangga Rp250.000,00, maka dapat disimpulkan bahwa ..........",
+    "opt": [
+      "harga 1 kg apel sama dengan harga 1 kg mangga",
+      "harga 1 kg kurma sama dengan harga 1 kg mangga",
+      "harga 1 kg apel lebih mahal daripada harga 1 kg mangga",
+      "harga 1 kg kurma lebih mahal daripada harga 1 kg apel",
+      "harga 1 kg kurma dua kali lipat dari harga 1 kg mangga"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan gambar grafik fungsi kuadrat berikut.<br><img src='MTK_6_no3.png'> Persamaan grafik fungsi kuadrat pada gambar adalah …",
+    "opt": [
+      "$y = -2x^2 + 4x + 3$",
+      "$y = -2x^2 + 4x + 2$",
+      "$y = -2x^2 + 4x - 6$",
+      "$y = -x^2 + 2x + 3$",
+      "$y = -x^2 + 2x - 5$"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Jika $g(x) = x + 3$ dan $(f \\circ g)(x) = x^2 - 4$, maka $f(x - 2) = ...$",
+    "opt": [
+      "$x^2 - 6x + 5$",
+      "$x^2 + 6x + 5$",
+      "$x^2 - 10x + 21$",
+      "$x^2 - 10x - 21$",
+      "$x^2 + 10x + 21$"
+    ],
+    "a": 2
+  },
+  {
+    "q": "Diketahui $f(x) = \\frac{1 - 5x}{x + 2}, x \\neq -2$ dan $f^{-1}(x)$ adalah invers dari $f(x)$. Nilai $f^{-1}(-3) = \\dots$",
+    "opt": [
+      "$\\frac{4}{3}$",
+      "$2$",
+      "$\\frac{5}{2}$",
+      "$3$",
+      "$\\frac{7}{2}$"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Perhatikan gambar di bawah ini. <br><img src='MTK_6_no6.png'> Panjang AB pada gambar di atas = ….....",
+    "opt": [
+      "$10\\sqrt{3} - 10 \\text{ cm}$",
+      "$10\\sqrt{3} - 5 \\text{ cm}$",
+      "$10\\sqrt{3} - 1 \\text{ cm}$",
+      "$10\\sqrt{3} + 1 \\text{ cm}$",
+      "$10\\sqrt{3} + 10 \\text{ cm}$"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan segitiga ABC di bawah ini. <br><img src='MTK_6_no7.png'> Perbandingan BC : AC adalah ...",
+    "opt": [
+      "$\\sqrt{2} : 1$",
+      "$\\sqrt{2} : \\sqrt{3}$",
+      "$\\sqrt{3} : \\sqrt{2}$",
+      "$3 : 4$",
+      "$4 : 3$"
+    ],
+    "a": 1
+  },
+  {
+    "q": "Pada segitiga ABC diketahui sisi AB = 6 cm, AC = 10 cm, dan sudut A = 60°. Panjang sisi BC = ….....",
+    "opt": [
+      "$2\\sqrt{19} \\text{ cm}$",
+      "$3\\sqrt{19} \\text{ cm}$",
+      "$4\\sqrt{19} \\text{ cm}$",
+      "$2\\sqrt{29} \\text{ cm}$",
+      "$3\\sqrt{29} \\text{ cm}$"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan gambar berikut. <br><img src='MTK_6_no9.png'> Daerah yang diarsir pada gambar di atas adalah daerah yang memenuhi sistem pertidaksamaan ….",
+    "opt": [
+      "$4x + 5y \\leq 20, 2x + y \\geq 8, x \\leq 6, y \\geq 0$",
+      "$4x + 5y \\geq 20, 2x + y \\leq 8, x \\leq 6, y \\geq 0$",
+      "$4x + 5y \\geq 20, 2x + y \\leq 8, y \\leq 6, x \\geq 0$",
+      "$5x + 4y \\leq 20, x + 2y \\geq 8, x \\leq 6, y \\geq 0$",
+      "$5x + 4y \\geq 20, x + 2y \\leq 8, x \\leq 6, y \\geq 0$"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Cuplis memiliki modal Rp15.000.000,00 untuk membuka usaha dagang sepatu dan sandal. Harga beli sepasang sepatu adalah Rp150.000,00 dan sandal Rp100.000,00. Keuntungan yang diperoleh dari penjualan sepasang sepatu adalah Rp20.000,00 dan sepasang sandal adalah Rp 10.000,00. Tempat usahanya hanya dapat memuat 120 pasang sepatu dan sandal maka hasil penjualan maksimum yang diperoleh adalah ....",
+    "opt": [
+      "Rp1.200.000,00",
+      "Rp1.500.000,00",
+      "Rp1.800.000,00",
+      "Rp2.000.000,00",
+      "Rp2.400.000,00"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Diketahui persamaan matriks $$\\begin{pmatrix} 2 & 3 \\\\ 4 & -1 \\end{pmatrix} \\begin{pmatrix} x & -2 \\\\ y & 5 \\end{pmatrix} = 2 \\begin{pmatrix} y & 4 \\\\ x & -3 \\end{pmatrix} + \\begin{pmatrix} 5 & 3 \\\\ -1 & -7 \\end{pmatrix}$$ Nilai dari $2x + 4y$ adalah ....",
+    "opt": ["6", "8", "10", "12", "14"],
+    "a": 4
+  },
+  {
+    "q": "Diketahui matriks $A = \\begin{pmatrix} 5 & 2 \\\\ 4 & 1 \\end{pmatrix}$ dan $C = \\begin{pmatrix} -1 & 7 \\\\ -2 & 8 \\end{pmatrix}$. Jika $AB = C$ dan $B^{-1}$ menyatakan invers matriks $B$, maka determinan matriks $B^{-1}$ adalah ....",
+    "opt": ["$-4$", "$-3$", "$-\\frac{1}{2}$", "$\\frac{1}{2}$", "$2$"],
+    "a": 2
+  },
+  {
+    "q": "Titik (-3, 5) ditranslasikan oleh translasi T menjadi titik (-1, 4). Bayangan titik (6, -4) oleh translasi T adalah ….",
+    "opt": ["(8, -5)", "(8, -3)", "(4, -5)", "(4, -3)", "(4, -2)"],
+    "a": 0
+  },
+  {
+    "q": "Persamaan bayangan garis 2x – y + 5 = 0 oleh refleksi terhadap garis y = -x dilanjutkan refleksi terhadap sumbu Y adalah ....",
+    "opt": [
+      "$x + 2y – 5 = 0$",
+      "$x + 2y + 5 = 0$",
+      "$x – 2y – 5 = 0$",
+      "$2x + y + 5 = 0$",
+      "$2x – y – 5 = 0$"
+    ],
+    "a": 0
+  },
+  {
+    "q": "Seorang petani memetik durian tiap hari selama tujuh hari menurut deret aritmetika. Jika banyak durian yang dipetik pada hari ketiga 32 buah dan pada hari kelima 2 kali dari yang dipetik pada hari kedua, maka jumlah seluruh durian yang dipetik adalah ....",
+    "opt": ["64 buah", "128 buah", "252 buah", "280 buah", "560 buah"],
+    "a": 3
+  },
+  {
+    "q": "Sebuah mesin foto copy dibeli seharga Rp10.000.000,00. Setiap tahun harga jualnya berkurang menjadi 60% dari harga sebelumnya. Harga jual mesin tersebut setelah dipakai 4 tahun adalah ....",
+    "opt": [
+      "Rp3.600.000,00",
+      "Rp2.400.000,00",
+      "Rp2.160.000,00",
+      "Rp1.800.000,00",
+      "Rp1.296.000,00"
+    ],
+    "a": 2
+  },
+  {
+    "q": "$\\lim_{x \\to 5} \\frac{x - \\sqrt{4x + 5}}{x - 5} = \\dots$",
+    "opt": ["$-\\frac{1}{5}$", "$-\\frac{1}{10}$", "$0$", "$\\frac{3}{5}$", "$\\frac{4}{5}$"],
+    "a": 3
+  },
+  {
+    "q": "Turunan pertama fungsi $f(x) = (6x - 3)^3(2x - 1)$ adalah $f'(x)$. Nilai $f'(1) = \\dots$",
+    "opt": ["18", "24", "54", "162", "216"],
+    "a": 4
+  },
+  {
+    "q": "Grafik fungsi $f(x) = x^3 + 6x^2 - 36x + 20$ turun pada interval ...",
+    "opt": [
+      "$-2 < x < 6$",
+      "$-6 < x < 2$",
+      "$-6 < x < -2$",
+      "$x < -6$ atau $x > 2$",
+      "$x < -2$ atau $x > 6$"
+    ],
+    "a": 1
+  },
+  {
+    "q": "$\\int(4x + 3)(4x^2 + 6x - 9)^9 \\, dx = \\dots$",
+    "opt": [
+      "$\\frac{1}{15}(2x - 3)^{10} + C$",
+      "$\\frac{1}{20}(2x - 3)^{10} + C$",
+      "$\\frac{1}{30}(4x^2 + 6x - 9)^{10} + C$",
+      "$\\frac{1}{20}(4x^2 + 6x - 9)^{10} + C$",
+      "$\\frac{1}{10}(4x^2 + 6x - 9)^{10} + C$"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Kamar suatu ruangan dengan ukuran panjang, lebar dan tinggi berturut-turut $5 \\text{ m}$, $3 \\text{ m}$ dan $4 \\text{ m}$. Di tengah pertemuan dua dinding dipasangi lampu. Jarak terjauh lampu dan pojok ruangan adalah ....",
+    "opt": ["$2 \\text{ m}$", "$4 \\text{ m}$", "$10 \\text{ m}$", "$\\sqrt{38} \\text{ m}$", "$\\sqrt{50} \\text{ m}$"],
+    "a": 3
+  },
+  {
+    "q": "<img src='MTK_6_no22.png'>Diketahui kubus $ABCD.EFGH$ dengan rusuk $9 \\text{ cm}$. $T$ pada pertengahan $HF$, jarak titik $A$ ke garis $CT$ adalah ....",
+    "opt": [
+      "$4\\sqrt{2} \\text{ cm}$",
+      "$4\\sqrt{3} \\text{ cm}$",
+      "$6\\sqrt{2} \\text{ cm}$",
+      "$6\\sqrt{3} \\text{ cm}$",
+      "$6\\sqrt{6} \\text{ cm}$"
+    ],
+    "a": 3
+  },
+  {
+    "q": "Diketahui kubus $ABCD.EFGH$ dengan rusuk $4$ cm. Jarak titik $D$ ke bidang $ACF$ adalah....",
+    "opt": [
+      "$\\frac{4}{3}\\sqrt{2} \\text{ cm}$",
+      "$2\\sqrt{2} \\text{ cm}$",
+      "$\\frac{1}{3}\\sqrt{3} \\text{ cm}$",
+      "$\\frac{2}{3}\\sqrt{3} \\text{ cm}$",
+      "$\\frac{4}{3}\\sqrt{3} \\text{ cm}$"
+    ],
+    "a": 4
+  },
+  {
+    "q": "Perhatikan tabel berikut : <br><img src='MTK_6_no24.png'>Rata-rata dari data pada tabel di atas adalah ....",
+    "opt": ["15,5", "16,25", "16,75", "17", "17,25"],
+    "a": 1
+  },
+  {
+    "q": "Perhatikan tabel berikut! <br><img src='MTK_6_no25.png'> Nilai kuartil atas dari data di atas adalah …",
+    "opt": ["54,5", "60,5", "78,25", "78,50", "78,75"],
+    "a": 2
+  },
+  {
+    "q": "Perhatikan histogram berikut. <br><img src='MTK_6_no26.png'> Median data di atas adalah ….",
+    "opt": ["61,8", "62,1", "62,4", "62,9", "63,2"],
+    "a": 1
+  },
+  {
+    "q": "Perhatikan tabel berikut. <br><img src='MTK_6_no27.png'>Jika nilai kuartil bawah data tersebut adalah 50,5 maka nilai k adalah ….",
+    "opt": ["5", "6", "8", "10", "11"],
+    "a": 3
+  },
+  {
+    "q": "Perhatikan histogram berikut. <br><img src='MTK_6_no28.png'> Modus data di atas adalah ….",
+    "opt": ["23,75", "24,25", "24,75", "25,75", "26,25"],
+    "a": 0
+  },
+  {
+    "q": "Perhatikan tabel di bawah ini. <br><img src='MTK_6_no29.png'>Modus dari data di atas adalah ….",
+    "opt": ["49,5", "50,5", "51,5", "52,5", "53,5"],
+    "a": 2
+  },
+  {
+    "q": "Dari angka–angka 0, 1, 2, 3, 4, 5, 6 akan disusun suatu bilangan yang terdiri dari 3 angka dengan tidak ada angka yang berulang. Banyak bilangan yang dapat disusun nilainya kurang dari 400 adalah ….",
+    "opt": ["60", "90", "120", "180", "240"],
+    "a": 1
+  },
+  {
+    "q": "Gambar berikut merupakan denah arena pameran. <br><img src='MTK_6_no31.png'> Banyak cara seorang pengunjung dapat masuk dan keluar arena pameran tersebut adalah ....",
+    "opt": ["12", "16", "28", "32", "36"],
+    "a": 2
+  },
+  {
+    "q": "Banyak kata yang terdiri dari tujuh huruf yang dapat dibentuk dari kata \"DIDIDIK\" adalah ….",
+    "opt": ["70 kata", "80 kata", "100 kata", "120 kata", "140 kata"],
+    "a": 4
+  },
+  {
+    "q": "Jika ada 4 pasang suami istri yang akan duduk melingkar pada meja makan bundar dengan setiap pasang suami istri selalu berdampingan, maka banyak susunan yang mungkin adalah....",
+    "opt": ["48 susunan", "64 susunan", "72 susunan", "84 susunan", "96 susunan"],
+    "a": 4
+  },
+  {
+    "q": "Sebuah kotak berisi 4 bola putih dan 5 bola biru. Dari dalam kotak diambil 3 bola sekaligus, banyak cara pengambilan sedemikian hingga sedikitnya terdapat 2 bola biru adalah …",
+    "opt": ["10 cara", "24 cara", "50 cara", "55 cara", "140 cara"],
+    "a": 2
+  },
+  {
+    "q": "Di dalam sebuah kotak terdapat m bola merah dan n bola putih dengan m+n=16. Jika diambil dua bola sekaligus secara acak dari dalam kotak, maka peluang terambil dua bola tersebut berbeda warna adalah $\\frac{1}{2}$. Nilai dari m2+n2 adalah....",
+    "opt": ["128", "136", "146", "160", "200"],
+    "a": 1
+  },
+  {
+    "q": "Dari 7 orang, terdiri atas 4 laki-laki dan 3 wanita, akan dipilih 3 orang untuk menjadi ketua, sekretaris, dan bendahara suatu organisasi (tidak boleh merangkap jabatan). Peluang terpilih ketua laki-laki atau bendahara wanita adalah....",
+    "opt": ["$\\frac{2}{7}$", "$\\frac{3}{7}$", "$\\frac{4}{7}$", "$\\frac{5}{7}$", "$\\frac{6}{7}$"],
+    "a": 3
+  },
+  {
+    "q": "Dua buah dadu dilambungkan bersamaan sekali. Peluang muncul kedua mata dadu berjumlah kurang dari 5 atau hasil kalinya 12 adalah ....",
+    "opt": ["$\\frac{6}{36}$", "$\\frac{8}{36}$", "$\\frac{10}{36}$", "$\\frac{12}{36}$", "$\\frac{14}{36}$"],
+    "a": 2
+  },
+  {
+    "q": "Dua kelas masing-masing terdiri atas 30 siswa. Satu siswa dipilih dari tiap-tiap kelas. Peluang terpilih keduanya perempuan adalah $\\frac{11}{36}$. Peluang terpilih keduanya laki-laki adalah ....",
+    "opt": ["$\\frac{11}{180}$", "$\\frac{19}{180}$", "$\\frac{25}{180}$", "$\\frac{29}{180}$", "$\\frac{35}{180}$"],
+    "a": 1
+  },
+  {
+    "q": "Di sebuah daerah, peluang bahwa suatu hari akan berawan adalah 0,4. Diketahui juga peluang suatu hari berawan dan hujan adalah 0,3. Jika hari ini berawan, peluang hari ini hujan adalah ….",
+    "opt": ["0,12", "0,2", "0,5", "0,6", "0,75"],
+    "a": 4
+  },
+  {
+    "q": "Di sebuah area parkir bandara, terdapat 50 unit mobil pengunjung, yang diantaranya ada 10 unit berjenis SUV dan 15 unit berjenis MPV. Setiap mobil bisa keluar kapan saja tanpa terhalangi oleh mobil lain. Hanya tersedia satu pintu keluar yang bisa dilalui secara bergantian. Pada urutan pertama keluar berturut dua unit mobil. Peluang bahwa yang keluar pertama adalah mobil SUV dan yang kedua mobil MPV adalah ….",
+    "opt": ["$\\frac{3}{49}$", "$\\frac{5}{49}$", "$\\frac{15}{49}$", "$\\frac{3}{50}$", "$\\frac{5}{50}$"],
+    "a": 0
+  }
+];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let isReviewMode = false;
+
+    window.onload = () => {
+        renderStatus();
+        showQuestion();
+    };
+
+    function renderStatus() {
+        const container = document.getElementById('status-container');
+        container.innerHTML = "";
+        quizData.forEach((_, i) => {
+            const box = document.createElement('div');
+            box.innerText = i + 1;
+            
+            if (isReviewMode) {
+                const isCorrect = userAnswers[i] === quizData[i].a;
+                box.className = `num-box ${isCorrect ? 'num-correct' : 'num-wrong'}`;
+            } else {
+                box.className = `num-box ${userAnswers[i] !== null ? 'num-answered' : 'num-unanswered'}`;
+            }
+            
+            if (i === currentIdx) box.classList.add('num-active');
+            box.onclick = () => { currentIdx = i; showQuestion(); };
+            container.appendChild(box);
+        });
+    }
+
+    function showQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById('question-number').innerText = `Soal #${currentIdx + 1}`;
+        
+        // MENGUBAH innerText MENJADI innerHTML DI SINI
+        document.getElementById('question-text').innerHTML = q.q;
+        
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = "";
+
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.opt.forEach((option, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<strong>${labels[i]}.</strong> ${option}`;
+            
+            if (isReviewMode) {
+                btn.disabled = true;
+                if (i === q.a) {
+                    btn.classList.add('correct-ans');
+                } 
+                if (userAnswers[currentIdx] === i && i !== q.a) {
+                    btn.classList.add('wrong-selected');
+                }
+            } else {
+                if (userAnswers[currentIdx] === i) btn.classList.add('selected');
+                btn.onclick = () => selectAnswer(i);
+            }
+            
+            optContainer.appendChild(btn);
+        });
+
+        document.getElementById('prev-btn').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+        document.getElementById('next-btn').innerText = currentIdx === quizData.length - 1 ? 'Selesai' : 'Selanjutnya';
+        document.getElementById('back-to-result-btn').style.display = isReviewMode ? 'block' : 'none';
+        
+        renderStatus();
+
+        // Tambahan: Render ulang matematika (LaTeX) setelah konten di-update
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err.message));
+        }
+    }
+
+    function selectAnswer(i) {
+        if (isReviewMode) return;
+        userAnswers[currentIdx] = i;
+        showQuestion();
+
+        setTimeout(() => {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                showQuestion();
+            }
+        }, 300);
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            showQuestion();
+        } else if (!isReviewMode) {
+            showResult();
+        } else {
+            exitReview();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            showQuestion();
+        }
+    }
+
+    function showResult() {
+        const unanswered = userAnswers.filter(ans => ans === null).length;
+        if (unanswered > 0 && !isReviewMode) {
+            if (!confirm(`Ada ${unanswered} soal belum dijawab. Yakin ingin mengumpulkan?`)) return;
+        }
+
+        let correct = 0;
+        userAnswers.forEach((ans, i) => { if (ans === quizData[i].a) correct++; });
+        const finalScoreValue = Math.round((correct / quizData.length) * 100);
+        
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finish-quiz-btn').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('stats-text').innerText = `Benar: ${correct} | Salah: ${quizData.length - correct}`;
+        
+        isReviewMode = true; 
+        renderStatus();
+    }
+
+    function startReview() {
+        currentIdx = 0; 
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function exitReview() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
